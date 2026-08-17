@@ -8,31 +8,31 @@ import com.cloud.userauth.application.common.ApplicationException;
 import com.cloud.userauth.application.port.ClientRenewalPolicy;
 import org.junit.jupiter.api.Test;
 
-class RefreshLoginCommandServiceTest {
+class RefreshTokenLoginCommandServiceTest {
     @Test
     void shouldRefreshWhenClientPolicyUsesRotation() {
-        RefreshLoginCommandOutput expected = new RefreshLoginCommandOutput(
+        RefreshTokenLoginCommandOutput expected = new RefreshTokenLoginCommandOutput(
                 "Bearer", "access-2", "refresh-2", 900L, "app.api",
                 1L, 2L, "session-1");
-        RefreshLoginCommandService service = new RefreshLoginCommandService(
+        RefreshTokenLoginCommandService service = new RefreshTokenLoginCommandService(
                 clientAppId -> ClientRenewalPolicy.REFRESH_TOKEN_ROTATION,
                 command -> expected);
 
-        RefreshLoginCommandOutput actual =
-                service.execute(new RefreshLoginCommand("app", "refresh-1"));
+        RefreshTokenLoginCommandOutput actual =
+                service.execute(new RefreshTokenLoginCommand("app", "refresh-1"));
 
         assertEquals(expected, actual);
     }
 
     @Test
     void shouldRejectRefreshForAuthorizationCodeClient() {
-        RefreshLoginCommandService service = new RefreshLoginCommandService(
+        RefreshTokenLoginCommandService service = new RefreshTokenLoginCommandService(
                 clientAppId -> ClientRenewalPolicy.EXTERNAL_AUTHORIZATION_CODE,
                 command -> { throw new AssertionError("refresher must not be invoked"); });
 
         ApplicationException exception = assertThrows(
                 ApplicationException.class,
-                () -> service.execute(new RefreshLoginCommand("mini-program", "refresh-1")));
+                () -> service.execute(new RefreshTokenLoginCommand("mini-program", "refresh-1")));
 
         assertEquals(ApplicationError.APP_CLIENT_RENEWAL_POLICY_NOT_ALLOWED.errorCode(),
                 exception.getErrorCode());

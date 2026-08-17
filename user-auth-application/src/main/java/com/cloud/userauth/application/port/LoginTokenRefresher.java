@@ -1,8 +1,8 @@
 package com.cloud.userauth.application.port;
 
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommand;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommandOutput;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommand;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandOutput;
 
 public interface LoginTokenRefresher {
-    RefreshLoginCommandOutput refresh(RefreshLoginCommand command);
+    RefreshTokenLoginCommandOutput refresh(RefreshTokenLoginCommand command);
 }

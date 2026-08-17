@@ -8,18 +8,18 @@ import com.cloud.userauth.application.common.ApplicationException;
 import com.cloud.userauth.application.port.ClientRenewalPolicy;
 import org.junit.jupiter.api.Test;
 
-class BoundExternalCredentialAuthorizationCodeLoginCommandServiceTest {
+class BoundCredentialLoginCommandServiceTest {
     @Test
     void shouldRejectExternalAuthorizationCodeWhenClientPolicyDoesNotAllowIt() {
-        BoundExternalCredentialAuthorizationCodeLoginCommandService service =
-                new BoundExternalCredentialAuthorizationCodeLoginCommandService(
+        BoundCredentialLoginCommandService service =
+                new BoundCredentialLoginCommandService(
                         null,
                         null,
                         clientAppId -> ClientRenewalPolicy.NONE);
 
         ApplicationException exception = assertThrows(
                 ApplicationException.class,
-                () -> service.execute(new BoundExternalCredentialAuthorizationCodeLoginCommand(
+                () -> service.execute(new BoundCredentialLoginCommand(
                         "WECHAT_MINI_PROGRAM",
                         "authorization-code",
                         null,

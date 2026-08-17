@@ -13,12 +13,12 @@ import com.cloud.userauth.application.authorization.UserChannelAuthorizationSync
 import com.cloud.userauth.application.login.MobileOtpAuthenticationProcess;
 import com.cloud.userauth.application.login.MobileOtpLoginCommandService;
 import com.cloud.userauth.application.login.MobileOtpLoginTransactionService;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommandService;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandService;
 import com.cloud.userauth.application.logout.LogoutCommandService;
 import com.cloud.userauth.application.login.external.ExternalAuthenticationProcess;
 import com.cloud.userauth.application.login.external.ExternalLoginCommandService;
-import com.cloud.userauth.application.login.external.TrustedMobileAuthorizationCodeLoginCommandService;
-import com.cloud.userauth.application.login.external.BoundExternalCredentialAuthorizationCodeLoginCommandService;
+import com.cloud.userauth.application.login.external.TrustedMobileLoginCommandService;
+import com.cloud.userauth.application.login.external.BoundCredentialLoginCommandService;
 import com.cloud.userauth.application.login.external.ExternalLoginTransactionService;
 import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandService;
 import com.cloud.userauth.application.credential.BindExternalCredentialCommandService;
@@ -471,21 +471,21 @@ public class UserAuthConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TrustedMobileAuthorizationCodeLoginCommandService trustedMobileAuthorizationCodeLoginCommandService(
+    public TrustedMobileLoginCommandService trustedMobileLoginCommandService(
             ExternalLoginAttemptCommandService externalLoginAttemptCommandService,
             LoginTokenIssuer loginTokenIssuer
     ) {
-        return new TrustedMobileAuthorizationCodeLoginCommandService(externalLoginAttemptCommandService, loginTokenIssuer);
+        return new TrustedMobileLoginCommandService(externalLoginAttemptCommandService, loginTokenIssuer);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public BoundExternalCredentialAuthorizationCodeLoginCommandService boundExternalCredentialAuthorizationCodeLoginCommandService(
+    public BoundCredentialLoginCommandService boundCredentialLoginCommandService(
             ExternalLoginAttemptCommandService externalLoginAttemptCommandService,
             ExternalLoginCommandService externalLoginCommandService,
             ClientRenewalPolicyResolver renewalPolicyResolver
     ) {
-        return new BoundExternalCredentialAuthorizationCodeLoginCommandService(
+        return new BoundCredentialLoginCommandService(
                 externalLoginAttemptCommandService, externalLoginCommandService,
                 renewalPolicyResolver);
     }
@@ -557,11 +557,11 @@ public class UserAuthConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public RefreshLoginCommandService refreshLoginCommandService(
+    public RefreshTokenLoginCommandService refreshTokenLoginCommandService(
             ClientRenewalPolicyResolver renewalPolicyResolver,
             LoginTokenRefresher loginTokenRefresher
     ) {
-        return new RefreshLoginCommandService(renewalPolicyResolver, loginTokenRefresher);
+        return new RefreshTokenLoginCommandService(renewalPolicyResolver, loginTokenRefresher);
     }
 
     @Bean

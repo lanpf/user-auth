@@ -2,8 +2,8 @@ package com.cloud.userauth.infrastructure.oauth2.sas.login;
 
 import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.application.common.ApplicationException;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommand;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommandOutput;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommand;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandOutput;
 import com.cloud.userauth.application.port.LoginTokenRefresher;
 import com.cloud.userauth.application.port.RefreshTokenRotationLock;
 import com.cloud.userauth.domain.authentication.session.LoginSession;
@@ -30,11 +30,11 @@ public final class SasLoginTokenRefresher implements LoginTokenRefresher {
     private final RefreshTokenRotationLock rotationLock;
 
     @Override
-    public RefreshLoginCommandOutput refresh(RefreshLoginCommand command) {
+    public RefreshTokenLoginCommandOutput refresh(RefreshTokenLoginCommand command) {
         return rotationLock.execute(command.refreshToken(), () -> refreshLocked(command));
     }
 
-    private RefreshLoginCommandOutput refreshLocked(RefreshLoginCommand command) {
+    private RefreshTokenLoginCommandOutput refreshLocked(RefreshTokenLoginCommand command) {
         OAuth2Authorization authorization = authorizationService.findByToken(
                 command.refreshToken(), OAuth2TokenType.REFRESH_TOKEN);
         if (authorization == null || !Objects.equals(
@@ -45,7 +45,7 @@ public final class SasLoginTokenRefresher implements LoginTokenRefresher {
         ensureActiveLoginSession(command.clientAppId(), authorization);
         SasRefreshTokenEndpointPayload response =
                 tokenEndpointClient.requestRefreshToken(command.refreshToken());
-        return new RefreshLoginCommandOutput(
+        return new RefreshTokenLoginCommandOutput(
                 response.tokenType(),
                 response.accessToken(),
                 response.refreshToken(),

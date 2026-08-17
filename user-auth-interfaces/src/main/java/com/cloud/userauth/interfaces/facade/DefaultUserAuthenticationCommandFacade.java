@@ -12,15 +12,15 @@ import com.cloud.userauth.api.authentication.TrustedMobileLoginApiCommand;
 import com.cloud.userauth.api.facade.UserAuthenticationCommandFacade;
 import com.cloud.userauth.application.challenge.AuthChallengeCommandService;
 import com.cloud.userauth.application.login.MobileOtpLoginCommandService;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommandService;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandService;
 import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommandOutput;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommandOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandService;
 import com.cloud.userauth.application.login.external.ExternalLoginCommandService;
-import com.cloud.userauth.application.login.external.TrustedMobileAuthorizationCodeLoginCommandService;
-import com.cloud.userauth.application.login.external.BoundExternalCredentialAuthorizationCodeLoginCommandService;
+import com.cloud.userauth.application.login.external.TrustedMobileLoginCommandService;
+import com.cloud.userauth.application.login.external.BoundCredentialLoginCommandService;
 import com.cloud.userauth.interfaces.mapper.AuthApiMapper;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
@@ -37,11 +37,11 @@ import org.springframework.validation.annotation.Validated;
 public class DefaultUserAuthenticationCommandFacade implements UserAuthenticationCommandFacade {
     private final AuthChallengeCommandService authChallengeCommandService;
     private final MobileOtpLoginCommandService mobileOtpLoginCommandService;
-    private final RefreshLoginCommandService refreshLoginCommandService;
+    private final RefreshTokenLoginCommandService refreshTokenLoginCommandService;
     private final ExternalLoginAttemptCommandService externalLoginAttemptCommandService;
     private final ExternalLoginCommandService externalLoginCommandService;
-    private final TrustedMobileAuthorizationCodeLoginCommandService trustedMobileAuthorizationCodeLoginCommandService;
-    private final BoundExternalCredentialAuthorizationCodeLoginCommandService boundExternalCredentialAuthorizationCodeLoginCommandService;
+    private final TrustedMobileLoginCommandService trustedMobileLoginCommandService;
+    private final BoundCredentialLoginCommandService boundCredentialLoginCommandService;
     private final LogoutCommandService logoutCommandService;
     private final BindExternalCredentialCommandService bindExternalCredentialCommandService;
     private final AuthApiMapper mapper;
@@ -60,7 +60,7 @@ public class DefaultUserAuthenticationCommandFacade implements UserAuthenticatio
     @Override
     public Result<RefreshTokenLoginApiCommandOutput> refreshTokenLogin(RefreshTokenLoginApiCommand request) {
         return Result.success(mapper.toOutput(
-                refreshLoginCommandService.execute(mapper.toCommand(request))));
+                refreshTokenLoginCommandService.execute(mapper.toCommand(request))));
     }
 
     @Override
@@ -84,7 +84,7 @@ public class DefaultUserAuthenticationCommandFacade implements UserAuthenticatio
             TrustedMobileLoginApiCommand request
     ) {
         return Result.success(mapper.toOutput(
-                trustedMobileAuthorizationCodeLoginCommandService.execute(mapper.toCommand(request))));
+                trustedMobileLoginCommandService.execute(mapper.toCommand(request))));
     }
 
     @Override
@@ -92,7 +92,7 @@ public class DefaultUserAuthenticationCommandFacade implements UserAuthenticatio
             BoundCredentialLoginApiCommand request
     ) {
         return Result.success(mapper.toOutput(
-                boundExternalCredentialAuthorizationCodeLoginCommandService.execute(mapper.toCommand(request))));
+                boundCredentialLoginCommandService.execute(mapper.toCommand(request))));
     }
 
 

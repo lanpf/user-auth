@@ -15,11 +15,11 @@ import org.springframework.validation.annotation.Validated;
  */
 @Validated
 @RequiredArgsConstructor
-public class TrustedMobileAuthorizationCodeLoginCommandService {
+public class TrustedMobileLoginCommandService {
     private final ExternalLoginAttemptCommandService externalLoginAttemptCommandService;
     private final LoginTokenIssuer loginTokenIssuer;
 
-    public ExternalLoginCommandOutput execute(@Valid TrustedMobileAuthorizationCodeLoginCommand command) {
+    public ExternalLoginCommandOutput execute(@Valid TrustedMobileLoginCommand command) {
         ExternalLoginAttemptCommandOutput preLogin = externalLoginAttemptCommandService.acceptTrustedIdentity(
                 new ExternalIdentity(
                         new CredentialIssuer(command.issuer(), CredentialIssuerType.TRUSTED_PARTNER),

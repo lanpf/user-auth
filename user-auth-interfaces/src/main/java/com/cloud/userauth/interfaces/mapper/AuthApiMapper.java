@@ -12,8 +12,9 @@ import com.cloud.userauth.application.challenge.IssueAuthChallengeCommand;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeCommandOutput;
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
 import com.cloud.userauth.application.login.MobileOtpLoginCommandOutput;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommand;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommandOutput;
+import com.cloud.userauth.application.login.external.TrustedMobileLoginCommand;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommand;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandOutput;
 import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommandOutput;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommand;
@@ -22,8 +23,7 @@ import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommand
 import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginCommand;
 import com.cloud.userauth.application.login.external.ExternalLoginCommandOutput;
-import com.cloud.userauth.application.login.external.TrustedMobileAuthorizationCodeLoginCommand;
-import com.cloud.userauth.application.login.external.BoundExternalCredentialAuthorizationCodeLoginCommand;
+import com.cloud.userauth.application.login.external.BoundCredentialLoginCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
 import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
@@ -40,9 +40,9 @@ public interface AuthApiMapper {
 
     MobileOtpLoginApiCommandOutput toOutput(MobileOtpLoginCommandOutput output);
 
-    RefreshLoginCommand toCommand(RefreshTokenLoginApiCommand request);
+    RefreshTokenLoginCommand toCommand(RefreshTokenLoginApiCommand request);
 
-    RefreshTokenLoginApiCommandOutput toOutput(RefreshLoginCommandOutput output);
+    RefreshTokenLoginApiCommandOutput toOutput(RefreshTokenLoginCommandOutput output);
 
     ExternalLoginAttemptCommand toCommand(ExternalLoginAttemptApiCommand request);
 
@@ -52,9 +52,9 @@ public interface AuthApiMapper {
 
     ExternalLoginApiCommandOutput toOutput(ExternalLoginCommandOutput output);
 
-    TrustedMobileAuthorizationCodeLoginCommand toCommand(TrustedMobileLoginApiCommand request);
+    TrustedMobileLoginCommand toCommand(TrustedMobileLoginApiCommand request);
 
-    BoundExternalCredentialAuthorizationCodeLoginCommand toCommand(BoundCredentialLoginApiCommand request);
+    BoundCredentialLoginCommand toCommand(BoundCredentialLoginApiCommand request);
 
     BindExternalCredentialCommand toCommand(
             BindExternalCredentialApiCommand request);

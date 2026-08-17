@@ -13,13 +13,13 @@ import org.springframework.validation.annotation.Validated;
 /** 已绑定外部 Credential 的无状态授权码登录/续期。 */
 @Validated
 @RequiredArgsConstructor
-public class BoundExternalCredentialAuthorizationCodeLoginCommandService {
+public class BoundCredentialLoginCommandService {
     private final ExternalLoginAttemptCommandService externalLoginAttemptCommandService;
     private final ExternalLoginCommandService externalLoginCommandService;
     private final ClientRenewalPolicyResolver renewalPolicyResolver;
 
     public ExternalLoginCommandOutput execute(
-            @Valid BoundExternalCredentialAuthorizationCodeLoginCommand command
+            @Valid BoundCredentialLoginCommand command
     ) {
         if (renewalPolicyResolver.resolve(command.clientAppId())
                 != ClientRenewalPolicy.EXTERNAL_AUTHORIZATION_CODE) {

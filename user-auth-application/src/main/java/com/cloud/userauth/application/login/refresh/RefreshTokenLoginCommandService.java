@@ -10,11 +10,11 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @RequiredArgsConstructor
-public class RefreshLoginCommandService {
+public class RefreshTokenLoginCommandService {
     private final ClientRenewalPolicyResolver renewalPolicyResolver;
     private final LoginTokenRefresher loginTokenRefresher;
 
-    public RefreshLoginCommandOutput execute(RefreshLoginCommand command) {
+    public RefreshTokenLoginCommandOutput execute(RefreshTokenLoginCommand command) {
         if (renewalPolicyResolver.resolve(command.clientAppId()) != ClientRenewalPolicy.REFRESH_TOKEN_ROTATION) {
             throw new ApplicationException(ApplicationError.APP_CLIENT_RENEWAL_POLICY_NOT_ALLOWED);
         }

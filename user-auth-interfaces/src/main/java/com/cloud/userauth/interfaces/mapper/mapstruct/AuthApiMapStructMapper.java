@@ -13,8 +13,8 @@ import com.cloud.userauth.application.challenge.IssueAuthChallengeCommandOutput;
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
 import com.cloud.userauth.application.login.MobileOtpLoginCommandOutput;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommandOutput;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommand;
-import com.cloud.userauth.application.login.refresh.RefreshLoginCommandOutput;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommand;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandOutput;
 import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommandOutput;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommand;
@@ -23,8 +23,8 @@ import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommand
 import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginCommand;
 import com.cloud.userauth.application.login.external.ExternalLoginCommandOutput;
-import com.cloud.userauth.application.login.external.TrustedMobileAuthorizationCodeLoginCommand;
-import com.cloud.userauth.application.login.external.BoundExternalCredentialAuthorizationCodeLoginCommand;
+import com.cloud.userauth.application.login.external.TrustedMobileLoginCommand;
+import com.cloud.userauth.application.login.external.BoundCredentialLoginCommand;
 import com.cloud.userauth.interfaces.mapper.AuthApiMapper;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
@@ -49,10 +49,10 @@ public interface AuthApiMapStructMapper extends AuthApiMapper {
     MobileOtpLoginApiCommandOutput toOutput(MobileOtpLoginCommandOutput output);
 
     @Override
-    RefreshLoginCommand toCommand(RefreshTokenLoginApiCommand request);
+    RefreshTokenLoginCommand toCommand(RefreshTokenLoginApiCommand request);
 
     @Override
-    RefreshTokenLoginApiCommandOutput toOutput(RefreshLoginCommandOutput output);
+    RefreshTokenLoginApiCommandOutput toOutput(RefreshTokenLoginCommandOutput output);
 
     @Override
     ExternalLoginAttemptCommand toCommand(ExternalLoginAttemptApiCommand request);
@@ -67,10 +67,10 @@ public interface AuthApiMapStructMapper extends AuthApiMapper {
     ExternalLoginApiCommandOutput toOutput(ExternalLoginCommandOutput output);
 
     @Override
-    TrustedMobileAuthorizationCodeLoginCommand toCommand(TrustedMobileLoginApiCommand request);
+    TrustedMobileLoginCommand toCommand(TrustedMobileLoginApiCommand request);
 
     @Override
-    BoundExternalCredentialAuthorizationCodeLoginCommand toCommand(BoundCredentialLoginApiCommand request);
+    BoundCredentialLoginCommand toCommand(BoundCredentialLoginApiCommand request);
 
     @Override
     BindExternalCredentialCommand toCommand(

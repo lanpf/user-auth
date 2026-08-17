@@ -1,6 +1,6 @@
 package com.cloud.userauth.application.login.refresh;
 
-public record RefreshLoginCommandOutput(
+public record RefreshTokenLoginCommandOutput(
         String tokenType,
         String accessToken,
         String refreshToken,
