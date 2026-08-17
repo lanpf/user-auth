@@ -1,0 +1,144 @@
+spring:
+  application:
+    name: user-auth
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - file:${USER_AUTH_CONFIG_DIR:./config}/db/schema.sql
+  datasource:
+    url: ${USER_AUTH_DATASOURCE_URL:jdbc:mysql://localhost:3306/user_auth?useUnicode=true&characterEncoding=utf8&preserveInstants=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
+    username: ${USER_AUTH_DATASOURCE_USERNAME:root}
+    password: ${USER_AUTH_DATASOURCE_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  data:
+    redis:
+      host: ${USER_AUTH_REDIS_HOST:localhost}
+      port: ${USER_AUTH_REDIS_PORT:6379}
+
+framework:
+  persistence:
+    naming:
+      table-prefix: ua_
+  lock:
+    redis:
+      namespace: user-auth
+      auto-renewal: true
+
+cosid:
+  namespace: user-auth
+  segment:
+    enabled: true
+    mode: chain
+    distributor:
+      type: jdbc
+      jdbc:
+        enable-auto-init-cosid-table: true
+        enable-auto-init-id-segment: true
+    provider:
+      user: { offset: 0, step: 100 }
+      auth_account: { offset: 0, step: 100 }
+      credential: { offset: 0, step: 100 }
+      auth_challenge: { offset: 0, step: 100 }
+      registration_process: { offset: 0, step: 100 }
+      domain_event: { offset: 0, step: 100 }
+
+server:
+  port: 8081
+
+user-auth:
+  authentication:
+    client-apps:
+      mini-program:
+        renewal-policy: ${USER_AUTH_MINI_PROGRAM_RENEWAL_POLICY:EXTERNAL_AUTHORIZATION_CODE}
+        oauth2-scopes:
+          - app.api
+      app:
+        renewal-policy: ${USER_AUTH_APP_RENEWAL_POLICY:REFRESH_TOKEN_ROTATION}
+        oauth2-scopes:
+          - app.api
+      admin:
+        renewal-policy: ${USER_AUTH_ADMIN_RENEWAL_POLICY:NONE}
+        oauth2-scopes:
+          - admin.api
+    access-token:
+      provider: ${USER_AUTH_ACCESS_TOKEN_PROVIDER:sas}
+      ttl: ${USER_AUTH_ACCESS_TOKEN_TTL:15m}
+    oauth2:
+      authorization-server:
+        enabled: ${USER_AUTH_OAUTH2_ENABLED:true}
+        sas:
+          issuer: ${USER_AUTH_OAUTH2_ISSUER:http://localhost:8081}
+          internal-token-client:
+            client-id: ${USER_AUTH_OAUTH2_INTERNAL_CLIENT_ID:${USER_AUTH_OAUTH2_CLIENT_ID:user-auth-client}}
+            client-secret: ${USER_AUTH_OAUTH2_INTERNAL_CLIENT_SECRET:${USER_AUTH_OAUTH2_CLIENT_SECRET:local-development-secret}}
+            token-endpoint: ${USER_AUTH_OAUTH2_INTERNAL_TOKEN_ENDPOINT:}
+            rest-client:
+              connect-timeout: ${USER_AUTH_OAUTH2_CONNECT_TIMEOUT:2s}
+              read-timeout: ${USER_AUTH_OAUTH2_READ_TIMEOUT:5s}
+          refresh-token:
+            ttl: ${USER_AUTH_OAUTH2_REFRESH_TOKEN_TTL:30d}
+          scopes:
+            - app.api
+            - admin.api
+          audiences:
+            - cloud-platform-api
+          signature:
+            key-store:
+              type: ${USER_AUTH_OAUTH2_KEY_STORE_TYPE:PKCS12}
+              location: ${USER_AUTH_OAUTH2_KEY_STORE_LOCATION:}
+              password: ${USER_AUTH_OAUTH2_KEY_STORE_PASSWORD:}
+            key-alias: ${USER_AUTH_OAUTH2_KEY_ALIAS:}
+            key-password: ${USER_AUTH_OAUTH2_KEY_PASSWORD:}
+            key-id: ${USER_AUTH_OAUTH2_KEY_ID:}
+          oidc:
+            enabled: ${USER_AUTH_OIDC_ENABLED:false}
+      authorization-store:
+        namespace: ${USER_AUTH_AUTHORIZATION_NAMESPACE:}
+        scene: ${USER_AUTH_AUTHORIZATION_SCENE:oauth2}
+    session-handoff:
+      ttl: ${USER_AUTH_HANDOFF_TTL:60s}
+    h5-session:
+      idle-ttl: ${USER_AUTH_H5_SESSION_IDLE_TTL:30m}
+      absolute-ttl: ${USER_AUTH_H5_SESSION_ABSOLUTE_TTL:8h}
+      renewal-threshold: ${USER_AUTH_H5_SESSION_RENEWAL_THRESHOLD:10m}
+    challenge:
+      pepper: ${USER_AUTH_CHALLENGE_PEPPER:local-development-pepper}
+      issue-policy:
+        ttl: ${USER_AUTH_CHALLENGE_TTL:5m}
+        reuse-window: ${USER_AUTH_CHALLENGE_REUSE_WINDOW:60s}
+      non-production:
+        fixed-code: ${USER_AUTH_CHALLENGE_FIXED_CODE:123456}
+    external-identity:
+      login-attempt:
+        ttl: ${USER_AUTH_EXTERNAL_LOGIN_ATTEMPT_TTL:10m}
+      issuer-policies:
+        WECHAT_MINI_PROGRAM:
+          trusted-mobile: ${USER_AUTH_EXTERNAL_WECHAT_MINI_PROGRAM_TRUSTED_MOBILE:true}
+      wechat-mini-program:
+        enabled: ${USER_AUTH_WECHAT_MINI_PROGRAM_ENABLED:false}
+        app-id: ${USER_AUTH_WECHAT_MINI_PROGRAM_APP_ID:wxdab042eed39eee98}
+        app-secret: ${USER_AUTH_WECHAT_MINI_PROGRAM_APP_SECRET:c896e173137a5e99389abfe656667c0a}
+        access-token-refresh-skew: ${USER_AUTH_WECHAT_MINI_PROGRAM_ACCESS_TOKEN_REFRESH_SKEW:1m}
+        rest-client:
+          connect-timeout: ${USER_AUTH_WECHAT_MINI_PROGRAM_CONNECT_TIMEOUT:2s}
+          read-timeout: ${USER_AUTH_WECHAT_MINI_PROGRAM_READ_TIMEOUT:5s}
+    login-session:
+      ttl: ${USER_AUTH_LOGIN_SESSION_TTL:30d}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+resilience4j:
+  bulkhead:
+    instances:
+      sasInternalTokenEndpoint:
+        max-concurrent-calls: ${USER_AUTH_OAUTH2_MAX_CONCURRENT_TOKEN_REQUESTS:32}
+        max-wait-duration: 0

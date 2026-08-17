@@ -1,0 +1,17 @@
+{
+  "name": "engineering-guidance-publisher",
+  "source": "https://github.com/lanpf/engineering-guidance-publisher.git",
+  "version": "2.0.5",
+  "artifact_sha256": "6fc868fb0b1c42dcd1dcfa5be856c77c95681f7a99c52693938a042400268ac1",
+  "managed_skills": [
+    "develop-java-code",
+    "manage-maven-dependencies",
+    "test-service",
+    "develop-layered-service",
+    "develop-distributed-capabilities",
+    "develop-compensation-workflows",
+    "develop-service-persistence",
+    "manage-service-error-codes",
+    "refactor-layered-service"
+  ]
+}
