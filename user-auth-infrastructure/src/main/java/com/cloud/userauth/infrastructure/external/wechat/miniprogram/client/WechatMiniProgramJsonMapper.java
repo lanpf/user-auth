@@ -2,7 +2,11 @@ package com.cloud.userauth.infrastructure.external.wechat.miniprogram.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class WechatMiniProgramJsonMapper {
     private final ObjectMapper objectMapper;
@@ -14,7 +18,11 @@ public final class WechatMiniProgramJsonMapper {
     }
 
     MappingJackson2HttpMessageConverter messageConverter() {
-        return new MappingJackson2HttpMessageConverter(objectMapper);
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+        List<MediaType> supportedMediaTypes = new ArrayList<>(converter.getSupportedMediaTypes());
+        supportedMediaTypes.add(MediaType.TEXT_PLAIN);
+        converter.setSupportedMediaTypes(supportedMediaTypes);
+        return converter;
     }
 
     private static final class WechatMiniProgramNamingStrategy

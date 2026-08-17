@@ -1,6 +1,7 @@
 package com.cloud.userauth.infrastructure.external.wechat.miniprogram.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -42,6 +43,63 @@ class RestClientWechatMiniProgramApiClientTest {
         assertEquals("openid-1", response.openId());
         assertEquals("session-key", response.sessionKey());
         assertEquals("unionid-1", response.unionId());
+        fixture.server.verify();
+    }
+
+    @Test
+    void shouldExchangeLoginCodeWhenWechatReturnsJsonAsTextPlain() {
+        TestClient fixture = fixture();
+        fixture.server.expect(requestTo(
+                        "https://api.weixin.qq.com/sns/jscode2session"
+                                + "?appid=app-id"
+                                + "&secret=app-secret"
+                                + "&js_code=login-code"
+                                + "&grant_type=authorization_code"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(
+                        """
+                        {
+                          "openid": "openid-1",
+                          "session_key": "session-key",
+                          "unionid": "unionid-1"
+                        }
+                        """,
+                        MediaType.TEXT_PLAIN));
+
+        WechatCode2SessionPayload response =
+                fixture.client.exchangeLoginCode("login-code");
+
+        assertEquals("openid-1", response.openId());
+        assertEquals("session-key", response.sessionKey());
+        assertEquals("unionid-1", response.unionId());
+        fixture.server.verify();
+    }
+
+    @Test
+    void shouldRejectWechatErrorWhenExchangingLoginCode() {
+        TestClient fixture = fixture();
+        fixture.server.expect(requestTo(
+                        "https://api.weixin.qq.com/sns/jscode2session"
+                                + "?appid=app-id"
+                                + "&secret=app-secret"
+                                + "&js_code=invalid-login-code"
+                                + "&grant_type=authorization_code"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(
+                        """
+                        {
+                          "errcode": 40029,
+                          "errmsg": "invalid code"
+                        }
+                        """,
+                        MediaType.APPLICATION_JSON));
+
+        WechatMiniProgramApiException exception = assertThrows(
+                WechatMiniProgramApiException.class,
+                () -> fixture.client.exchangeLoginCode("invalid-login-code"));
+
+        assertEquals(40029, exception.getErrorCode());
+        assertEquals("invalid code", exception.getMessage());
         fixture.server.verify();
     }
 

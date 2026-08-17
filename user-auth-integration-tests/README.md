@@ -11,6 +11,8 @@ Challenge 策略刷新、首次登录注册、跨服务失败恢复、Challenge 
 需要 JDK 17。`MobileOtpLoginFlowIT` 需要本机 Docker，并通过 Testcontainers 启动隔离的
 MySQL 和 Redis；`SessionTokenOnlyRuntimeIT` 同样使用这两类容器验证完整应用装配。其他场景是否使用
 内存适配器或外部基础设施，以各测试的同名文档为准。
+`RestClientWechatMiniProgramApiClientLiveIT` 仅在显式提供真实微信小程序环境变量时访问微信服务；
+未提供时自动跳过，不影响统一验证。
 
 ## 统一执行方式
 
@@ -30,3 +32,4 @@ Failsafe 报告位于 `user-auth-integration-tests/target/failsafe-reports`。
 - [SessionTokenOnlyRuntimeIT](docs/SessionTokenOnlyRuntimeIT.md)
 - [ExternalLoginFlowIT](docs/ExternalLoginFlowIT.md)
 - [MobileRegistrationRetryIT](docs/MobileRegistrationRetryIT.md)
+- [RestClientWechatMiniProgramApiClientLiveIT](docs/RestClientWechatMiniProgramApiClientLiveIT.md)
