@@ -23,11 +23,11 @@ public class RedisSessionHandoffTicketConfiguration {
     @Bean
     public SessionHandoffTicketService sessionHandoffTicketService(
             SessionHandoffTicketStore ticketStore,
+            SessionHandoffTicketProperties ticketProperties,
             LoginSessionRepository loginSessionRepository,
-            Clock clock,
-            SessionHandoffTicketProperties properties
+            Clock clock
     ) {
         return new SessionHandoffTicketService(
-                ticketStore, loginSessionRepository, clock, properties.getTtl());
+                ticketStore, ticketProperties.getTtl(), loginSessionRepository, clock);
     }
 }

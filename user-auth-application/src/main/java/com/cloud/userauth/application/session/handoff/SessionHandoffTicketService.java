@@ -17,9 +17,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SessionHandoffTicketService {
     private final SessionHandoffTicketStore ticketStore;
+    private final Duration ticketTtl;
     private final LoginSessionRepository loginSessionRepository;
     private final Clock clock;
-    private final Duration ticketTtl;
 
     public IssuedSessionHandoff issue(
             AuthenticatedSession authenticatedSession,
