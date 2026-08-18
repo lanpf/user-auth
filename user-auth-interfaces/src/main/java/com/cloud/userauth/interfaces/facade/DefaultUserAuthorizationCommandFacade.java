@@ -32,72 +32,72 @@ public class DefaultUserAuthorizationCommandFacade implements UserAuthorizationC
     private final AuthorizationApiMapper mapper;
 
     @Override
-    public Result<PermissionApiResponse> savePermission(SavePermissionApiCommand request) {
+    public Result<PermissionApiResponse> savePermission(SavePermissionApiCommand command) {
         return Result.success(mapper.toResponse(
-                catalogCommandService.savePermission(mapper.toCommand(request))));
+                catalogCommandService.savePermission(mapper.toCommand(command))));
     }
 
     @Override
-    public Result<PermissionApiResponse> activatePermission(ChangePermissionStatusApiCommand request) {
+    public Result<PermissionApiResponse> activatePermission(ChangePermissionStatusApiCommand command) {
         return Result.success(mapper.toResponse(
-                catalogCommandService.activatePermission(request.permissionCode())));
+                catalogCommandService.activatePermission(command.permissionCode())));
     }
 
     @Override
-    public Result<PermissionApiResponse> disablePermission(ChangePermissionStatusApiCommand request) {
+    public Result<PermissionApiResponse> disablePermission(ChangePermissionStatusApiCommand command) {
         return Result.success(mapper.toResponse(
-                catalogCommandService.disablePermission(request.permissionCode())));
+                catalogCommandService.disablePermission(command.permissionCode())));
     }
 
     @Override
-    public Result<RoleApiResponse> saveRole(SaveRoleApiCommand request) {
+    public Result<RoleApiResponse> saveRole(SaveRoleApiCommand command) {
         return Result.success(mapper.toResponse(
-                catalogCommandService.saveRole(mapper.toCommand(request))));
+                catalogCommandService.saveRole(mapper.toCommand(command))));
     }
 
     @Override
-    public Result<RoleApiResponse> activateRole(ChangeRoleStatusApiCommand request) {
+    public Result<RoleApiResponse> activateRole(ChangeRoleStatusApiCommand command) {
         return Result.success(mapper.toResponse(
-                catalogCommandService.activateRole(request.roleCode())));
+                catalogCommandService.activateRole(command.roleCode())));
     }
 
     @Override
-    public Result<RoleApiResponse> disableRole(ChangeRoleStatusApiCommand request) {
+    public Result<RoleApiResponse> disableRole(ChangeRoleStatusApiCommand command) {
         return Result.success(mapper.toResponse(
-                catalogCommandService.disableRole(request.roleCode())));
+                catalogCommandService.disableRole(command.roleCode())));
     }
 
     @Override
     public Result<ChannelAuthorizationPolicyApiResponse> saveChannelPolicy(
-            SaveChannelAuthorizationPolicyApiCommand request
+            SaveChannelAuthorizationPolicyApiCommand command
     ) {
-        return Result.success(mapper.toResponse(commandService.save(mapper.toCommand(request))));
+        return Result.success(mapper.toResponse(commandService.save(mapper.toCommand(command))));
     }
 
     @Override
     public Result<ChannelAuthorizationPolicyApiResponse> activateChannelPolicy(
-            ChangeChannelAuthorizationPolicyStatusApiCommand request
+            ChangeChannelAuthorizationPolicyStatusApiCommand command
     ) {
         return Result.success(mapper.toResponse(commandService.activate(new
                 ChangeChannelAuthorizationPolicyStatusCommand(
-                        request.channelCode(), request.expectedVersion()))));
+                        command.channelCode(), command.expectedVersion()))));
     }
 
     @Override
     public Result<ChannelAuthorizationPolicyApiResponse> disableChannelPolicy(
-            ChangeChannelAuthorizationPolicyStatusApiCommand request
+            ChangeChannelAuthorizationPolicyStatusApiCommand command
     ) {
         return Result.success(mapper.toResponse(commandService.disable(new
                 ChangeChannelAuthorizationPolicyStatusCommand(
-                        request.channelCode(), request.expectedVersion()))));
+                        command.channelCode(), command.expectedVersion()))));
     }
 
     @Override
     public Result<ReconcileChannelAuthorizationPolicyApiCommandOutput> reconcileChannelPolicy(
-            ReconcileChannelAuthorizationPolicyApiCommand request
+            ReconcileChannelAuthorizationPolicyApiCommand command
     ) {
         ReconcileChannelAuthorizationPolicyOutput output = commandService.reconcile(
-                new ReconcileChannelAuthorizationPolicyCommand(request.channelCode(), request.batchSize()));
+                new ReconcileChannelAuthorizationPolicyCommand(command.channelCode(), command.batchSize()));
         return Result.success(new ReconcileChannelAuthorizationPolicyApiCommandOutput(
                 output.processedUserCount(), output.policyVersion(), output.hasPendingUsers()));
     }

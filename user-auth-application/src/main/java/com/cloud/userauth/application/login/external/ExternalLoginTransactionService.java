@@ -13,7 +13,6 @@ import com.cloud.userauth.domain.authentication.challenge.ChallengeConsumerType;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import com.cloud.userauth.domain.authentication.credential.Credential;
-import com.cloud.userauth.domain.authentication.credential.CredentialId;
 import com.cloud.userauth.domain.authentication.credential.CredentialIdGenerator;
 import com.cloud.userauth.domain.authentication.credential.CredentialKey;
 import com.cloud.userauth.domain.authentication.credential.LoginMobile;
@@ -106,7 +105,7 @@ public class ExternalLoginTransactionService {
     }
 
     @Transactional
-    public ExternalAuthenticationCommandOutput completeLogin(
+    public ExternalAuthenticationOutput completeLogin(
             ExternalAuthenticationCommand command,
             ExternalAccountPreparationOutput prepared
     ) {
@@ -234,8 +233,8 @@ public class ExternalLoginTransactionService {
                 .orElseThrow(() -> new DomainException(DomainError.AUTH_ACCOUNT_CREDENTIAL_NOT_FOUND));
     }
 
-    private static ExternalAuthenticationCommandOutput output(LoginSession session, boolean replayed) {
-        return new ExternalAuthenticationCommandOutput(
+    private static ExternalAuthenticationOutput output(LoginSession session, boolean replayed) {
+        return new ExternalAuthenticationOutput(
                 session.getUserId().value(),
                 session.getAuthAccountId().value(),
                 session.id().value(),

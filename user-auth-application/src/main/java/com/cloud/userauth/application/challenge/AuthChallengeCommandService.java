@@ -24,13 +24,13 @@ public class AuthChallengeCommandService {
     private final AuthChallengePolicyProvider policyProvider;
     private final Clock clock;
 
-    public IssueAuthChallengeCommandOutput execute(IssueAuthChallengeCommand command) {
+    public IssueAuthChallengeOutput execute(IssueAuthChallengeCommand command) {
         ChallengeTarget target = ChallengeTarget.of(command.challengeType(), command.target());
         return issueLock.execute(command.challengeType(), target, command.scene(),
                 () -> executeLocked(command, target));
     }
 
-    private IssueAuthChallengeCommandOutput executeLocked(
+    private IssueAuthChallengeOutput executeLocked(
             IssueAuthChallengeCommand command,
             ChallengeTarget target
     ) {
@@ -38,13 +38,13 @@ public class AuthChallengeCommandService {
         return repository.findReusable(
                         command.challengeType(), target, command.scene(), now
                 )
-                .map(challenge -> new IssueAuthChallengeCommandOutput(
+                .map(challenge -> new IssueAuthChallengeOutput(
                         challenge.id().value(), challenge.getExpiresAt(), true
                 ))
                 .orElseGet(() -> executeNew(command, target, now));
     }
 
-    private IssueAuthChallengeCommandOutput executeNew(
+    private IssueAuthChallengeOutput executeNew(
             IssueAuthChallengeCommand command,
             ChallengeTarget target,
             Instant now
@@ -64,6 +64,6 @@ public class AuthChallengeCommandService {
         );
         repository.save(challenge);
         dispatcher.dispatch(command.challengeType(), target, code);
-        return new IssueAuthChallengeCommandOutput(challenge.id().value(), challenge.getExpiresAt(), false);
+        return new IssueAuthChallengeOutput(challenge.id().value(), challenge.getExpiresAt(), false);
     }
 }

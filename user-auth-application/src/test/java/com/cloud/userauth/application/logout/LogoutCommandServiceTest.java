@@ -41,7 +41,7 @@ class LogoutCommandServiceTest {
                 events::addAll,
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
-        LogoutCommandOutput output = service.execute(new LogoutCommand(sessionId.value()));
+        LogoutOutput output = service.execute(new LogoutCommand(1001L, sessionId.value()));
 
         assertEquals(SessionStatus.REVOKED, output.sessionStatus());
         assertEquals(List.of(sessionId, sessionId, sessionId), revokedArtifacts);
@@ -64,7 +64,7 @@ class LogoutCommandServiceTest {
                 events::addAll,
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
-        LogoutCommandOutput output = service.execute(new LogoutCommand(sessionId.value()));
+        LogoutOutput output = service.execute(new LogoutCommand(1001L, sessionId.value()));
 
         assertEquals(SessionStatus.REVOKED, output.sessionStatus());
         assertTrue(events.isEmpty());
@@ -82,7 +82,7 @@ class LogoutCommandServiceTest {
                 events::addAll,
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
-        LogoutCommandOutput output = service.execute(new LogoutCommand(sessionId.value()));
+        LogoutOutput output = service.execute(new LogoutCommand(1001L, sessionId.value()));
 
         assertEquals(SessionStatus.REVOKED, output.sessionStatus());
         assertEquals(SessionStatus.REVOKED, sessions.session.getStatus());

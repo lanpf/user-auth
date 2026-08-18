@@ -1,9 +1,9 @@
 package com.cloud.userauth.application.port;
 
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
-import com.cloud.userauth.application.login.MobileOtpLoginCommandOutput;
+import com.cloud.userauth.application.login.MobileOtpLoginOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginCommand;
-import com.cloud.userauth.application.login.external.ExternalLoginCommandOutput;
+import com.cloud.userauth.application.login.external.ExternalLoginOutput;
 import com.cloud.userauth.application.login.external.ExternalCredentialBinding;
 import jakarta.validation.Valid;
 
@@ -14,9 +14,9 @@ import jakarta.validation.Valid;
  * 其他安全实现必须保持相同的业务输入输出语义。</p>
  */
 public interface LoginTokenIssuer {
-    MobileOtpLoginCommandOutput issueMobileOtpLogin(@Valid MobileOtpLoginCommand command);
+    MobileOtpLoginOutput issueMobileOtpLogin(@Valid MobileOtpLoginCommand command);
 
-    ExternalLoginCommandOutput issueExternalLogin(
+    ExternalLoginOutput issueExternalLogin(
             @Valid ExternalLoginCommand command,
             ExternalCredentialBinding credentialBinding
     );

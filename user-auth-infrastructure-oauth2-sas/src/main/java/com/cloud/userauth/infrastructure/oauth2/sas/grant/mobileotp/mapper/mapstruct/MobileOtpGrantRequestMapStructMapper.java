@@ -1,7 +1,7 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.mapper.mapstruct;
 
 import com.cloud.framework.core.mapper.MapStructConfig;
-import com.cloud.userauth.application.login.MobileAuthenticationCommand;
+import com.cloud.userauth.application.login.MobileOtpAuthenticationCommand;
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantRequest;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.mapper.MobileOtpGrantRequestMapper;
@@ -20,7 +20,7 @@ public interface MobileOtpGrantRequestMapStructMapper
     );
 
     @Override
-    MobileAuthenticationCommand toAuthenticationCommand(
+    MobileOtpAuthenticationCommand toAuthenticationCommand(
             MobileOtpGrantRequest request
     );
 }

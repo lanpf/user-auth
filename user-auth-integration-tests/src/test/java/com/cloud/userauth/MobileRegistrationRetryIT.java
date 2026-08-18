@@ -3,11 +3,11 @@ package com.cloud.userauth;
 import com.cloud.framework.domain.DomainEventId;
 import com.cloud.userauth.application.challenge.AuthChallengeCommandService;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeCommand;
-import com.cloud.userauth.application.challenge.IssueAuthChallengeCommandOutput;
+import com.cloud.userauth.application.challenge.IssueAuthChallengeOutput;
 import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.application.common.ApplicationException;
-import com.cloud.userauth.application.login.MobileAuthenticationCommand;
-import com.cloud.userauth.application.login.MobileAuthenticationCommandOutput;
+import com.cloud.userauth.application.login.MobileOtpAuthenticationCommand;
+import com.cloud.userauth.application.login.MobileOtpAuthenticationOutput;
 import com.cloud.userauth.application.login.MobileOtpAuthenticationProcess;
 import com.cloud.userauth.application.login.MobileOtpLoginTransactionService;
 import com.cloud.userauth.application.port.AuthChallengeIssueLock;
@@ -83,13 +83,13 @@ class MobileRegistrationRetryIT {
                 new PropertiesAuthChallengePolicyProvider(properties),
                 java.time.Clock.systemUTC());
 
-        IssueAuthChallengeCommandOutput first = service.execute(new IssueAuthChallengeCommand(
+        IssueAuthChallengeOutput first = service.execute(new IssueAuthChallengeCommand(
                 AuthChallengeType.SMS_OTP, "13800138000", AuthChallengeScene.LOGIN));
         AuthChallenge firstChallenge = challenges.findById(new AuthChallengeId(first.challengeId())).orElseThrow();
 
         properties.getIssuePolicy().setTtl(java.time.Duration.ofMinutes(3));
         properties.getIssuePolicy().setReuseWindow(java.time.Duration.ofSeconds(30));
-        IssueAuthChallengeCommandOutput second = service.execute(new IssueAuthChallengeCommand(
+        IssueAuthChallengeOutput second = service.execute(new IssueAuthChallengeCommand(
                 AuthChallengeType.SMS_OTP, "13900139000", AuthChallengeScene.LOGIN));
         AuthChallenge secondChallenge = challenges.findById(new AuthChallengeId(second.challengeId())).orElseThrow();
 
@@ -124,12 +124,12 @@ class MobileRegistrationRetryIT {
         IssueAuthChallengeCommand issue = new IssueAuthChallengeCommand(
                 AuthChallengeType.SMS_OTP, "13800138000", AuthChallengeScene.LOGIN);
 
-        IssueAuthChallengeCommandOutput firstIssue = services.challengeService().execute(issue);
-        IssueAuthChallengeCommandOutput repeatedIssue = services.challengeService().execute(issue);
+        IssueAuthChallengeOutput firstIssue = services.challengeService().execute(issue);
+        IssueAuthChallengeOutput repeatedIssue = services.challengeService().execute(issue);
         assertEquals(firstIssue.challengeId(), repeatedIssue.challengeId());
         assertTrue(repeatedIssue.reused());
 
-        MobileAuthenticationCommand login =
+        MobileOtpAuthenticationCommand login =
                 login(firstIssue.challengeId(), "123456", "device-1");
         ApplicationException failure = assertThrows(
                 ApplicationException.class, () -> services.loginService().authenticate(login));
@@ -143,21 +143,21 @@ class MobileRegistrationRetryIT {
 
         Long reservedUserId = accounts.findByCredential(CredentialKey.mobile(new LoginMobile("13800138000")))
                 .orElseThrow().userId().value();
-        MobileAuthenticationCommandOutput completed = services.loginService().authenticate(login);
+        MobileOtpAuthenticationOutput completed = services.loginService().authenticate(login);
         assertEquals(reservedUserId, completed.userId());
         assertTrue(completed.fromRegistrationFlow());
         assertFalse(completed.replayed());
         assertEquals(2, initializationCalls.get());
 
-        MobileAuthenticationCommandOutput replayed = services.loginService().authenticate(login);
+        MobileOtpAuthenticationOutput replayed = services.loginService().authenticate(login);
         assertEquals(completed.sessionId(), replayed.sessionId());
         assertTrue(replayed.replayed());
         assertThrows(DomainException.class, () -> services.loginService().authenticate(
                 login(firstIssue.challengeId(), "000000", "device-1")));
 
-        IssueAuthChallengeCommandOutput nextChallenge = services.challengeService().execute(issue);
+        IssueAuthChallengeOutput nextChallenge = services.challengeService().execute(issue);
         assertFalse(nextChallenge.reused());
-        MobileAuthenticationCommandOutput existingLogin = services.loginService().authenticate(
+        MobileOtpAuthenticationOutput existingLogin = services.loginService().authenticate(
                 login(nextChallenge.challengeId(), "123456", "device-2"));
         assertEquals(reservedUserId, existingLogin.userId());
         assertFalse(existingLogin.fromRegistrationFlow());
@@ -254,12 +254,12 @@ class MobileRegistrationRetryIT {
                 java.time.Duration.ofDays(30));
     }
 
-    private MobileAuthenticationCommand login(
+    private MobileOtpAuthenticationCommand login(
             Long challengeId,
             String code,
             String deviceId
     ) {
-        return new MobileAuthenticationCommand(
+        return new MobileOtpAuthenticationCommand(
                 challengeId,
                 code,
                 deviceId,

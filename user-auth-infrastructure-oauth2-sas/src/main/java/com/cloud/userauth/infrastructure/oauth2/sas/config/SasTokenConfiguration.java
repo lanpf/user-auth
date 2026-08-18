@@ -2,7 +2,6 @@ package com.cloud.userauth.infrastructure.oauth2.sas.config;
 
 import com.cloud.userauth.api.constants.AccessTokenClaimApiConstants;
 import com.cloud.userauth.infrastructure.oauth2.sas.protocol.SasAuthorizationAttributes;
-import com.cloud.userauth.infrastructure.oauth2.sas.token.SasReferenceAccessTokenIntrospector;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -26,7 +25,6 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
-import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator;
@@ -37,7 +35,6 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.oauth2.server.authorization.token.OAuth2RefreshTokenGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
-import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -99,17 +96,6 @@ public class SasTokenConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(
-            prefix = "user-auth.authentication.oauth2.access-token",
-            name = "format",
-            havingValue = "REFERENCE")
-    public OpaqueTokenIntrospector opaqueTokenIntrospector(
-            OAuth2AuthorizationService authorizationService
-    ) {
-        return new SasReferenceAccessTokenIntrospector(authorizationService);
-    }
-
-    @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer(
             SasAuthorizationServerProperties properties
     ) {
@@ -122,9 +108,6 @@ public class SasTokenConfiguration {
                 context.getClaims()
                         .audience(List.copyOf(properties.getAudiences()))
                         .subject(authorization.getPrincipalName())
-                        .claim(
-                                AccessTokenClaimApiConstants.USER_ID_CLAIM,
-                                authorization.getAttribute(SasAuthorizationAttributes.USER_ID))
                         .claim(
                                 AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM,
                                 authorization.getAttribute(SasAuthorizationAttributes.AUTH_ACCOUNT_ID))
@@ -147,9 +130,6 @@ public class SasTokenConfiguration {
             context.getClaims()
                     .audience(List.copyOf(properties.getAudiences()))
                     .subject(authorization.getPrincipalName())
-                    .claim(
-                            AccessTokenClaimApiConstants.USER_ID_CLAIM,
-                            authorization.getAttribute(SasAuthorizationAttributes.USER_ID))
                     .claim(
                             AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM,
                             authorization.getAttribute(SasAuthorizationAttributes.AUTH_ACCOUNT_ID))

@@ -19,8 +19,8 @@ public class TrustedMobileLoginCommandService {
     private final ExternalLoginAttemptCommandService externalLoginAttemptCommandService;
     private final LoginTokenIssuer loginTokenIssuer;
 
-    public ExternalLoginCommandOutput execute(@Valid TrustedMobileLoginCommand command) {
-        ExternalLoginAttemptCommandOutput preLogin = externalLoginAttemptCommandService.acceptTrustedIdentity(
+    public ExternalLoginOutput execute(@Valid TrustedMobileLoginCommand command) {
+        ExternalLoginAttemptOutput preLogin = externalLoginAttemptCommandService.acceptTrustedIdentity(
                 new ExternalIdentity(
                         new CredentialIssuer(command.issuer(), CredentialIssuerType.TRUSTED_PARTNER),
                         new Principal(command.authorizationCode()),

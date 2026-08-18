@@ -25,31 +25,19 @@ import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
 import com.cloud.userauth.api.facade.UserAuthenticationCommandFacade;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
-import com.cloud.userauth.api.constants.AccessTokenClaimApiConstants;
 import com.cloud.userauth.api.enums.LoginSessionStatusApiEnum;
 import com.cloud.userauth.interfaces.mapper.AuthenticationRestMapper;
 import com.cloud.userauth.interfaces.mapper.mapstruct.AuthenticationRestMapStructMapper;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class UserAuthenticationControllerTest {
-
-    @AfterEach
-    void clearSecurityContext() {
-        SecurityContextHolder.clearContext();
-    }
 
     @Test
     void shouldPublishMobileOtpLoginEndpoint() throws Exception {
@@ -151,7 +139,7 @@ class UserAuthenticationControllerTest {
     }
 
     @Test
-    void shouldBuildBindExternalCredentialCommandFromAuthenticatedPrincipal() throws Exception {
+    void shouldBuildBindExternalCredentialCommandFromTrustedGatewayHeaders() throws Exception {
         AtomicReference<BindExternalCredentialApiCommand> capturedRequest = new AtomicReference<>();
         UserAuthenticationCommandFacade facade = new StubUserAuthenticationCommandFacade(new AtomicReference<>()) {
             @Override
@@ -163,30 +151,28 @@ class UserAuthenticationControllerTest {
         MockMvc mockMvc = MockMvcBuilders
                 .standaloneSetup(new UserAuthenticationController(facade, authenticationRestMapper()))
                 .setControllerAdvice(new ClientRequestBodyAdvice())
-                .setCustomArgumentResolvers(
-                        new ClientRequestArgumentResolver(),
-                        new AuthenticationPrincipalArgumentResolver())
+                .setCustomArgumentResolvers(new ClientRequestArgumentResolver())
                 .build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(
-                jwtWithIdentity(1001L, 2001L, "session-1")));
 
         MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_CREDENTIALS_EXTERNAL_BIND)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "gateway-app")
                         .header(RequestHeader.CHANNEL_CODE, "DIRECT")
+                        .header(RequestHeader.USER_ID, "1001")
+                        .header(RequestHeader.SESSION_ID, "session-1")
                         .content("""
                                 {
                                   "issuer": "WECHAT_MINI_PROGRAM",
                                   "authorizationCode": "code-1",
-                                  "authenticatedUserId": 9999,
-                                  "authenticatedAuthAccountId": 9999
+                                  "userId": "9999",
+                                  "sessionId": "forged-session"
                                 }
                                 """))
                 .andReturn();
 
         assertEquals(200, result.getResponse().getStatus());
         assertEquals(1001L, capturedRequest.get().authenticatedUserId());
-        assertEquals(2001L, capturedRequest.get().authenticatedAuthAccountId());
+        assertEquals("session-1", capturedRequest.get().authenticatedSessionId());
         assertEquals("WECHAT_MINI_PROGRAM", capturedRequest.get().issuer());
         assertEquals("code-1", capturedRequest.get().authorizationCode());
     }
@@ -252,40 +238,19 @@ class UserAuthenticationControllerTest {
         MockMvc mockMvc = MockMvcBuilders
                 .standaloneSetup(new UserAuthenticationController(facade, authenticationRestMapper()))
                 .setControllerAdvice(new ClientRequestBodyAdvice())
-                .setCustomArgumentResolvers(
-                        new ClientRequestArgumentResolver(),
-                        new AuthenticationPrincipalArgumentResolver())
+                .setCustomArgumentResolvers(new ClientRequestArgumentResolver())
                 .build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(
-                jwtWithSessionId("session-1")));
 
         MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGOUT)
-                        .header(RequestHeader.CLIENT_APP_ID, "gateway-app"))
+                        .header(RequestHeader.CLIENT_APP_ID, "gateway-app")
+                        .header(RequestHeader.USER_ID, "1001")
+                        .header(RequestHeader.SESSION_ID, "session-1"))
                 .andReturn();
 
         assertEquals(200, result.getResponse().getStatus());
+        assertEquals(1001L, capturedRequest.get().authenticatedUserId());
         assertEquals("session-1", capturedRequest.get().sessionId());
         assertTrue(result.getResponse().getContentAsString().contains("\"sessionStatus\":\"REVOKED\""));
-    }
-
-    private static Jwt jwtWithSessionId(String sessionId) {
-        return jwtWithIdentity(1001L, 2001L, sessionId);
-    }
-
-    private static Jwt jwtWithIdentity(Long userId, Long authAccountId, String sessionId) {
-        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-        Jwt.Builder builder = Jwt.withTokenValue("access-token")
-                .header("alg", "RS256")
-                .issuedAt(now)
-                .expiresAt(now.plusSeconds(300))
-                .claim(AccessTokenClaimApiConstants.SESSION_ID_CLAIM, sessionId);
-        if (userId != null) {
-            builder.claim(AccessTokenClaimApiConstants.USER_ID_CLAIM, userId);
-        }
-        if (authAccountId != null) {
-            builder.claim(AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM, authAccountId);
-        }
-        return builder.build();
     }
 
     private static MockMvc mockMvc(UserAuthenticationCommandFacade facade) {

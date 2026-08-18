@@ -30,44 +30,44 @@ public class DefaultUserAuthorizationQueryFacade implements UserAuthorizationQue
     private final AuthorizationApiMapper mapper;
 
     @Override
-    public Result<PermissionApiResponse> getPermission(PermissionApiQuery request) {
+    public Result<PermissionApiResponse> getPermission(PermissionApiQuery query) {
         return Result.success(mapper.toResponse(
-                queryService.findPermission(request.permissionCode())));
+                queryService.findPermission(query.permissionCode())));
     }
 
     @Override
-    public PageResult<PermissionApiResponse> getPermissions(AuthorizationCatalogApiQuery request) {
+    public PageResult<PermissionApiResponse> getPermissions(AuthorizationCatalogApiQuery query) {
         PagedList<PermissionView> page =
-                queryService.findPermissions(PageQuery.from(request));
+                queryService.findPermissions(PageQuery.from(query));
         return PageResult.success(page.getData().stream().map(mapper::toResponse).toList(),
                 page.getTotal());
     }
 
     @Override
-    public Result<RoleApiResponse> getRole(RoleApiQuery request) {
-        return Result.success(mapper.toResponse(queryService.findRole(request.roleCode())));
+    public Result<RoleApiResponse> getRole(RoleApiQuery query) {
+        return Result.success(mapper.toResponse(queryService.findRole(query.roleCode())));
     }
 
     @Override
-    public PageResult<RoleApiResponse> getRoles(AuthorizationCatalogApiQuery request) {
+    public PageResult<RoleApiResponse> getRoles(AuthorizationCatalogApiQuery query) {
         PagedList<RoleView> page =
-                queryService.findRoles(PageQuery.from(request));
+                queryService.findRoles(PageQuery.from(query));
         return PageResult.success(page.getData().stream().map(mapper::toResponse).toList(),
                 page.getTotal());
     }
 
     @Override
     public Result<ChannelAuthorizationPolicyApiResponse> getChannelPolicy(
-            ChannelAuthorizationPolicyApiQuery request
+            ChannelAuthorizationPolicyApiQuery query
     ) {
-        return Result.success(mapper.toResponse(queryService.findPolicy(request.channelCode())));
+        return Result.success(mapper.toResponse(queryService.findPolicy(query.channelCode())));
     }
 
     @Override
     public Result<UserAuthorizationApiQueryView> getUserAuthorization(
-            UserAuthorizationApiQuery request
+            UserAuthorizationApiQuery query
     ) {
-        return Result.success(mapper.toResponse(
-                queryService.findUserAuthorization(request.userId())));
+        return Result.success(mapper.toView(
+                queryService.findUserAuthorization(query.userId())));
     }
 }

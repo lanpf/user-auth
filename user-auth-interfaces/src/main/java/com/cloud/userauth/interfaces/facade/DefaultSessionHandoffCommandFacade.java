@@ -1,12 +1,12 @@
 package com.cloud.userauth.interfaces.facade;
 
 import com.cloud.framework.core.Result;
-import com.cloud.userauth.api.authentication.CreateH5SessionHandoffApiCommand;
-import com.cloud.userauth.api.authentication.CreateH5SessionHandoffApiCommandOutput;
-import com.cloud.userauth.api.authentication.ExchangeH5SessionHandoffApiCommand;
-import com.cloud.userauth.api.authentication.ExchangeH5SessionHandoffApiCommandOutput;
+import com.cloud.userauth.api.authentication.CreateSessionHandoffApiCommand;
+import com.cloud.userauth.api.authentication.CreateSessionHandoffApiCommandOutput;
+import com.cloud.userauth.api.authentication.ExchangeSessionHandoffApiCommand;
+import com.cloud.userauth.api.authentication.ExchangeSessionHandoffApiCommandOutput;
 import com.cloud.userauth.api.facade.SessionHandoffCommandFacade;
-import com.cloud.userauth.application.session.handoff.H5SessionHandoffCommandService;
+import com.cloud.userauth.application.session.handoff.SessionHandoffCommandService;
 import com.cloud.userauth.interfaces.mapper.SessionHandoffApiMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,21 +16,20 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @RequiredArgsConstructor
 public class DefaultSessionHandoffCommandFacade implements SessionHandoffCommandFacade {
-    private final H5SessionHandoffCommandService commandService;
+    private final SessionHandoffCommandService commandService;
     private final SessionHandoffApiMapper mapper;
 
     @Override
-    public Result<CreateH5SessionHandoffApiCommandOutput> createH5SessionHandoff(
-            CreateH5SessionHandoffApiCommand request
+    public Result<CreateSessionHandoffApiCommandOutput> create(
+            CreateSessionHandoffApiCommand command
     ) {
-        return Result.success(mapper.toOutput(
-                commandService.create(mapper.toAuthenticatedSession(request))));
+        return Result.success(mapper.toOutput(commandService.create(mapper.toCommand(command))));
     }
 
     @Override
-    public Result<ExchangeH5SessionHandoffApiCommandOutput> exchangeH5SessionHandoff(
-            ExchangeH5SessionHandoffApiCommand request
+    public Result<ExchangeSessionHandoffApiCommandOutput> exchange(
+            ExchangeSessionHandoffApiCommand command
     ) {
-        return Result.success(mapper.toOutput(commandService.exchange(request.ticket())));
+        return Result.success(mapper.toOutput(commandService.exchange(mapper.toCommand(command))));
     }
 }

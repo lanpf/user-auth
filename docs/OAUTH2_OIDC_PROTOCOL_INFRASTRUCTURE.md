@@ -49,7 +49,7 @@ SAS endpoint  -> custom grant provider -> application authentication process
 
 `scope` 是 OAuth2 客户端获得的协议 scope，按注册客户端配置解析。当前业务登录的 `clientAppId` 通过 `user-auth.authentication.client-apps.<clientAppId>.oauth2-scopes` 选择服务端允许的 scope；SAS 的 `scopes` 则登记全局允许集合，ClientApp 配置必须是其非空子集。这只是 access-token 登录交付的调用方策略，不是 OAuth2 `RegisteredClient` 的替代物。它不是 PermissionCode，也不等价于角色或业务数据范围。新增协议 scope 不会自动授予任何 `order:*` 功能权限。
 
-当前服务支持的 scope 是 API 契约 `OAuth2Scope` 定义的封闭目录：`APP=app`、`ADMIN=admin`。配置只负责从目录中启用 SAS 全局允许集合并为 ClientApp 分配子集，不能声明任意字符串。user-auth Resource Server 对 JWT 本地验证、对 Reference Token 查询本地授权存储，之后都通过 Spring Security 的 scope 授权 API 校验 `admin`；框架把 Token 中的 scope 映射为 `SCOPE_admin` authority，但 `SCOPE_` 前缀不进入配置或服务协议枚举。当前 Token 只允许网关和 user-auth 验证：网关对 JWT 做本地校验，或使用 SAS 标准 introspection endpoint 在线校验 Reference Token，再以受保护 Header 向其他服务传递身份上下文。
+当前服务支持的 scope 是 API 契约 `OAuth2Scope` 定义的封闭目录：`APP=app`、`ADMIN=admin`。配置只负责从目录中启用 SAS 全局允许集合并为 ClientApp 分配子集，不能声明任意字符串。gateway 是业务 API 的 OAuth2 Resource Server：对 JWT 本地验证，或使用 SAS 标准 introspection endpoint 在线校验 Reference Token；`admin` scope 在网关映射为 `SCOPE_admin` 并完成管理入口授权。user-auth 的业务安全链只消费网关写入的可信会话 Header，不重复验证 Bearer；SAS OAuth2/OIDC 协议端点继续由独立 SAS 安全链处理。
 
 ## Access Token 与登出
 
@@ -57,12 +57,12 @@ SAS endpoint  -> custom grant provider -> application authentication process
 
 SAS 使用 `DelegatingOAuth2TokenGenerator`，并由 `user-auth.authentication.oauth2.access-token.format` 全局选择格式：
 
-- `SELF_CONTAINED`：使用 `JwtGenerator`，由 RSA 私钥按 `RS256` 签名；网关和 user-auth 使用 issuer、audience、签名与过期时间本地验证。
-- `REFERENCE`：使用 `OAuth2AccessTokenGenerator` 生成高熵不透明值；Token 状态和声明保存在 OAuth2 Authorization Redis Store，网关通过 SAS 标准 introspection endpoint 验证，user-auth 直接查询本地授权存储，避免回环 HTTP。
+- `SELF_CONTAINED`：使用 `JwtGenerator`，由 RSA 私钥按 `RS256` 签名；网关使用 issuer、audience、签名与过期时间本地验证。
+- `REFERENCE`：使用 `OAuth2AccessTokenGenerator` 生成高熵不透明值；Token 状态和声明保存在 OAuth2 Authorization Redis Store，网关使用专用 introspection client 调用 SAS 标准 introspection endpoint。
 
 两种格式共享 `user-auth.authentication.oauth2.access-token.ttl`，默认 15 分钟；登录响应和请求携带方式均为 `tokenType=Bearer + accessToken` / `Authorization: Bearer <token>`。格式是服务端部署策略，不允许客户端在登录请求中选择。Access Token 中的服务声明由 `user-auth-api` 的 `AccessTokenClaimApiConstants` 定义：
 
-- `user_id`
+- `sub`（UserId 的字符串形式，不再重复签发 `user_id`）
 - `auth_account_id`
 - `session_id`
 
@@ -80,17 +80,17 @@ SAS 使用 `DelegatingOAuth2TokenGenerator`，并由 `user-auth.authentication.o
 
 公开 refresh 接口不会把 public client 直接注册为持有 secret 的 OAuth2 client，而是经应用用例调用本机 Token endpoint 的内部 confidential client。调用前会以原始 Refresh Token 查询协议授权记录并校验其中的 `client_app_id`，再校验关联 LoginSession 的 ClientApp、ACTIVE 状态和绝对有效期。轮换使用 refresh token 哈希作为分布式锁 key，避免并发请求同时消费同一 token；Redis 中 Access Token/Refresh Token 均以 SHA-256 哈希保存，旧 Refresh Token 哈希进入 family 历史索引。旧 token 再次出现时，协议授权和 LoginSession 会一起撤销。
 
-单个 LoginSession 是当前派生凭据的生命周期根。logout 通过 application `LoginSessionRevoker.revoke` 集合统一调用 SAS 授权撤销器及 H5/handoff Store：SAS Access Token 与 Refresh Token 状态失效，H5 credential、未消费 ticket 及其 Redis 反向索引被删除。短期 JWT 在其他离线校验节点继续自然失效；Reference Token 的 introspection 会立即返回 inactive。当前没有 SessionFamily，因此外部授权码重新认证产生的新 LoginSession 不会与初始 LoginSession 一起撤销。
+单个 LoginSession 是当前派生凭据的生命周期根。logout 通过 application `LoginSessionRevoker.revoke` 集合统一调用 SAS 授权撤销器、Browser Session Store 及 handoff Store：SAS Access Token 与 Refresh Token 状态失效，Browser Session credential、未消费 ticket 及其 Redis 反向索引被删除。短期 JWT 在其他离线校验节点继续自然失效；Reference Token 的 introspection 会立即返回 inactive。当前没有 SessionFamily，因此外部授权码重新认证产生的新 LoginSession 不会与初始 LoginSession 一起撤销。
 
 SAS 与 OAuth2 Authorization Redis Store 是宿主访问令牌的必需基础设施，不再提供 Session-Token-only 或关闭 Authorization Server 后继续运行登录交付的组合。`SELF_CONTAINED` 与 `REFERENCE` 只改变 Access Token 的表示和验证方式，不改变 REST 登录 API、`LoginTokenIssuer`、ClientApp 续期策略或 LoginSession 语义。
 
-宿主 App 打开 WebView 时，以当前 Bearer Access Token 创建一次性 WebView handoff ticket。Access Token 只用于认证该创建请求，绝不写入 H5 Cookie。H5 以 ticket 兑换独立的 `H5_SESSION` HttpOnly Cookie；该 Cookie 按 idle window 滑动且受 absolute TTL 限制，父 LoginSession 登出时级联失效。ticket 默认 60 秒且一次性消费。
+宿主 App 打开 WebView 时，以当前 Bearer Access Token 创建一次性 WebView handoff ticket。Access Token 只用于认证该创建请求，绝不写入 Browser Cookie。H5 以 ticket 兑换独立的 `BROWSER_SESSION` HttpOnly Cookie；该 Cookie 按 idle window 滑动且受 absolute TTL 限制，父 LoginSession 登出时级联失效。ticket 默认 60 秒且一次性消费。
 
-Redis 适配器只持久化并原子消费通用的 Session handoff ticket；票据包含目标会话类型绑定。应用层 `SessionHandoffTicketService` 不依赖 H5，`H5SessionHandoffCommandService` 才负责消费目标为 `H5_SESSION` 的 ticket 并创建 H5 Session。新增其他目标会话时复用前者并新增独立目标用例，不复用 H5 Store 或 Cookie 交付逻辑。
+Redis 适配器只持久化并原子消费通用的 Session handoff ticket；票据包含目标会话类型绑定。`SessionHandoffCommandFacade` 的创建和兑换命令由外部显式传入目标类型，应用层 `SessionHandoffService` 不依赖具体目标会话，并在兑换时校验声明目标与 ticket 绑定一致；当前会话创建实现仅开放 `BROWSER_SESSION`。新增其他目标会话时复用通用 Facade 与 ticket 服务，并增加对应的目标会话创建及协议交付实现，不复用 Browser Session Store 或 Cookie 交付逻辑。
 
 - `EXTERNAL_AUTHORIZATION_CODE` ClientApp 的 Access Token 到期后，已绑定微信 Credential 的小程序重新执行 `wx.login → code → POST /api/user-auth/login/external/bound`，请求体提交 `issuer=WECHAT_MINI_PROGRAM`、`authorizationCode` 和可选设备字段；user-auth 校验新的外部一次性 code 后签发新 Token。
-- 通用外部授权码登录只允许使用已绑定到 AuthAccount、且对应账户已有有效 LoginMobile 的 Credential；它不接受手机号、不建账，也不在登录中绑定 Credential。首次建立账户和绑定微信 Credential 分别走已有的手机号登录及认证后的 Credential 绑定接口。网关注入 `X-Client-App-Id`、`X-Client-Platform`、`X-Client-Version`、`X-Channel-Code`；Token 响应是否含 `refreshToken` 完全由对应 ClientApp 的 renewal policy 决定。
-- `POST /api/user-auth/logout`、`POST /api/user-auth/credentials/external/bind` 与 `POST /api/user-auth/web-view-handoffs` 要求宿主登录态。JWT 本地校验或 Reference Token 在线校验后，都必须取得 `user_id`、`auth_account_id`、`session_id` 声明并转换为统一的 `AuthenticatedSession` Principal。H5 Session 虽转换为相同 Principal 形态，但只获得受限 H5 authority，不能调用上述宿主级命令。
+- 通用外部授权码登录只允许使用已绑定到 AuthAccount、且对应账户已有有效 LoginMobile 的 Credential；它不接受手机号、不建账，也不在登录中绑定 Credential。首次建立账户和绑定微信 Credential 分别走已有的手机号登录及认证后的 Credential 绑定接口。网关注入 `X-Client-App-Id`、`X-Client-Platform`、`X-Client-Version`、`X-Channel-Code`；Token 响应是否含 `PARENT` 完全由对应 ClientApp 的 renewal policy 决定。
+- `POST /api/user-auth/logout`、`POST /api/user-auth/credentials/external/bind` 与 `POST /api/user-auth/web-view-handoffs` 要求宿主登录态。gateway 校验 JWT 或 Reference Token 后，从 `sub` 与 `session_id` 写入 `X-User-Id`、`X-Session-Id`；user-auth 使用该组合回查 LoginSession，并从领域会话恢复 AuthAccount。客户端不能指定其他用户、账户或会话。Browser Session 只获得受限 H5 authority，不能调用上述宿主级命令。
 - `SasLoginSessionRevoker` 根据 session id 查找 SAS 的 `OAuth2Authorization` 并使关联 Access/Refresh Token 在协议状态中失效。
 - `SELF_CONTAINED` JWT 的撤销策略仍是短期自然失效：已签发 JWT 在过期前不会由离线资源服务器逐请求查询 SAS。`REFERENCE` Token 必须每次 introspect，logout 后可即时失效，但其可用性和延迟依赖授权存储与 introspection endpoint。
 
@@ -98,7 +98,7 @@ Redis 适配器只持久化并原子消费通用的 Session handoff ticket；票
 
 SAS 以 `OAuth2AuthorizationServerConfigurer` 挂载其标准协议端点，并将它们置于独立的最高优先级 `SecurityFilterChain`。协议端点要求已认证的 OAuth2 client，CSRF 仅对协议端点忽略。
 
-应用 REST 链开放认证挑战和登录接口；绑定外部 Credential、登出父 LoginSession 与创建 handoff ticket 必须具有宿主会话 authority，该 authority 仅由有效 Bearer Access Token 提供。`H5_SESSION` 只能建立受限 H5 认证，不能调用这些宿主级写接口；其余未明确允许的请求默认拒绝。SAS endpoint 不应被当作面向最终用户的业务 API。
+应用 REST 链开放认证挑战和登录接口；绑定外部 Credential、登出父 LoginSession 与创建 handoff ticket 必须具有可信网关认证会话 Header 转换出的宿主会话 authority。Bearer 验证和 `admin` scope 校验属于 gateway；`BROWSER_SESSION` 只能建立受限 H5 认证，不能调用这些宿主级写接口；其余未明确允许的请求默认拒绝。SAS endpoint 不应被当作面向最终用户的业务 API。
 
 开发或运维配置必须保证：
 
@@ -113,8 +113,8 @@ SAS 以 `OAuth2AuthorizationServerConfigurer` 挂载其标准协议端点，并�
 - 注册客户端由 SAS 的 JDBC `RegisteredClientRepository` 保存。
 - OAuth2 授权记录与 Token 状态由 SAS 的 `OAuth2AuthorizationService` 保存到 Redis。
 - Redis authorization store 的 namespace 与 key scene 由 `user-auth.authentication.oauth2.authorization-store` 配置；该配置属于 Redis 技术模块，不属于功能授权领域或 SAS 协议行为配置。
-- Session handoff ticket 与 H5 Session 由独立的 `user-auth-infrastructure-session-redis` 模块实现；它们不是 OAuth2 授权记录持久化的一部分。H5 与 handoff 生命周期分别位于 `user-auth.authentication.h5-session.idle-ttl/absolute-ttl/renewal-threshold` 和 `user-auth.authentication.session-handoff.ttl`。
-- SAS 授权撤销器、H5 Session Store 与 handoff ticket Store 共同实现 `LoginSessionRevoker`。H5 和 ticket Store 分别维护 loginSessionId 反向索引，以支持 logout 的物理级联删除；H5 解析和 ticket 兑换还会验证父 LoginSession。
+- Session handoff ticket 与 Browser Session 由独立的 `user-auth-infrastructure-session-redis` 模块实现；它们不是 OAuth2 授权记录持久化的一部分。Browser Session 与 handoff 生命周期分别位于 `user-auth.authentication.browser-session.idle-ttl/absolute-ttl/renewal-threshold` 和 `user-auth.authentication.session-handoff.ttl`。
+- SAS 授权撤销器、Browser Session Store 与 handoff Store 共同实现 `LoginSessionRevoker`。Browser Session 和 handoff Store 分别维护 loginSessionId 反向索引，以支持 logout 的物理级联删除；Browser Session 解析和 ticket 兑换还会验证父 LoginSession。
 - 登录会话是认证域记录；协议授权记录保存其 `session_id` 属性以支持刷新和登出撤销。
 
 协议存储 schema、Redis 可用性、密钥轮换和客户端密钥轮换属于部署安全要求。领域模型不应直接依赖 SAS 的授权对象或存储对象。

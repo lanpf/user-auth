@@ -33,7 +33,7 @@ public class ExternalLoginAttemptCommandService {
     private final Duration loginAttemptTtl;
 
     @Transactional
-    public ExternalLoginAttemptCommandOutput execute(@Valid ExternalLoginAttemptCommand command) {
+    public ExternalLoginAttemptOutput execute(@Valid ExternalLoginAttemptCommand command) {
         ExternalIdentity identity = verifierRegistry.verify(
                 command.issuer(), command.proofType(), command.proofParameters());
         return accept(identity, trustPolicyProvider.policyFor(identity.issuer()));
@@ -41,11 +41,11 @@ public class ExternalLoginAttemptCommandService {
 
     /** 仅供已完成入口验签与证明校验的受保护调用链使用。 */
     @Transactional
-    public ExternalLoginAttemptCommandOutput acceptTrustedIdentity(ExternalIdentity identity) {
+    public ExternalLoginAttemptOutput acceptTrustedIdentity(ExternalIdentity identity) {
         return accept(identity, new IssuerMobileTrustPolicy(identity.issuer(), true));
     }
 
-    private ExternalLoginAttemptCommandOutput accept(
+    private ExternalLoginAttemptOutput accept(
             ExternalIdentity identity,
             IssuerMobileTrustPolicy trustPolicy
     ) {
@@ -70,7 +70,7 @@ public class ExternalLoginAttemptCommandService {
         LoginAttempt loginAttempt = acceptanceEffect.loginAttempt();
         loginAttemptRepository.save(loginAttempt);
         domainEventStore.appendAll(acceptanceEffect.events());
-        return new ExternalLoginAttemptCommandOutput(
+        return new ExternalLoginAttemptOutput(
                 loginAttempt.id().value(),
                 loginAttempt.requiresMobileVerification(),
                 loginAttempt.getExpiresAt());

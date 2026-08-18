@@ -2,8 +2,8 @@ package com.cloud.userauth;
 
 import com.cloud.framework.core.RequestHeader;
 import com.cloud.framework.core.Result;
+import com.cloud.userauth.api.authentication.CreateSessionHandoffApiCommandOutput;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommandOutput;
-import com.cloud.userauth.api.authentication.CreateH5SessionHandoffApiCommandOutput;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommand;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommandOutput;
 import com.cloud.userauth.api.enums.AuthChallengeSceneApiEnum;
@@ -26,7 +26,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.client.RestClient;
 import org.testcontainers.containers.MySQLContainer;
@@ -165,13 +164,15 @@ class MobileOtpLoginFlowIT {
         assertThat(login.tokenType()).isEqualToIgnoringCase("Bearer");
         assertThat(login.accessToken()).isNotBlank().doesNotContain(".");
         assertThat(context.getBeansOfType(JwtDecoder.class)).isEmpty();
-        assertThat(context.getBeansOfType(OpaqueTokenIntrospector.class)).hasSize(1);
         assertThat(introspect(restClient, login.accessToken()).get("active")).isEqualTo(true);
 
-        Result<CreateH5SessionHandoffApiCommandOutput> handoff = restClient.post()
+        Result<CreateSessionHandoffApiCommandOutput> handoff = restClient.post()
                 .uri("/api/user-auth/web-view-handoffs")
                 .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
-                .header("Authorization", "Bearer " + login.accessToken())
+                .header(RequestHeader.USER_ID, login.userId().toString())
+                .header(RequestHeader.SESSION_ID, login.sessionId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"target\":\"BROWSER_SESSION\"}")
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {
                 });
@@ -183,7 +184,8 @@ class MobileOtpLoginFlowIT {
         restClient.post()
                 .uri("/api/user-auth/logout")
                 .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
-                .header("Authorization", "Bearer " + login.accessToken())
+                .header(RequestHeader.USER_ID, login.userId().toString())
+                .header(RequestHeader.SESSION_ID, login.sessionId())
                 .retrieve()
                 .toBodilessEntity();
         assertThat(introspect(restClient, login.accessToken()).get("active")).isEqualTo(false);
@@ -199,7 +201,7 @@ class MobileOtpLoginFlowIT {
         return restClient.post()
                 .uri("/oauth2/introspect")
                 .headers(headers -> headers.setBasicAuth(
-                        "user-auth-client", "local-development-secret"))
+                        "gateway-introspection-client", "local-gateway-introspection-secret"))
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body("token=" + accessToken)
                 .retrieve()

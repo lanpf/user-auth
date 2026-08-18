@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cloud.framework.domain.DomainEventId;
 import com.cloud.userauth.application.login.external.ExternalAuthenticationCommand;
-import com.cloud.userauth.application.login.external.ExternalAuthenticationCommandOutput;
+import com.cloud.userauth.application.login.external.ExternalAuthenticationOutput;
 import com.cloud.userauth.application.login.external.ExternalAuthenticationProcess;
+import com.cloud.userauth.application.login.external.ExternalLoginAttemptOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginTransactionService;
 import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommand;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandService;
 import com.cloud.userauth.domain.authentication.account.AuthAccount;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallenge;
@@ -53,10 +53,10 @@ class ExternalLoginFlowIT {
     @Test
     void shouldCreateMobileAndExternalCredentialsForTrustedMobile() {
         Fixture fixture = fixture(true);
-        ExternalLoginAttemptCommandOutput preLogin = fixture.preLogin();
+        ExternalLoginAttemptOutput preLogin = fixture.preLogin();
 
         assertFalse(preLogin.mobileVerificationRequired());
-        ExternalAuthenticationCommandOutput login = fixture.login(preLogin, null, null);
+        ExternalAuthenticationOutput login = fixture.login(preLogin, null, null);
 
         AuthAccount account = fixture.accounts.findById(
                 new com.cloud.userauth.domain.authentication.account.AuthAccountId(login.authAccountId())).orElseThrow();
@@ -82,7 +82,7 @@ class ExternalLoginFlowIT {
     @Test
     void shouldRequireChallengeForUntrustedMobileAndThenCreateBothCredentials() {
         Fixture fixture = fixture(false);
-        ExternalLoginAttemptCommandOutput preLogin = fixture.preLogin();
+        ExternalLoginAttemptOutput preLogin = fixture.preLogin();
         assertTrue(preLogin.mobileVerificationRequired());
 
         long challengeId = 9001L;
@@ -99,7 +99,7 @@ class ExternalLoginFlowIT {
                 now.plus(Duration.ofMinutes(5)),
                 now.plus(Duration.ofMinutes(1))));
 
-        ExternalAuthenticationCommandOutput login =
+        ExternalAuthenticationOutput login =
                 fixture.login(preLogin, challengeId, "123456");
         AuthAccount account = fixture.accounts.findById(
                 new com.cloud.userauth.domain.authentication.account.AuthAccountId(login.authAccountId())).orElseThrow();
@@ -119,10 +119,10 @@ class ExternalLoginFlowIT {
     @Test
     void shouldNotBindExternalOrderProofForDirectLogin() {
         Fixture fixture = fixture(false);
-        ExternalLoginAttemptCommandOutput preLogin = fixture.directPreLogin();
+        ExternalLoginAttemptOutput preLogin = fixture.directPreLogin();
 
         assertFalse(preLogin.mobileVerificationRequired());
-        ExternalAuthenticationCommandOutput login = fixture.directLogin(preLogin);
+        ExternalAuthenticationOutput login = fixture.directLogin(preLogin);
 
         AuthAccount account = fixture.accounts.findById(
                 new com.cloud.userauth.domain.authentication.account.AuthAccountId(login.authAccountId())).orElseThrow();
@@ -196,21 +196,21 @@ class ExternalLoginFlowIT {
             ExternalLoginAttemptCommandService preLoginService,
             ExternalAuthenticationProcess authenticationProcess
     ) {
-        ExternalLoginAttemptCommandOutput preLogin() {
+        ExternalLoginAttemptOutput preLogin() {
             return preLoginService.execute(new ExternalLoginAttemptCommand(
                     WECHAT.code(),
                     ProofType.AUTHORIZATION_CODE,
                     Map.of("loginCode", "one-time-code")));
         }
 
-        ExternalLoginAttemptCommandOutput directPreLogin() {
+        ExternalLoginAttemptOutput directPreLogin() {
             return preLoginService.acceptTrustedIdentity(new ExternalIdentity(
                     new CredentialIssuer("PARTNER_A", CredentialIssuerType.TRUSTED_PARTNER),
                     new Principal("order-1"), MOBILE, true, null));
         }
 
-        ExternalAuthenticationCommandOutput login(
-                ExternalLoginAttemptCommandOutput preLogin,
+        ExternalAuthenticationOutput login(
+                ExternalLoginAttemptOutput preLogin,
                 Long challengeId,
                 String code
         ) {
@@ -226,7 +226,7 @@ class ExternalLoginFlowIT {
                     "1.0"));
         }
 
-        ExternalAuthenticationCommandOutput directLogin(ExternalLoginAttemptCommandOutput preLogin) {
+        ExternalAuthenticationOutput directLogin(ExternalLoginAttemptOutput preLogin) {
             return authenticationProcess.authenticate(new ExternalAuthenticationCommand(
                     preLogin.loginAttemptId(), null, null, "device-1", "SERVICE", "partner",
                     "partner-service", "SERVICE", "1.0", false));

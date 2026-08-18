@@ -17,12 +17,12 @@ import com.cloud.userauth.application.authorization.UserAuthorizationView;
 
 public interface AuthorizationApiMapper {
     SaveChannelAuthorizationPolicyCommand toCommand(
-            SaveChannelAuthorizationPolicyApiCommand request);
+            SaveChannelAuthorizationPolicyApiCommand command);
     ChannelAuthorizationPolicyApiResponse toResponse(
             ChannelAuthorizationPolicyView view);
-    UserAuthorizationApiQueryView toResponse(UserAuthorizationView view);
-    SavePermissionCommand toCommand(SavePermissionApiCommand request);
-    SaveRoleCommand toCommand(SaveRoleApiCommand request);
+    UserAuthorizationApiQueryView toView(UserAuthorizationView view);
+    SavePermissionCommand toCommand(SavePermissionApiCommand command);
+    SaveRoleCommand toCommand(SaveRoleApiCommand command);
     PermissionApiResponse toResponse(PermissionView view);
     RoleApiResponse toResponse(RoleView view);
 }

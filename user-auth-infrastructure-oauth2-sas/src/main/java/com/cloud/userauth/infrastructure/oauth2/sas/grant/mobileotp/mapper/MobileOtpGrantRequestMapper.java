@@ -1,6 +1,6 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.mapper;
 
-import com.cloud.userauth.application.login.MobileAuthenticationCommand;
+import com.cloud.userauth.application.login.MobileOtpAuthenticationCommand;
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantRequest;
 
@@ -12,7 +12,7 @@ public interface MobileOtpGrantRequestMapper {
             String scope
     );
 
-    MobileAuthenticationCommand toAuthenticationCommand(
+    MobileOtpAuthenticationCommand toAuthenticationCommand(
             MobileOtpGrantRequest request
     );
 }

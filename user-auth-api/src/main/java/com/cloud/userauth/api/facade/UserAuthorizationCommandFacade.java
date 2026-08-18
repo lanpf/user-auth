@@ -27,6 +27,7 @@ public interface UserAuthorizationCommandFacade {
             @Valid ChangeChannelAuthorizationPolicyStatusApiCommand command);
     Result<ChannelAuthorizationPolicyApiResponse> disableChannelPolicy(
             @Valid ChangeChannelAuthorizationPolicyStatusApiCommand command);
+
     Result<ReconcileChannelAuthorizationPolicyApiCommandOutput> reconcileChannelPolicy(
             @Valid ReconcileChannelAuthorizationPolicyApiCommand command);
 }

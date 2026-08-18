@@ -78,9 +78,11 @@ verifiedAt
 requestId
 ```
 
-当前 REST 入口使用以下网关注入 Header：`X-Client-App-Id`、`X-Client-Platform`、`X-Client-Version`、`X-Channel-Code`；认证后的请求还可由网关写入 `X-User-Id`。所有有业务参数的 user-auth Controller 接口必须将参数收敛为一个 `ClientRequest` 子类型；需要消费渠道上下文时继承 `ClientChannelRequest`，需要消费认证用户上下文时使用 `AuthenticatedRequest`。不得将业务字段拆为 path/query 参数后再额外声明客户端上下文。Web MVC starter 在反序列化或参数解析阶段以受保护 Header 填充这些上下文，Controller 自身不继承请求类型。
+当前 REST 入口使用以下网关注入 Header：`X-Client-App-Id`、`X-Client-Platform`、`X-Client-Version`、`X-Channel-Code`；认证后的请求由网关写入 `X-User-Id` 与 `X-Session-Id`。所有有业务参数的 Controller 接口必须将参数收敛为一个 `ClientRequest` 子类型。`ClientRequest` 是共同基类；渠道能力由 `ChannelRequestContext` 组合，认证会话能力由 `AuthenticatedSessionRequestContext` 组合。框架提供 `ClientChannelRequest`、`AuthenticatedSessionRequest` 和同时组合两种能力的 `AuthenticatedSessionChannelRequest`。
 
-`ClientRequest`、`ClientChannelRequest` 与 `AuthenticatedRequest` 都是可实例化的具体类型：有业务请求体时继承相应类型，由 `RequestBodyAdvice` 注入上下文；Advice 只绑定 Header，随后由 Spring MVC 根据 `@Valid` 执行请求体 Bean Validation。无业务请求体但需要上下文时，Controller 直接声明不带 `@RequestBody` 的具体请求上下文参数，由统一的 Web MVC argument resolver 从 Header 创建，并仅在参数存在 `@Valid`/`@Validated` 时显式执行相同的 Bean Validation。所有 `ClientRequest` 及其子类型的 Controller 参数都必须标注 `@Valid`，以明确校验契约并使 `clientAppId`、`channelCode` 和 `userId` 的约束在两种入口中保持一致。无须上下文且没有业务参数的操作可以不声明请求对象。
+有业务请求体时继承所需框架类型，或自行继承 `ClientRequest` 并实现一个或两个上下文能力接口，由 `RequestBodyAdvice` 注入上下文；Advice 只绑定 Header，随后由 Spring MVC 根据 `@Valid` 执行 Bean Validation。无业务请求体但需要上下文时，Controller 直接声明不带 `@RequestBody` 的框架具体请求类型，由统一的 argument resolver 创建。所有 `ClientRequest` 及其子类型的 Controller 参数都必须标注 `@Valid`。
+
+这些 Header 只在网关到服务的受控链路内可信。网关必须删除调用方提交的所有受保护 Header，再根据 ClientApp 配置推导平台、验证渠道组合，并在 Access Token 校验成功后从 `sub` 与 `session_id` 写入用户和会话。user-auth 不再对业务 REST 接口重复解析 Bearer Token，但会使用 `userId + sessionId` 回查 LoginSession，验证会话归属和状态。
 
 继承关系表达接口的强制上下文需求：继承 `ClientRequest` 表示 `X-Client-App-Id` 必须存在；继承 `ClientChannelRequest` 表示该接口确实需要渠道，因此 `X-Channel-Code` 也必须存在。无需渠道的接口不得继承 `ClientChannelRequest`，不得通过把 `channelCode` 改为可选值来兼容两种语义。
 
@@ -121,7 +123,7 @@ GrantSource.sourceId   = channelCode
 
 ## 管理与查询 API
 
-以下接口均位于 `/admin/user-auth/authorization`，并要求 Bearer Access Token 具有 OAuth2 `admin` scope。JWT 与 Reference Token 使用相同 scope 语义；`H5_SESSION` 不具备管理资格。
+以下接口均位于 `/admin/user-auth/authorization`，并要求 Bearer Access Token 具有 OAuth2 `admin` scope。JWT 与 Reference Token 使用相同 scope 语义；`BROWSER_SESSION` 不具备管理资格。
 
 | 接口 | 语义 |
 | --- | --- |

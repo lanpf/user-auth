@@ -79,6 +79,9 @@ user-auth:
             rest-client:
               connect-timeout: ${USER_AUTH_OAUTH2_CONNECT_TIMEOUT:2s}
               read-timeout: ${USER_AUTH_OAUTH2_READ_TIMEOUT:5s}
+          introspection-client:
+            client-id: ${USER_AUTH_OAUTH2_INTROSPECTION_CLIENT_ID:gateway-introspection-client}
+            client-secret: ${USER_AUTH_OAUTH2_INTROSPECTION_CLIENT_SECRET:local-gateway-introspection-secret}
           refresh-token:
             ttl: ${USER_AUTH_OAUTH2_REFRESH_TOKEN_TTL:30d}
           scopes:
@@ -100,11 +103,13 @@ user-auth:
         namespace: ${USER_AUTH_AUTHORIZATION_NAMESPACE:}
         scene: ${USER_AUTH_AUTHORIZATION_SCENE:oauth2}
     session-handoff:
+      namespace: ${USER_AUTH_SESSION_HANDOFF_NAMESPACE:}
       ttl: ${USER_AUTH_HANDOFF_TTL:60s}
-    h5-session:
-      idle-ttl: ${USER_AUTH_H5_SESSION_IDLE_TTL:30m}
-      absolute-ttl: ${USER_AUTH_H5_SESSION_ABSOLUTE_TTL:8h}
-      renewal-threshold: ${USER_AUTH_H5_SESSION_RENEWAL_THRESHOLD:10m}
+    browser-session:
+      namespace: ${USER_AUTH_BROWSER_SESSION_NAMESPACE:}
+      idle-ttl: ${USER_AUTH_BROWSER_SESSION_IDLE_TTL:30m}
+      absolute-ttl: ${USER_AUTH_BROWSER_SESSION_ABSOLUTE_TTL:8h}
+      renewal-threshold: ${USER_AUTH_BROWSER_SESSION_RENEWAL_THRESHOLD:10m}
     challenge:
       pepper: ${USER_AUTH_CHALLENGE_PEPPER:local-development-pepper}
       issue-policy:

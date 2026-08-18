@@ -54,7 +54,7 @@ public class MobileOtpLoginTransactionService {
     private final Duration sessionTtl;
 
     @Transactional
-    public AuthChallenge verifyChallenge(MobileAuthenticationCommand command) {
+    public AuthChallenge verifyChallenge(MobileOtpAuthenticationCommand command) {
         AuthChallenge challenge = requiredChallenge(new AuthChallengeId(command.challengeId()));
         challenge.verify(
                 AuthChallengeType.SMS_OTP,
@@ -104,9 +104,9 @@ public class MobileOtpLoginTransactionService {
     }
 
     @Transactional
-    public MobileAuthenticationCommandOutput completeRegistration(
+    public MobileOtpAuthenticationOutput completeRegistration(
             RegistrationProcessId processId,
-            MobileAuthenticationCommand command
+            MobileOtpAuthenticationCommand command
     ) {
         RegistrationProcess process = requiredProcess(processId);
         if (process.isCompleted()) {
@@ -120,10 +120,10 @@ public class MobileOtpLoginTransactionService {
     }
 
     @Transactional
-    public MobileAuthenticationCommandOutput loginExistingAccount(
+    public MobileOtpAuthenticationOutput loginExistingAccount(
             AuthAccountId accountId,
             AuthChallengeId challengeId,
-            MobileAuthenticationCommand command
+            MobileOtpAuthenticationCommand command
     ) {
         AuthAccount account = requiredAccount(accountId);
         AuthChallenge challenge = requiredChallenge(challengeId);
@@ -137,10 +137,10 @@ public class MobileOtpLoginTransactionService {
     }
 
     @Transactional(readOnly = true)
-    public MobileAuthenticationCommandOutput replayLogin(SessionId sessionId, boolean fromRegistrationFlow) {
+    public MobileOtpAuthenticationOutput replayLogin(SessionId sessionId, boolean fromRegistrationFlow) {
         LoginSession session = requiredSession(sessionId);
         session.ensureActive(clock.instant());
-        return new MobileAuthenticationCommandOutput(
+        return new MobileOtpAuthenticationOutput(
                 session.getUserId().value(), session.getAuthAccountId().value(), session.id().value(),
                 fromRegistrationFlow, true
         );
@@ -168,7 +168,7 @@ public class MobileOtpLoginTransactionService {
 
     private LoginSession createLogin(
             AuthAccount account,
-            MobileAuthenticationCommand command
+            MobileOtpAuthenticationCommand command
     ) {
         Instant now = clock.instant();
         CredentialId authenticatedCredentialId = account.activeMobileCredential()
@@ -188,13 +188,13 @@ public class MobileOtpLoginTransactionService {
         return effect.session();
     }
 
-    private MobileAuthenticationCommandOutput output(
+    private MobileOtpAuthenticationOutput output(
             AuthAccount account,
             LoginSession session,
             boolean fromRegistrationFlow,
             boolean replayed
     ) {
-        return new MobileAuthenticationCommandOutput(
+        return new MobileOtpAuthenticationOutput(
                 account.userId().value(), account.id().value(), session.id().value(),
                 fromRegistrationFlow, replayed);
     }

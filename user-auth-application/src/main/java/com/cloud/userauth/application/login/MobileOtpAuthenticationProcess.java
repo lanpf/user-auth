@@ -40,18 +40,18 @@ public class MobileOtpAuthenticationProcess {
     private final UserChannelAuthorizationSynchronizer userChannelAuthorizationSynchronizer;
     private final UserGateway userGateway;
 
-    public MobileAuthenticationCommandOutput authenticate(@Valid MobileAuthenticationCommand command) {
+    public MobileOtpAuthenticationOutput authenticate(@Valid MobileOtpAuthenticationCommand command) {
         AuthChallenge initialChallenge = challengeRepository.findById(new AuthChallengeId(command.challengeId()))
                 .orElseThrow(() -> new DomainException(DomainError.AUTH_CHALLENGE_NOT_FOUND));
         LoginMobile mobile = new LoginMobile(initialChallenge.getTarget().value());
-        MobileAuthenticationCommandOutput authenticated =
+        MobileOtpAuthenticationOutput authenticated =
                 mobileOtpLoginLock.execute(mobile, () -> authenticateLocked(command));
         userChannelAuthorizationSynchronizer.synchronize(
                 new UserId(authenticated.userId()), command.channelCode());
         return authenticated;
     }
 
-    private MobileAuthenticationCommandOutput authenticateLocked(MobileAuthenticationCommand command) {
+    private MobileOtpAuthenticationOutput authenticateLocked(MobileOtpAuthenticationCommand command) {
         AuthChallenge challenge = mobileOtpLoginTransactionService.verifyChallenge(command);
         if (challenge.getStatus() == AuthChallengeStatus.CONSUMED) {
             return resumeConsumed(challenge, command);
@@ -66,9 +66,9 @@ public class MobileOtpAuthenticationProcess {
         return resumeRegistration(process, command);
     }
 
-    private MobileAuthenticationCommandOutput resumeConsumed(
+    private MobileOtpAuthenticationOutput resumeConsumed(
             AuthChallenge challenge,
-            MobileAuthenticationCommand command
+            MobileOtpAuthenticationCommand command
     ) {
         if (challenge.getConsumedByType() == ChallengeConsumerType.REGISTRATION_PROCESS) {
             RegistrationProcess process = registrationRepository.findById(
@@ -82,9 +82,9 @@ public class MobileOtpAuthenticationProcess {
         throw new DomainException(DomainError.AUTH_CHALLENGE_CONSUMED);
     }
 
-    private MobileAuthenticationCommandOutput resumeRegistration(
+    private MobileOtpAuthenticationOutput resumeRegistration(
             RegistrationProcess process,
-            MobileAuthenticationCommand command
+            MobileOtpAuthenticationCommand command
     ) {
         if (process.isCompleted()) {
             return mobileOtpLoginTransactionService.replayLogin(process.getSessionId(), true);

@@ -25,6 +25,8 @@ public class SasAuthorizationServerProperties {
     @Valid
     private final InternalTokenClientProperties internalTokenClient = new InternalTokenClientProperties();
     @Valid
+    private final IntrospectionClientProperties introspectionClient = new IntrospectionClientProperties();
+    @Valid
     private final RefreshTokenProperties refreshToken = new RefreshTokenProperties();
     @NotBlank
     private String issuer = "http://localhost:8081";
@@ -47,6 +49,15 @@ public class SasAuthorizationServerProperties {
         private String tokenEndpoint;
         @Valid
         private final RestClientProperties restClient = new RestClientProperties();
+    }
+
+    @Getter
+    @Setter
+    public static class IntrospectionClientProperties {
+        @NotBlank
+        private String clientId = "gateway-introspection-client";
+        @NotBlank
+        private String clientSecret = "local-gateway-introspection-secret";
     }
 
     @Getter

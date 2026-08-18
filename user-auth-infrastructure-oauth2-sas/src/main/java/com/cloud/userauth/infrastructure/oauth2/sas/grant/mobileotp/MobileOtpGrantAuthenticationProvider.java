@@ -1,7 +1,7 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp;
 
 import com.cloud.userauth.application.common.ApplicationException;
-import com.cloud.userauth.application.login.MobileAuthenticationCommandOutput;
+import com.cloud.userauth.application.login.MobileOtpAuthenticationOutput;
 import com.cloud.userauth.application.login.MobileOtpAuthenticationProcess;
 import com.cloud.userauth.application.port.ClientRenewalPolicy;
 import com.cloud.userauth.application.port.ClientRenewalPolicyResolver;
@@ -59,7 +59,7 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
         }
 
         Set<String> authorizedScopes = authorizedScopes(grantAuthentication, registeredClient);
-        MobileAuthenticationCommandOutput login = authenticateMobile(grantAuthentication);
+        MobileOtpAuthenticationOutput login = authenticateMobile(grantAuthentication);
         Authentication userPrincipal = UsernamePasswordAuthenticationToken.authenticated(
                 String.valueOf(login.userId()), null, List.of());
         OAuth2Authorization.Builder authorizationBuilder = authorization(
@@ -84,7 +84,7 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
         return MobileOtpGrantAuthenticationToken.class.isAssignableFrom(authentication);
     }
 
-    private MobileAuthenticationCommandOutput authenticateMobile(MobileOtpGrantAuthenticationToken grantAuthentication) {
+    private MobileOtpAuthenticationOutput authenticateMobile(MobileOtpGrantAuthenticationToken grantAuthentication) {
         try {
             return mobileOtpAuthenticationProcess.authenticate(
                     requestMapper.toAuthenticationCommand(
@@ -101,7 +101,7 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
     private OAuth2Authorization.Builder authorization(
             RegisteredClient client,
             Authentication userPrincipal,
-            MobileAuthenticationCommandOutput login,
+            MobileOtpAuthenticationOutput login,
             Set<String> scopes,
             String clientAppId
     ) {
@@ -215,7 +215,7 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
         return configuredScopes;
     }
 
-    private Map<String, Object> buildResponseParameters(MobileAuthenticationCommandOutput login) {
+    private Map<String, Object> buildResponseParameters(MobileOtpAuthenticationOutput login) {
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put(SasTokenResponseParameters.USER_ID, login.userId());
         parameters.put(SasTokenResponseParameters.AUTH_ACCOUNT_ID, login.authAccountId());

@@ -1,5 +1,6 @@
 package com.cloud.userauth.interfaces.rest;
 
+import com.cloud.framework.core.AuthenticatedSessionRequest;
 import com.cloud.framework.core.ClientChannelRequest;
 import com.cloud.framework.core.ClientRequest;
 import com.cloud.framework.core.Result;
@@ -13,10 +14,8 @@ import com.cloud.userauth.api.enums.AuthChallengeSceneApiEnum;
 import com.cloud.userauth.api.enums.AuthChallengeTypeApiEnum;
 import com.cloud.userauth.api.enums.ExternalProofTypeApiEnum;
 import com.cloud.userauth.api.facade.UserAuthenticationCommandFacade;
-import com.cloud.userauth.application.authentication.AuthenticatedSession;
 import com.cloud.userauth.interfaces.mapper.AuthenticationRestMapper;
-import com.cloud.userauth.interfaces.security.AuthenticatedSessionResolver;
-import com.cloud.userauth.interfaces.security.H5SessionCookie;
+import com.cloud.userauth.interfaces.security.BrowserSessionCookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -27,7 +26,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -84,12 +82,9 @@ public class UserAuthenticationController {
 
     @PostMapping(UserAuthRestPaths.API_CREDENTIALS_EXTERNAL_BIND)
     public Result<Void> bindExternalCredential(
-            @AuthenticationPrincipal Object principal,
             @Valid @RequestBody BindExternalCredentialRequest request
     ) {
-        AuthenticatedSession authenticated = AuthenticatedSessionResolver.resolve(principal);
-        return facade.bindExternalCredential(mapper.toBindExternalCredentialCommand(
-                request, authenticated.userId(), authenticated.authAccountId()));
+        return facade.bindExternalCredential(mapper.toCommand(request));
     }
 
     @PostMapping(UserAuthRestPaths.API_LOGIN_REFRESH)
@@ -101,20 +96,19 @@ public class UserAuthenticationController {
 
     @PostMapping(UserAuthRestPaths.API_LOGOUT)
     public Result<LogoutApiCommandOutput> logout(
-            @AuthenticationPrincipal Object principal,
+            @Valid AuthenticatedSessionRequest request,
             HttpServletResponse response
     ) {
-        AuthenticatedSession authenticated = AuthenticatedSessionResolver.resolve(principal);
         Result<LogoutApiCommandOutput> result = facade.logout(
-                mapper.toLogoutCommand(authenticated.sessionId().value()));
-        H5SessionCookie.clear(response);
+                mapper.toLogoutCommand(request));
+        BrowserSessionCookie.clear(response);
         return result;
     }
 
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class BindExternalCredentialRequest extends ClientRequest {
+    public static class BindExternalCredentialRequest extends AuthenticatedSessionRequest {
         @NotBlank
         private String issuer;
         @NotBlank

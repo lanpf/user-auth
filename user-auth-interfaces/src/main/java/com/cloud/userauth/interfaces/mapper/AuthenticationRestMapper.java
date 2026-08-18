@@ -1,5 +1,6 @@
 package com.cloud.userauth.interfaces.mapper;
 
+import com.cloud.framework.core.AuthenticatedSessionRequest;
 import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
 import com.cloud.userauth.api.authentication.BoundCredentialLoginApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommand;
@@ -29,10 +30,8 @@ public interface AuthenticationRestMapper {
 
     ExternalLoginApiCommand toCommand(UserAuthenticationController.ExternalLoginRequest request);
 
-    BindExternalCredentialApiCommand toBindExternalCredentialCommand(
-            UserAuthenticationController.BindExternalCredentialRequest request,
-            Long authenticatedUserId,
-            Long authenticatedAuthAccountId);
+    BindExternalCredentialApiCommand toCommand(
+            UserAuthenticationController.BindExternalCredentialRequest request);
 
-    LogoutApiCommand toLogoutCommand(String sessionId);
+    LogoutApiCommand toLogoutCommand(AuthenticatedSessionRequest request);
 }

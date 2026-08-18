@@ -3,7 +3,7 @@ package com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import com.cloud.userauth.application.login.MobileAuthenticationCommand;
+import com.cloud.userauth.application.login.MobileOtpAuthenticationCommand;
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.mapper.MobileOtpGrantRequestMapper;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.mapper.mapstruct.MobileOtpGrantRequestMapStructMapper;
@@ -22,7 +22,7 @@ class MobileOtpGrantRequestMapperTest {
                 loginCommand(),
                 "app");
 
-        MobileAuthenticationCommand authenticationCommand =
+        MobileOtpAuthenticationCommand authenticationCommand =
                 mapper.toAuthenticationCommand(request);
 
         assertEquals(1001L, request.challengeId());

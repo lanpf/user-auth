@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 public class MobileOtpLoginCommandService {
     private final LoginTokenIssuer loginTokenIssuer;
 
-    public MobileOtpLoginCommandOutput execute(MobileOtpLoginCommand command) {
+    public MobileOtpLoginOutput execute(MobileOtpLoginCommand command) {
         return loginTokenIssuer.issueMobileOtpLogin(command);
     }
 }

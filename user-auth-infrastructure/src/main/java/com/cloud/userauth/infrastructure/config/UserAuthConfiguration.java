@@ -496,13 +496,15 @@ public class UserAuthConfiguration {
     public BindExternalCredentialCommandService bindExternalCredentialCommandService(
             ExternalIdentityVerifierRegistry verifierRegistry,
             AuthAccountRepository authAccountRepository,
+            LoginSessionRepository loginSessionRepository,
             CredentialIdGenerator credentialIdGenerator,
             CredentialDomainService credentialDomainService,
             DomainEventStore domainEventStore,
             Clock clock
     ) {
         return new BindExternalCredentialCommandService(
-                verifierRegistry, authAccountRepository, credentialIdGenerator, credentialDomainService,
+                verifierRegistry, authAccountRepository, loginSessionRepository,
+                credentialIdGenerator, credentialDomainService,
                 domainEventStore, clock);
     }
 

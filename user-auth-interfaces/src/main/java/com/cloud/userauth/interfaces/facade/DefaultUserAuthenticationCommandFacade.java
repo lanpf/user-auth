@@ -21,7 +21,7 @@ import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommand
 import com.cloud.userauth.application.login.external.ExternalLoginCommandService;
 import com.cloud.userauth.application.login.external.TrustedMobileLoginCommandService;
 import com.cloud.userauth.application.login.external.BoundCredentialLoginCommandService;
-import com.cloud.userauth.interfaces.mapper.AuthApiMapper;
+import com.cloud.userauth.interfaces.mapper.AuthenticationApiMapper;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
 import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
@@ -44,69 +44,69 @@ public class DefaultUserAuthenticationCommandFacade implements UserAuthenticatio
     private final BoundCredentialLoginCommandService boundCredentialLoginCommandService;
     private final LogoutCommandService logoutCommandService;
     private final BindExternalCredentialCommandService bindExternalCredentialCommandService;
-    private final AuthApiMapper mapper;
+    private final AuthenticationApiMapper mapper;
 
     @Override
-    public Result<IssueAuthChallengeApiCommandOutput> issueAuthChallenge(IssueAuthChallengeApiCommand request) {
-        return Result.success(mapper.toOutput(authChallengeCommandService.execute(mapper.toCommand(request))));
+    public Result<IssueAuthChallengeApiCommandOutput> issueAuthChallenge(IssueAuthChallengeApiCommand command) {
+        return Result.success(mapper.toOutput(authChallengeCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
-    public Result<MobileOtpLoginApiCommandOutput> loginWithMobileOtp(MobileOtpLoginApiCommand request) {
+    public Result<MobileOtpLoginApiCommandOutput> loginWithMobileOtp(MobileOtpLoginApiCommand command) {
         return Result.success(mapper.toOutput(
-                mobileOtpLoginCommandService.execute(mapper.toCommand(request))));
+                mobileOtpLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
-    public Result<RefreshTokenLoginApiCommandOutput> refreshTokenLogin(RefreshTokenLoginApiCommand request) {
+    public Result<RefreshTokenLoginApiCommandOutput> refreshTokenLogin(RefreshTokenLoginApiCommand command) {
         return Result.success(mapper.toOutput(
-                refreshTokenLoginCommandService.execute(mapper.toCommand(request))));
+                refreshTokenLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
     public Result<ExternalLoginAttemptApiCommandOutput> createExternalLoginAttempt(
-            ExternalLoginAttemptApiCommand request
+            ExternalLoginAttemptApiCommand command
     ) {
         return Result.success(mapper.toOutput(
-                externalLoginAttemptCommandService.execute(mapper.toCommand(request))));
+                externalLoginAttemptCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
     public Result<ExternalLoginApiCommandOutput> completeExternalLogin(
-            ExternalLoginApiCommand request
+            ExternalLoginApiCommand command
     ) {
         return Result.success(mapper.toOutput(
-                externalLoginCommandService.execute(mapper.toCommand(request))));
+                externalLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
     public Result<ExternalLoginApiCommandOutput> loginWithTrustedMobile(
-            TrustedMobileLoginApiCommand request
+            TrustedMobileLoginApiCommand command
     ) {
         return Result.success(mapper.toOutput(
-                trustedMobileLoginCommandService.execute(mapper.toCommand(request))));
+                trustedMobileLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
     public Result<ExternalLoginApiCommandOutput> loginWithBoundCredential(
-            BoundCredentialLoginApiCommand request
+            BoundCredentialLoginApiCommand command
     ) {
         return Result.success(mapper.toOutput(
-                boundCredentialLoginCommandService.execute(mapper.toCommand(request))));
+                boundCredentialLoginCommandService.execute(mapper.toCommand(command))));
     }
 
 
     @Override
     public Result<Void> bindExternalCredential(
-            BindExternalCredentialApiCommand request
+            BindExternalCredentialApiCommand command
     ) {
-        bindExternalCredentialCommandService.execute(mapper.toCommand(request));
+        bindExternalCredentialCommandService.execute(mapper.toCommand(command));
         return Result.success();
     }
 
     @Override
-    public Result<LogoutApiCommandOutput> logout(LogoutApiCommand request) {
-        return Result.success(mapper.toOutput(logoutCommandService.execute(mapper.toCommand(request))));
+    public Result<LogoutApiCommandOutput> logout(LogoutApiCommand command) {
+        return Result.success(mapper.toOutput(logoutCommandService.execute(mapper.toCommand(command))));
     }
 
 }

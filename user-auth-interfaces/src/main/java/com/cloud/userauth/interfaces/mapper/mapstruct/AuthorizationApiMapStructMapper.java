@@ -26,7 +26,7 @@ public interface AuthorizationApiMapStructMapper extends AuthorizationApiMapper 
     @Override
     ChannelAuthorizationPolicyApiResponse toResponse(ChannelAuthorizationPolicyView view);
     @Override
-    UserAuthorizationApiQueryView toResponse(UserAuthorizationView view);
+    UserAuthorizationApiQueryView toView(UserAuthorizationView view);
     @Override
     SavePermissionCommand toCommand(SavePermissionApiCommand request);
     @Override

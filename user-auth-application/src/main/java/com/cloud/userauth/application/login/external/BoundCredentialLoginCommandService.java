@@ -18,14 +18,14 @@ public class BoundCredentialLoginCommandService {
     private final ExternalLoginCommandService externalLoginCommandService;
     private final ClientRenewalPolicyResolver renewalPolicyResolver;
 
-    public ExternalLoginCommandOutput execute(
+    public ExternalLoginOutput execute(
             @Valid BoundCredentialLoginCommand command
     ) {
         if (renewalPolicyResolver.resolve(command.clientAppId())
                 != ClientRenewalPolicy.EXTERNAL_AUTHORIZATION_CODE) {
             throw new ApplicationException(ApplicationError.APP_LOGIN_CLIENT_NOT_ALLOWED);
         }
-        ExternalLoginAttemptCommandOutput attempt = externalLoginAttemptCommandService.execute(
+        ExternalLoginAttemptOutput attempt = externalLoginAttemptCommandService.execute(
                 new ExternalLoginAttemptCommand(command.issuer(), ProofType.AUTHORIZATION_CODE,
                         Map.of("authorizationCode", command.authorizationCode())));
         if (attempt.mobileVerificationRequired()) {

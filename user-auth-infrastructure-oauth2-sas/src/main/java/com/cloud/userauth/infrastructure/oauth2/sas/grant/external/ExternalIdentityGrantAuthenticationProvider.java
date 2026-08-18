@@ -1,7 +1,7 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.grant.external;
 
 import com.cloud.userauth.application.common.ApplicationException;
-import com.cloud.userauth.application.login.external.ExternalAuthenticationCommandOutput;
+import com.cloud.userauth.application.login.external.ExternalAuthenticationOutput;
 import com.cloud.userauth.application.login.external.ExternalAuthenticationProcess;
 import com.cloud.userauth.application.port.ClientRenewalPolicy;
 import com.cloud.userauth.application.port.ClientRenewalPolicyResolver;
@@ -59,7 +59,7 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
             throw oauth2(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
         Set<String> scopes = authorizedScopes(grant, registeredClient);
-        ExternalAuthenticationCommandOutput login = authenticateExternal(grant);
+        ExternalAuthenticationOutput login = authenticateExternal(grant);
         Authentication userPrincipal = UsernamePasswordAuthenticationToken.authenticated(
                 String.valueOf(login.userId()), null, List.of());
         OAuth2Authorization.Builder authorization = authorization(
@@ -86,7 +86,7 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
         return ExternalIdentityGrantAuthenticationToken.class.isAssignableFrom(authentication);
     }
 
-    private ExternalAuthenticationCommandOutput authenticateExternal(
+    private ExternalAuthenticationOutput authenticateExternal(
             ExternalIdentityGrantAuthenticationToken grant
     ) {
         try {
@@ -104,7 +104,7 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
     private OAuth2Authorization.Builder authorization(
             RegisteredClient client,
             Authentication userPrincipal,
-            ExternalAuthenticationCommandOutput login,
+            ExternalAuthenticationOutput login,
             Set<String> scopes,
             String clientAppId
     ) {
@@ -215,7 +215,7 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
     }
 
     private static Map<String, Object> responseParameters(
-            ExternalAuthenticationCommandOutput login
+            ExternalAuthenticationOutput login
     ) {
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put(SasTokenResponseParameters.USER_ID, login.userId());

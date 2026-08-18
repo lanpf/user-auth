@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 public class ExternalLoginCommandService {
     private final LoginTokenIssuer loginTokenIssuer;
 
-    public ExternalLoginCommandOutput execute(@Valid ExternalLoginCommand command) {
+    public ExternalLoginOutput execute(@Valid ExternalLoginCommand command) {
         return loginTokenIssuer.issueExternalLogin(command, ExternalCredentialBinding.BIND);
     }
 }

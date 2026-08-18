@@ -3,7 +3,7 @@ package com.cloud.userauth.interfaces.rest;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.cloud.framework.core.AuthenticatedRequest;
+import com.cloud.framework.core.AuthenticatedSessionRequestContext;
 import com.cloud.framework.core.ClientChannelRequest;
 import com.cloud.framework.core.ClientRequest;
 import com.cloud.framework.core.PageResult;
@@ -23,7 +23,7 @@ class ControllerClientRequestContractTest {
     void shouldInjectGatewayClientContextIntoEveryRequestBody() {
         List<Class<?>> controllers = List.of(
                 UserAuthenticationController.class,
-                UserAuthorizationAdminController.class,
+                UserAuthorizationController.class,
                 WebViewHandoffController.class);
 
         controllers.stream()
@@ -58,7 +58,7 @@ class ControllerClientRequestContractTest {
 
     @Test
     void shouldNotExposeChannelCodeInChannelPolicyPaths() {
-        Arrays.stream(UserAuthorizationAdminController.class.getDeclaredMethods())
+        Arrays.stream(UserAuthorizationController.class.getDeclaredMethods())
                 .filter(method -> method.getName().endsWith("ChannelPolicy"))
                 .map(method -> AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class))
                 .forEach(mapping -> assertTrue(
@@ -69,7 +69,7 @@ class ControllerClientRequestContractTest {
 
     @Test
     void shouldReceiveGatewayClientContextForEveryAuthorizationEndpoint() {
-        Arrays.stream(UserAuthorizationAdminController.class.getDeclaredMethods())
+        Arrays.stream(UserAuthorizationController.class.getDeclaredMethods())
                 .filter(method -> AnnotatedElementUtils.hasAnnotation(method, RequestMapping.class))
                 .forEach(method -> assertTrue(
                         Arrays.stream(method.getParameterTypes())
@@ -80,22 +80,22 @@ class ControllerClientRequestContractTest {
 
     @Test
     void shouldNotUseGatewayChannelOrUserContextAsAdminTarget() {
-        Arrays.stream(UserAuthorizationAdminController.class.getDeclaredMethods())
+        Arrays.stream(UserAuthorizationController.class.getDeclaredMethods())
                 .filter(method -> AnnotatedElementUtils.hasAnnotation(method, RequestMapping.class))
                 .flatMap(method -> Arrays.stream(method.getParameterTypes()))
                 .filter(ClientRequest.class::isAssignableFrom)
                 .forEach(requestType -> {
                     assertFalse(ClientChannelRequest.class.isAssignableFrom(requestType),
                             "admin target channel must not use X-Channel-Code context");
-                    assertFalse(AuthenticatedRequest.class.isAssignableFrom(requestType),
+                    assertFalse(AuthenticatedSessionRequestContext.class.isAssignableFrom(requestType),
                             "admin target user must not use X-User-Id context");
                 });
     }
 
     @Test
     void shouldUseExplicitTargetRequestForUserAuthorizationQuery() throws NoSuchMethodException {
-        Method method = UserAuthorizationAdminController.class.getDeclaredMethod(
-                "getUserAuthorization", UserAuthorizationAdminController.UserTargetRequest.class);
+        Method method = UserAuthorizationController.class.getDeclaredMethod(
+                "getUserAuthorization", UserAuthorizationController.UserTargetRequest.class);
         RequestMapping mapping = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
 
         assertTrue(mapping != null
@@ -105,10 +105,10 @@ class ControllerClientRequestContractTest {
 
     @Test
     void shouldUsePagedContractForAuthorizationCatalogQueries() throws NoSuchMethodException {
-        Method permissions = UserAuthorizationAdminController.class.getDeclaredMethod(
-                "getPermissions", UserAuthorizationAdminController.CatalogPageRequest.class);
-        Method roles = UserAuthorizationAdminController.class.getDeclaredMethod(
-                "getRoles", UserAuthorizationAdminController.CatalogPageRequest.class);
+        Method permissions = UserAuthorizationController.class.getDeclaredMethod(
+                "getPermissions", UserAuthorizationController.CatalogPageRequest.class);
+        Method roles = UserAuthorizationController.class.getDeclaredMethod(
+                "getRoles", UserAuthorizationController.CatalogPageRequest.class);
 
         assertTrue(PageResult.class.equals(permissions.getReturnType()),
                 "permission catalog must return PageResult");
@@ -123,7 +123,7 @@ class ControllerClientRequestContractTest {
     private static List<Class<?>> controllers() {
         return List.of(
                 UserAuthenticationController.class,
-                UserAuthorizationAdminController.class,
+                UserAuthorizationController.class,
                 WebViewHandoffController.class);
     }
 

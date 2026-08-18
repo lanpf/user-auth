@@ -1,16 +1,24 @@
 package com.cloud.userauth.interfaces.mapper;
 
-import com.cloud.userauth.api.authentication.CreateH5SessionHandoffApiCommand;
-import com.cloud.userauth.api.authentication.CreateH5SessionHandoffApiCommandOutput;
-import com.cloud.userauth.api.authentication.ExchangeH5SessionHandoffApiCommandOutput;
-import com.cloud.userauth.application.authentication.AuthenticatedSession;
-import com.cloud.userauth.application.session.handoff.CreateH5SessionHandoffCommandOutput;
-import com.cloud.userauth.application.session.handoff.ExchangeH5SessionHandoffCommandOutput;
+import com.cloud.userauth.api.authentication.CreateSessionHandoffApiCommand;
+import com.cloud.userauth.api.authentication.CreateSessionHandoffApiCommandOutput;
+import com.cloud.userauth.api.authentication.ExchangeSessionHandoffApiCommand;
+import com.cloud.userauth.api.authentication.ExchangeSessionHandoffApiCommandOutput;
+import com.cloud.userauth.api.enums.SessionHandoffTargetApiEnum;
+import com.cloud.userauth.application.session.handoff.CreateSessionHandoffCommand;
+import com.cloud.userauth.application.session.handoff.CreateSessionHandoffOutput;
+import com.cloud.userauth.application.session.handoff.ExchangeSessionHandoffCommand;
+import com.cloud.userauth.application.session.handoff.ExchangeSessionHandoffOutput;
+import com.cloud.userauth.application.session.handoff.SessionHandoffTarget;
 
 public interface SessionHandoffApiMapper {
-    AuthenticatedSession toAuthenticatedSession(CreateH5SessionHandoffApiCommand command);
+    CreateSessionHandoffCommand toCommand(CreateSessionHandoffApiCommand command);
 
-    CreateH5SessionHandoffApiCommandOutput toOutput(CreateH5SessionHandoffCommandOutput output);
+    ExchangeSessionHandoffCommand toCommand(ExchangeSessionHandoffApiCommand command);
 
-    ExchangeH5SessionHandoffApiCommandOutput toOutput(ExchangeH5SessionHandoffCommandOutput output);
+    CreateSessionHandoffApiCommandOutput toOutput(CreateSessionHandoffOutput output);
+
+    ExchangeSessionHandoffApiCommandOutput toOutput(ExchangeSessionHandoffOutput output);
+
+    SessionHandoffTarget toTarget(SessionHandoffTargetApiEnum target);
 }

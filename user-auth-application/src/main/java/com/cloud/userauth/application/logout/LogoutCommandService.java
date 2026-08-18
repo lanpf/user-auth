@@ -9,6 +9,7 @@ import com.cloud.userauth.domain.authentication.service.SessionRevocationEffect;
 import com.cloud.userauth.domain.authentication.session.LoginSession;
 import com.cloud.userauth.domain.authentication.session.LoginSessionRepository;
 import com.cloud.userauth.domain.authentication.session.SessionId;
+import com.cloud.userauth.domain.user.UserId;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -26,16 +27,19 @@ public class LogoutCommandService {
     private final Clock clock;
 
     @Transactional
-    public LogoutCommandOutput execute(LogoutCommand command) {
+    public LogoutOutput execute(LogoutCommand command) {
         SessionId sessionId = new SessionId(command.sessionId());
         LoginSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new DomainException(DomainError.LOGIN_SESSION_NOT_FOUND));
+        if (!session.getUserId().equals(new UserId(command.authenticatedUserId()))) {
+            throw new DomainException(DomainError.LOGIN_SESSION_NOT_FOUND);
+        }
 
         Instant now = clock.instant();
         SessionRevocationEffect effect = sessionDomainService.logout(session, now);
         sessionRepository.save(effect.session());
         loginSessionRevokers.forEach(revoker -> revoker.revoke(sessionId));
         domainEventStore.appendAll(effect.events());
-        return new LogoutCommandOutput(sessionId.value(), effect.session().getStatus());
+        return new LogoutOutput(sessionId.value(), effect.session().getStatus());
     }
 }

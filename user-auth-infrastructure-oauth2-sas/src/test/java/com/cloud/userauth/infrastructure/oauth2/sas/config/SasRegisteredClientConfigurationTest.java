@@ -36,7 +36,7 @@ class SasRegisteredClientConfigurationTest {
         InMemoryRegisteredClientRepository repository =
                 new InMemoryRegisteredClientRepository(unrelatedClient());
 
-        InitializingBean initializer = configuration.bootstrapRegisteredClient(
+        InitializingBean initializer = configuration.bootstrapRegisteredClients(
                 repository,
                 passwordEncoder,
                 properties,
@@ -71,6 +71,12 @@ class SasRegisteredClientConfigurationTest {
                 registeredClient.getTokenSettings().getAccessTokenTimeToLive());
         assertEquals(OAuth2TokenFormat.SELF_CONTAINED,
                 registeredClient.getTokenSettings().getAccessTokenFormat());
+        RegisteredClient introspectionClient = repository.findByClientId(
+                properties.getIntrospectionClient().getClientId());
+        assertNotNull(introspectionClient);
+        assertTrue(passwordEncoder.matches(
+                properties.getIntrospectionClient().getClientSecret(),
+                introspectionClient.getClientSecret()));
     }
 
     @Test
@@ -86,7 +92,7 @@ class SasRegisteredClientConfigurationTest {
         AccessTokenProperties accessTokenProperties = hostAccessTokenProperties();
         accessTokenProperties.setFormat(AccessTokenProperties.Format.REFERENCE);
 
-        configuration.bootstrapRegisteredClient(
+        configuration.bootstrapRegisteredClients(
                 repository, passwordEncoder, properties, accessTokenProperties).afterPropertiesSet();
 
         RegisteredClient registeredClient = repository.findByClientId(
@@ -116,7 +122,7 @@ class SasRegisteredClientConfigurationTest {
         InMemoryRegisteredClientRepository repository =
                 new InMemoryRegisteredClientRepository(existingClient);
 
-        configuration.bootstrapRegisteredClient(
+        configuration.bootstrapRegisteredClients(
                 repository,
                 passwordEncoder,
                 properties,

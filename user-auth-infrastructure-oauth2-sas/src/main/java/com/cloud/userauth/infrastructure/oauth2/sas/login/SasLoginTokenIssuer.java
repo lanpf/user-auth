@@ -1,9 +1,9 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.login;
 
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
-import com.cloud.userauth.application.login.MobileOtpLoginCommandOutput;
+import com.cloud.userauth.application.login.MobileOtpLoginOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginCommand;
-import com.cloud.userauth.application.login.external.ExternalLoginCommandOutput;
+import com.cloud.userauth.application.login.external.ExternalLoginOutput;
 import com.cloud.userauth.application.login.external.ExternalCredentialBinding;
 import com.cloud.userauth.application.port.LoginTokenIssuer;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.external.ExternalIdentityGrantRequest;
@@ -28,7 +28,7 @@ public final class SasLoginTokenIssuer implements LoginTokenIssuer {
     private final SasExternalTokenEndpointPayloadMapper externalResponseMapper;
 
     @Override
-    public MobileOtpLoginCommandOutput issueMobileOtpLogin(MobileOtpLoginCommand command) {
+    public MobileOtpLoginOutput issueMobileOtpLogin(MobileOtpLoginCommand command) {
         String scope = String.join(" ", clientScopeResolver.resolve(command.clientAppId()));
         MobileOtpGrantRequest grantRequest = requestMapper.toGrantRequest(command, scope);
         SasTokenEndpointPayload response = tokenEndpointClient.requestToken(grantRequest);
@@ -36,7 +36,7 @@ public final class SasLoginTokenIssuer implements LoginTokenIssuer {
     }
 
     @Override
-    public ExternalLoginCommandOutput issueExternalLogin(
+    public ExternalLoginOutput issueExternalLogin(
             ExternalLoginCommand command,
             ExternalCredentialBinding credentialBinding
     ) {

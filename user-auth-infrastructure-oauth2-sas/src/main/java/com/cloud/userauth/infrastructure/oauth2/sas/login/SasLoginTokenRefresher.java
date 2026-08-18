@@ -3,7 +3,7 @@ package com.cloud.userauth.infrastructure.oauth2.sas.login;
 import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.application.common.ApplicationException;
 import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommand;
-import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandOutput;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginOutput;
 import com.cloud.userauth.application.port.LoginTokenRefresher;
 import com.cloud.userauth.application.port.RefreshTokenRotationLock;
 import com.cloud.userauth.domain.authentication.session.LoginSession;
@@ -30,11 +30,11 @@ public final class SasLoginTokenRefresher implements LoginTokenRefresher {
     private final RefreshTokenRotationLock rotationLock;
 
     @Override
-    public RefreshTokenLoginCommandOutput refresh(RefreshTokenLoginCommand command) {
+    public RefreshTokenLoginOutput refresh(RefreshTokenLoginCommand command) {
         return rotationLock.execute(command.refreshToken(), () -> refreshLocked(command));
     }
 
-    private RefreshTokenLoginCommandOutput refreshLocked(RefreshTokenLoginCommand command) {
+    private RefreshTokenLoginOutput refreshLocked(RefreshTokenLoginCommand command) {
         OAuth2Authorization authorization = authorizationService.findByToken(
                 command.refreshToken(), OAuth2TokenType.REFRESH_TOKEN);
         if (authorization == null || !Objects.equals(
@@ -45,7 +45,7 @@ public final class SasLoginTokenRefresher implements LoginTokenRefresher {
         ensureActiveLoginSession(command.clientAppId(), authorization);
         SasRefreshTokenEndpointPayload response =
                 tokenEndpointClient.requestRefreshToken(command.refreshToken());
-        return new RefreshTokenLoginCommandOutput(
+        return new RefreshTokenLoginOutput(
                 response.tokenType(),
                 response.accessToken(),
                 response.refreshToken(),

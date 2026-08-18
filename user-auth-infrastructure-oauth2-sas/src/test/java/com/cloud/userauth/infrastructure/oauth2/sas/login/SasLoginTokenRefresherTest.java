@@ -3,7 +3,7 @@ package com.cloud.userauth.infrastructure.oauth2.sas.login;
 import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.application.common.ApplicationException;
 import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommand;
-import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandOutput;
+import com.cloud.userauth.application.login.refresh.RefreshTokenLoginOutput;
 import com.cloud.userauth.application.port.RefreshTokenRotationLock;
 import com.cloud.userauth.domain.authentication.account.AuthAccountId;
 import com.cloud.userauth.domain.authentication.credential.CredentialId;
@@ -48,7 +48,7 @@ class SasLoginTokenRefresherTest {
                 Clock.fixed(Instant.parse("2026-08-10T00:01:00Z"), ZoneOffset.UTC),
                 RefreshTokenRotationLock.direct());
 
-        RefreshTokenLoginCommandOutput output =
+        RefreshTokenLoginOutput output =
                 refresher.refresh(new RefreshTokenLoginCommand("app", "refresh-1"));
 
         assertEquals("access-2", output.accessToken());

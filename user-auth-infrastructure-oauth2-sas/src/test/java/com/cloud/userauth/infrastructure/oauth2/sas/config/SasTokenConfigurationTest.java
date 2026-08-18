@@ -37,7 +37,8 @@ class SasTokenConfigurationTest {
         assertEquals(
                 properties.getAudiences(),
                 Set.copyOf(claims.getAudience()));
-        assertEquals(Long.valueOf(100001L), claims.getClaim(AccessTokenClaimApiConstants.USER_ID_CLAIM));
+        assertEquals("100001", claims.getSubject());
+        assertNull(claims.getClaim("user_id"));
         assertEquals(Long.valueOf(1001L), claims.getClaim(AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM));
         assertEquals("session-1", claims.getClaim(AccessTokenClaimApiConstants.SESSION_ID_CLAIM));
     }
@@ -47,7 +48,7 @@ class SasTokenConfigurationTest {
         JwtClaimsSet claims = customize(properties(), ID_TOKEN);
 
         assertNull(claims.getAudience());
-        assertNull(claims.getClaim(AccessTokenClaimApiConstants.USER_ID_CLAIM));
+        assertNull(claims.getClaim("user_id"));
         assertNull(claims.getClaim(AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM));
         assertNull(claims.getClaim(AccessTokenClaimApiConstants.SESSION_ID_CLAIM));
     }

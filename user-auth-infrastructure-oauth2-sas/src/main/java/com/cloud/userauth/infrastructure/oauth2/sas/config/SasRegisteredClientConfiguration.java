@@ -35,7 +35,7 @@ public class SasRegisteredClientConfiguration {
     }
 
     @Bean
-    public InitializingBean bootstrapRegisteredClient(
+    public InitializingBean bootstrapRegisteredClients(
             RegisteredClientRepository repository,
             PasswordEncoder passwordEncoder,
             SasAuthorizationServerProperties properties,
@@ -70,6 +70,33 @@ public class SasRegisteredClientConfiguration {
                     .map(OAuth2Scope::value)
                     .forEach(builder::scope);
             repository.save(builder.build());
+
+            SasAuthorizationServerProperties.IntrospectionClientProperties introspectionClient =
+                    properties.getIntrospectionClient();
+            String introspectionClientId = introspectionClient.getClientId();
+            RegisteredClient existingIntrospectionClient = repository.findByClientId(introspectionClientId);
+            repository.save(RegisteredClient
+                    .withId(existingIntrospectionClient == null
+                            ? stableClientId(introspectionClientId)
+                            : existingIntrospectionClient.getId())
+                    .clientId(introspectionClientId)
+                    .clientIdIssuedAt(existingIntrospectionClient == null
+                            ? null
+                            : existingIntrospectionClient.getClientIdIssuedAt())
+                    .clientSecret(encodedSecret(
+                            existingIntrospectionClient,
+                            introspectionClient.getClientSecret(),
+                            passwordEncoder))
+                    .clientName("gateway token introspection client")
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                    .clientSettings(ClientSettings.builder()
+                            .requireAuthorizationConsent(false)
+                            .build())
+                    .tokenSettings(TokenSettings.builder()
+                            .accessTokenTimeToLive(accessTokenProperties.getTtl())
+                            .build())
+                    .build());
         };
     }
 

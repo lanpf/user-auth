@@ -13,7 +13,7 @@ public class ExternalAuthenticationProcess {
     private final UserChannelAuthorizationSynchronizer userChannelAuthorizationSynchronizer;
     private final UserGateway userGateway;
 
-    public ExternalAuthenticationCommandOutput authenticate(ExternalAuthenticationCommand command) {
+    public ExternalAuthenticationOutput authenticate(ExternalAuthenticationCommand command) {
         ExternalAccountPreparationOutput prepared = transactionService.prepareAccount(command);
         try {
             userGateway.initializeUser(prepared.userId());
@@ -22,7 +22,7 @@ public class ExternalAuthenticationProcess {
                     ApplicationError.APP_USER_INITIALIZATION_FAILED,
                     exception);
         }
-        ExternalAuthenticationCommandOutput authenticated =
+        ExternalAuthenticationOutput authenticated =
                 transactionService.completeLogin(command, prepared);
         userChannelAuthorizationSynchronizer.synchronize(
                 new UserId(authenticated.userId()), command.channelCode());
