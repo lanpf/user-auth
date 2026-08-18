@@ -3,6 +3,7 @@ package com.cloud.userauth.infrastructure.oauth2.sas.scope;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.cloud.userauth.api.authentication.OAuth2Scope;
 import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.application.common.ApplicationException;
 import com.cloud.userauth.infrastructure.config.ClientAppRegistryProperties;
@@ -10,7 +11,6 @@ import com.cloud.userauth.application.port.ClientRenewalPolicy;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.userauth.infrastructure.oauth2.sas.scope.PropertiesSasClientScopeResolver;
 import org.junit.jupiter.api.Test;
 
 class SasClientScopeResolverTest {
@@ -19,9 +19,9 @@ class SasClientScopeResolverTest {
 
     @Test
     void shouldResolveConfiguredClientScope() {
-        assertEquals(Set.of("app.api"), resolver.resolve("mini-program"));
-        assertEquals(Set.of("app.api"), resolver.resolve("app"));
-        assertEquals(Set.of("admin.api"), resolver.resolve("admin"));
+        assertEquals(Set.of("app"), resolver.resolve("mini-program"));
+        assertEquals(Set.of("app"), resolver.resolve("app"));
+        assertEquals(Set.of("admin"), resolver.resolve("admin"));
     }
 
     @Test
@@ -38,13 +38,15 @@ class SasClientScopeResolverTest {
     private static ClientAppRegistryProperties properties() {
         ClientAppRegistryProperties properties = new ClientAppRegistryProperties();
         properties.getClientApps().putAll(Map.of(
-                "mini-program", clientApp(Set.of("app.api")),
-                "app", clientApp(Set.of("app.api")),
-                "admin", clientApp(Set.of("admin.api"))));
+                "mini-program", clientApp(Set.of(OAuth2Scope.APP)),
+                "app", clientApp(Set.of(OAuth2Scope.APP)),
+                "admin", clientApp(Set.of(OAuth2Scope.ADMIN))));
         return properties;
     }
 
-    private static ClientAppRegistryProperties.ClientAppProperties clientApp(Set<String> scopes) {
+    private static ClientAppRegistryProperties.ClientAppProperties clientApp(
+            Set<OAuth2Scope> scopes
+    ) {
         ClientAppRegistryProperties.ClientAppProperties properties =
                 new ClientAppRegistryProperties.ClientAppProperties();
         properties.setRenewalPolicy(ClientRenewalPolicy.NONE);

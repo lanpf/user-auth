@@ -1,7 +1,8 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.config;
 
-import com.cloud.userauth.api.constants.JwtApiConstants;
+import com.cloud.userauth.api.constants.AccessTokenClaimApiConstants;
 import com.cloud.userauth.infrastructure.oauth2.sas.protocol.SasAuthorizationAttributes;
+import com.cloud.userauth.infrastructure.oauth2.sas.token.SasReferenceAccessTokenIntrospector;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -25,15 +26,18 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2AccessTokenGenerator;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenClaimsContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2RefreshTokenGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
+import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -45,10 +49,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(
-        prefix = "user-auth.authentication.oauth2.authorization-server",
-        name = "enabled",
-        havingValue = "true")
 @Import({
         SasTokenConfiguration.NonProductionJwkConfiguration.class,
         SasTokenConfiguration.ProductionJwkConfiguration.class
@@ -66,18 +66,26 @@ public class SasTokenConfiguration {
     @Bean
     public OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator(
             JWKSource<SecurityContext> jwkSource,
-            OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer
+            OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer,
+            OAuth2TokenCustomizer<OAuth2TokenClaimsContext> referenceAccessTokenCustomizer
     ) {
         JwtEncoder jwtEncoder = new NimbusJwtEncoder(jwkSource);
         JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
         jwtGenerator.setJwtCustomizer(jwtCustomizer);
+        OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
+        accessTokenGenerator.setAccessTokenCustomizer(referenceAccessTokenCustomizer);
         return new DelegatingOAuth2TokenGenerator(
                 jwtGenerator,
-                new OAuth2AccessTokenGenerator(),
+                accessTokenGenerator,
                 new OAuth2RefreshTokenGenerator());
     }
 
     @Bean
+    @ConditionalOnProperty(
+            prefix = "user-auth.authentication.oauth2.access-token",
+            name = "format",
+            havingValue = "SELF_CONTAINED",
+            matchIfMissing = true)
     public JwtDecoder jwtDecoder(
             JWKSource<SecurityContext> jwkSource,
             SasAuthorizationServerProperties properties
@@ -88,6 +96,17 @@ public class SasTokenConfiguration {
         NimbusJwtDecoder decoder = new NimbusJwtDecoder(jwtProcessor);
         decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.getIssuer()));
         return decoder;
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "user-auth.authentication.oauth2.access-token",
+            name = "format",
+            havingValue = "REFERENCE")
+    public OpaqueTokenIntrospector opaqueTokenIntrospector(
+            OAuth2AuthorizationService authorizationService
+    ) {
+        return new SasReferenceAccessTokenIntrospector(authorizationService);
     }
 
     @Bean
@@ -104,15 +123,39 @@ public class SasTokenConfiguration {
                         .audience(List.copyOf(properties.getAudiences()))
                         .subject(authorization.getPrincipalName())
                         .claim(
-                                JwtApiConstants.USER_ID_CLAIM,
+                                AccessTokenClaimApiConstants.USER_ID_CLAIM,
                                 authorization.getAttribute(SasAuthorizationAttributes.USER_ID))
                         .claim(
-                                JwtApiConstants.AUTH_ACCOUNT_ID_CLAIM,
+                                AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM,
                                 authorization.getAttribute(SasAuthorizationAttributes.AUTH_ACCOUNT_ID))
                         .claim(
-                                JwtApiConstants.SESSION_ID_CLAIM,
+                                AccessTokenClaimApiConstants.SESSION_ID_CLAIM,
                                 authorization.getAttribute(SasAuthorizationAttributes.SESSION_ID));
             }
+        };
+    }
+
+    @Bean
+    public OAuth2TokenCustomizer<OAuth2TokenClaimsContext> referenceAccessTokenCustomizer(
+            SasAuthorizationServerProperties properties
+    ) {
+        return context -> {
+            OAuth2Authorization authorization = context.getAuthorization();
+            if (authorization == null) {
+                return;
+            }
+            context.getClaims()
+                    .audience(List.copyOf(properties.getAudiences()))
+                    .subject(authorization.getPrincipalName())
+                    .claim(
+                            AccessTokenClaimApiConstants.USER_ID_CLAIM,
+                            authorization.getAttribute(SasAuthorizationAttributes.USER_ID))
+                    .claim(
+                            AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM,
+                            authorization.getAttribute(SasAuthorizationAttributes.AUTH_ACCOUNT_ID))
+                    .claim(
+                            AccessTokenClaimApiConstants.SESSION_ID_CLAIM,
+                            authorization.getAttribute(SasAuthorizationAttributes.SESSION_ID));
         };
     }
 

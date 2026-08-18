@@ -3,6 +3,7 @@ package com.cloud.userauth;
 import com.cloud.framework.core.RequestHeader;
 import com.cloud.framework.core.Result;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommandOutput;
+import com.cloud.userauth.api.authentication.CreateH5SessionHandoffApiCommandOutput;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommand;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommandOutput;
 import com.cloud.userauth.api.enums.AuthChallengeSceneApiEnum;
@@ -23,6 +24,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.client.RestClient;
 import org.testcontainers.containers.MySQLContainer;
@@ -77,7 +81,7 @@ class MobileOtpLoginFlowIT {
     @Test
     void shouldIssueMobileCodeAndLoginUsingMySqlAndRedis() throws Exception {
         int serverPort = availablePort();
-        context = startApplication(serverPort);
+        context = startApplication(serverPort, "SELF_CONTAINED");
         RestClient restClient = RestClient.builder()
                 .baseUrl("http://127.0.0.1:" + serverPort)
                 .build();
@@ -103,7 +107,7 @@ class MobileOtpLoginFlowIT {
         assertThat(login.tokenType()).isEqualToIgnoringCase("Bearer");
         assertThat(login.accessToken()).isNotBlank();
         assertThat(login.refreshToken()).isNotBlank();
-        assertThat(login.scope()).isEqualTo("app.api");
+        assertThat(login.scope()).isEqualTo("app");
         assertThat(login.fromRegistrationFlow()).isTrue();
         assertThat(login.replayed()).isFalse();
 
@@ -141,6 +145,65 @@ class MobileOtpLoginFlowIT {
                 redis.accessIndexTtlSeconds(),
                 redis.storedAuthorizationBytes(),
                 redis.plaintextTokenStored());
+
+        context.close();
+        context = null;
+        verifyReferenceAccessTokenFlow();
+    }
+
+    private void verifyReferenceAccessTokenFlow() throws Exception {
+        int serverPort = availablePort();
+        context = startApplication(serverPort, "REFERENCE");
+        RestClient restClient = RestClient.builder()
+                .baseUrl("http://127.0.0.1:" + serverPort)
+                .build();
+        IssueAuthChallengeApiCommandOutput challenge = issueChallenge(restClient);
+        String code = context.getBean(ChallengeProbe.class).last().code();
+
+        MobileOtpLoginApiCommandOutput login = login(restClient, challenge.challengeId(), code);
+
+        assertThat(login.tokenType()).isEqualToIgnoringCase("Bearer");
+        assertThat(login.accessToken()).isNotBlank().doesNotContain(".");
+        assertThat(context.getBeansOfType(JwtDecoder.class)).isEmpty();
+        assertThat(context.getBeansOfType(OpaqueTokenIntrospector.class)).hasSize(1);
+        assertThat(introspect(restClient, login.accessToken()).get("active")).isEqualTo(true);
+
+        Result<CreateH5SessionHandoffApiCommandOutput> handoff = restClient.post()
+                .uri("/api/user-auth/web-view-handoffs")
+                .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
+                .header("Authorization", "Bearer " + login.accessToken())
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {
+                });
+        assertThat(handoff).isNotNull();
+        assertThat(handoff.isSuccess()).isTrue();
+        assertThat(handoff.getData()).isNotNull();
+        assertThat(handoff.getData().ticket()).isNotBlank();
+
+        restClient.post()
+                .uri("/api/user-auth/logout")
+                .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
+                .header("Authorization", "Bearer " + login.accessToken())
+                .retrieve()
+                .toBodilessEntity();
+        assertThat(introspect(restClient, login.accessToken()).get("active")).isEqualTo(false);
+        log.info(
+                "Reference access token observed: sessionId={}, tokenLength={}, handoffId={}",
+                login.sessionId(),
+                login.accessToken().length(),
+                handoff.getData().handoffId());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> introspect(RestClient restClient, String accessToken) {
+        return restClient.post()
+                .uri("/oauth2/introspect")
+                .headers(headers -> headers.setBasicAuth(
+                        "user-auth-client", "local-development-secret"))
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body("token=" + accessToken)
+                .retrieve()
+                .body(Map.class);
     }
 
     private static ManualInspection manualInspection(
@@ -182,7 +245,10 @@ class MobileOtpLoginFlowIT {
                 inspection.redisKeyPattern());
     }
 
-    private ConfigurableApplicationContext startApplication(int serverPort) {
+    private ConfigurableApplicationContext startApplication(
+            int serverPort,
+            String accessTokenFormat
+    ) {
         String tokenEndpoint = "http://127.0.0.1:" + serverPort + "/oauth2/token";
         String datasourceUrl = MYSQL.getJdbcUrl()
                 + "?preserveInstants=true&connectionTimeZone=UTC"
@@ -199,6 +265,8 @@ class MobileOtpLoginFlowIT {
                         "--spring.datasource.password=" + MYSQL.getPassword(),
                         "--spring.data.redis.host=" + REDIS.getHost(),
                         "--spring.data.redis.port=" + REDIS.getRedisPort(),
+                        "--user-auth.authentication.oauth2.access-token.format="
+                                + accessTokenFormat,
                         "--user-auth.authentication.oauth2.authorization-store.namespace=" + REDIS_NAMESPACE,
                         "--user-auth.authentication.oauth2.authorization-store.scene=" + REDIS_SCENE,
                         "--user-auth.authentication.oauth2.authorization-server.sas.issuer=http://127.0.0.1:"
@@ -373,7 +441,7 @@ class MobileOtpLoginFlowIT {
         assertThat(sessionTtl(database.session())).isEqualTo(Duration.ofDays(30));
 
         assertThat(database.registeredClient().get("scopes").toString())
-                .contains("app.api", "admin.api");
+                .contains("app", "admin");
         assertThat(database.registeredClient().get("authorization_grant_types").toString())
                 .contains("mobile_otp");
         assertThat(database.domainEventCount()).isPositive();

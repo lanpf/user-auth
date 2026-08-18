@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 
 class OAuth2AuthorizationTokenHasherTest {
@@ -49,6 +50,23 @@ class OAuth2AuthorizationTokenHasherTest {
         assertEquals(
                 stored.getRefreshToken().getToken().getTokenValue(),
                 restoredAndSaved.getRefreshToken().getToken().getTokenValue());
+    }
+
+    @Test
+    void shouldRestoreMatchedTokenForProtocolProcessingAndHashItWhenSavedAgain() {
+        OAuth2Authorization stored = tokenHasher.sanitize(
+                authorization("raw-access-token", "raw-refresh-token"));
+
+        OAuth2Authorization restored = tokenHasher.restoreMatchedToken(
+                stored, "raw-access-token", OAuth2TokenType.ACCESS_TOKEN);
+        OAuth2Authorization savedAgain = tokenHasher.sanitize(restored);
+
+        assertEquals("raw-access-token",
+                restored.getAccessToken().getToken().getTokenValue());
+        assertEquals(DigestUtils.sha256Hex("raw-access-token"),
+                savedAgain.getAccessToken().getToken().getTokenValue());
+        assertEquals(stored.getRefreshToken().getToken().getTokenValue(),
+                savedAgain.getRefreshToken().getToken().getTokenValue());
     }
 
     private OAuth2Authorization authorization(

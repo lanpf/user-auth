@@ -1,7 +1,7 @@
 package com.cloud.userauth.application.logout;
 
 import com.cloud.framework.domain.DomainEventStore;
-import com.cloud.userauth.application.port.LoginSessionArtifactRevoker;
+import com.cloud.userauth.application.port.LoginSessionRevoker;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import com.cloud.userauth.domain.authentication.service.SessionDomainService;
@@ -20,7 +20,7 @@ import org.springframework.validation.annotation.Validated;
 @RequiredArgsConstructor
 public class LogoutCommandService {
     private final LoginSessionRepository sessionRepository;
-    private final List<LoginSessionArtifactRevoker> artifactRevokers;
+    private final List<LoginSessionRevoker> loginSessionRevokers;
     private final SessionDomainService sessionDomainService;
     private final DomainEventStore domainEventStore;
     private final Clock clock;
@@ -34,7 +34,7 @@ public class LogoutCommandService {
         Instant now = clock.instant();
         SessionRevocationEffect effect = sessionDomainService.logout(session, now);
         sessionRepository.save(effect.session());
-        artifactRevokers.forEach(revoker -> revoker.revokeByLoginSessionId(sessionId));
+        loginSessionRevokers.forEach(revoker -> revoker.revoke(sessionId));
         domainEventStore.appendAll(effect.events());
         return new LogoutCommandOutput(sessionId.value(), effect.session().getStatus());
     }

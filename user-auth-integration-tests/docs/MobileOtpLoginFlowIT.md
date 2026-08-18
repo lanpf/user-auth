@@ -12,6 +12,8 @@
    LoginSession、RegisteredClient 和领域事件的最终状态。
 5. 验证 Redis 中保存 Authorization 与 Access Token 哈希索引，且不保存可直接使用的
    Token 明文。
+6. 以 `REFERENCE` 格式重启完整应用，验证不透明 Bearer Access Token、标准 introspection、
+   user-auth 本地在线认证、handoff 创建，以及 logout 后 introspection 立即返回 inactive。
 
 ## 运行条件
 
@@ -98,12 +100,14 @@ SHA-256 摘要，不是前端可直接使用的 Token 明文。
    - 两个 Key 的 TTL 均大于 0。
    - Access Token 索引指向登录返回的 SessionId。
    - `plaintextTokenStored=false`。
-5. 打开 Failsafe 报告，确认执行数为 1，失败数和错误数均为 0。
+5. 查找日志 `Reference access token observed`，观察 Reference Token 长度、SessionId 和
+   handoffId；日志不会输出 Token 明文。
+6. 打开 Failsafe 报告，确认执行数为 1，失败数和错误数均为 0。
 
 ## 观察入口
 
 - Maven 控制台中的 `Mobile challenge observed`、`MySQL business observation` 和
-  `Redis token observation`。
+  `Redis token observation`、`Reference access token observed`。
 - `user-auth-integration-tests/target/failsafe-reports/com.cloud.userauth.MobileOtpLoginFlowIT.txt`
 - `user-auth-integration-tests/target/failsafe-reports/TEST-com.cloud.userauth.MobileOtpLoginFlowIT.xml`
 
@@ -112,10 +116,12 @@ Testcontainers 在测试结束后删除容器，因此数据观察以测试断�
 
 ## 预期结果
 
-- 两个公开 HTTP 接口调用成功，登录 scope 为 `app.api`。
+- 两个公开 HTTP 接口调用成功，登录 scope 为 `app`。
 - 登录结果为首次注册流程：`fromRegistrationFlow=true`、`replayed=false`。
 - user 初始化探针收到与登录结果一致的 UserId。
 - MySQL 中关键业务实体、登录会话、RegisteredClient 和领域事件均符合最终状态。
 - Redis 中恰好存在本次 Authorization 及 Access Token 哈希索引，索引值为 SessionId。
 - Redis Authorization 只含 Token 的 SHA-256 摘要，不含 Token 明文。
+- Reference Access Token 可通过标准 introspection 取得 active 状态，可认证宿主级 handoff
+  请求，并在 logout 后立即变为 inactive。
 - Failsafe 报告显示测试通过，无失败或错误。

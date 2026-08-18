@@ -230,9 +230,9 @@ class MobileRegistrationRetryIT {
                                 java.time.Duration.ofSeconds(60)),
                         java.time.Clock.systemUTC()),
                 new MobileOtpAuthenticationProcess(
-                        challenges, registrations, accounts, gateway,
+                        challenges, registrations, accounts,
                         MobileOtpLoginLock.direct(), transactionalService,
-                        (ignoredUserId, ignoredChannelCode) -> { }));
+                        (ignoredUserId, ignoredChannelCode) -> { }, gateway));
     }
 
     private MobileOtpLoginTransactionService transactionalService(

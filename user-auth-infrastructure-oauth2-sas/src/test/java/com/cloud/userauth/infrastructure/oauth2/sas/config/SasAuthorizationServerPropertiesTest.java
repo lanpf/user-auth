@@ -2,9 +2,10 @@ package com.cloud.userauth.infrastructure.oauth2.sas.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.cloud.userauth.infrastructure.oauth2.sas.config.SasAuthorizationServerProperties;
+import com.cloud.userauth.api.authentication.OAuth2Scope;
 import com.cloud.userauth.infrastructure.oauth2.sas.config.validation.LoopbackTokenEndpoint;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -16,6 +17,7 @@ import java.util.Set;
 import org.hibernate.validator.constraints.time.DurationMin;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.BindException;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 
@@ -37,7 +39,9 @@ class SasAuthorizationServerPropertiesTest {
         MapConfigurationPropertySource source =
                 new MapConfigurationPropertySource(Map.of(
                         "user-auth.authentication.oauth2.authorization-server.sas.scopes[0]",
-                        "app.api",
+                        "app",
+                        "user-auth.authentication.oauth2.authorization-server.sas.scopes[1]",
+                        "admin",
                         "user-auth.authentication.oauth2.authorization-server.sas.internal-token-client.client-id",
                         "internal-client",
                         "user-auth.authentication.oauth2.authorization-server.sas.internal-token-client.client-secret",
@@ -53,7 +57,9 @@ class SasAuthorizationServerPropertiesTest {
                         Bindable.of(SasAuthorizationServerProperties.class))
                 .orElseThrow(IllegalStateException::new);
 
-        assertEquals(Set.of("app.api"), properties.getScopes());
+        assertEquals(
+                Set.of(OAuth2Scope.APP, OAuth2Scope.ADMIN),
+                properties.getScopes());
         assertEquals("internal-client", properties.getInternalTokenClient().getClientId());
         assertEquals("internal-secret", properties.getInternalTokenClient().getClientSecret());
         assertEquals(Duration.ofDays(7), properties.getRefreshToken().getTtl());
@@ -189,14 +195,15 @@ class SasAuthorizationServerPropertiesTest {
     }
 
     @Test
-    void shouldRejectSpringAuthorityPrefixAsOAuth2Scope() {
-        SasAuthorizationServerProperties properties =
-                SasAuthorizationServerPropertiesFixtures.defaults();
-        properties.getScopes().add("SCOPE_app.api");
+    void shouldRejectUnknownOAuth2ScopeDuringBinding() {
+        MapConfigurationPropertySource source =
+                new MapConfigurationPropertySource(Map.of(
+                        "user-auth.authentication.oauth2.authorization-server.sas.scopes[0]",
+                        "SCOPE_app"));
 
-        assertTrue(hasViolation(
-                properties,
-                jakarta.validation.constraints.Pattern.class));
+        assertThrows(BindException.class, () -> new Binder(source).bind(
+                "user-auth.authentication.oauth2.authorization-server.sas",
+                Bindable.of(SasAuthorizationServerProperties.class)));
     }
 
     @Test

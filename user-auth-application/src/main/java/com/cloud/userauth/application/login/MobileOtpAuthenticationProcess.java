@@ -35,10 +35,10 @@ public class MobileOtpAuthenticationProcess {
     private final AuthChallengeRepository challengeRepository;
     private final RegistrationProcessRepository registrationRepository;
     private final AuthAccountRepository authAccountRepository;
-    private final UserGateway userGateway;
     private final MobileOtpLoginLock mobileOtpLoginLock;
     private final MobileOtpLoginTransactionService mobileOtpLoginTransactionService;
     private final UserChannelAuthorizationSynchronizer userChannelAuthorizationSynchronizer;
+    private final UserGateway userGateway;
 
     public MobileAuthenticationCommandOutput authenticate(@Valid MobileAuthenticationCommand command) {
         AuthChallenge initialChallenge = challengeRepository.findById(new AuthChallengeId(command.challengeId()))

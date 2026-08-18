@@ -1,28 +1,31 @@
 package com.cloud.userauth.interfaces.config;
 
-import com.cloud.userauth.application.port.SessionTokenStore;
+import static org.springframework.security.oauth2.core.authorization.OAuth2AuthorizationManagers.hasScope;
+
+import com.cloud.userauth.api.authentication.OAuth2Scope;
 import com.cloud.userauth.application.port.H5SessionStore;
 import com.cloud.userauth.interfaces.security.AuthenticatedSessionResolver;
-import com.cloud.userauth.interfaces.security.SessionTokenAuthenticationFilter;
 import com.cloud.userauth.interfaces.security.H5SessionAuthenticationFilter;
 import com.cloud.userauth.interfaces.security.SessionAuthenticationAuthorities;
 import com.cloud.userauth.interfaces.rest.UserAuthRestPaths;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
-import java.util.ArrayList;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration(proxyBeanMethods = false)
 public class ApplicationSecurityConfiguration {
@@ -30,9 +33,9 @@ public class ApplicationSecurityConfiguration {
     @Order(Ordered.HIGHEST_PRECEDENCE + 100)
     public SecurityFilterChain applicationSecurityFilterChain(
             HttpSecurity http,
-            ObjectProvider<SessionTokenAuthenticationFilter> sessionTokenAuthenticationFilter,
             ObjectProvider<H5SessionAuthenticationFilter> h5SessionAuthenticationFilter,
-            ObjectProvider<JwtDecoder> jwtDecoder
+            ObjectProvider<JwtDecoder> jwtDecoder,
+            ObjectProvider<OpaqueTokenIntrospector> opaqueTokenIntrospector
     ) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
@@ -53,7 +56,7 @@ public class ApplicationSecurityConfiguration {
                                 UserAuthRestPaths.API_WEB_VIEW_HANDOFFS)
                         .hasAuthority(SessionAuthenticationAuthorities.HOST_SESSION)
                         .requestMatchers(UserAuthRestPaths.ADMIN_AUTHORIZATION + "/**")
-                        .hasAuthority("SCOPE_admin.api")
+                        .access(hasScope(OAuth2Scope.ADMIN.value()))
                         .anyRequest()
                         .denyAll())
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
@@ -74,31 +77,21 @@ public class ApplicationSecurityConfiguration {
             http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
                     .decoder(decoder)
                     .jwtAuthenticationConverter(ApplicationSecurityConfiguration::authentication)));
+        } else {
+            OpaqueTokenIntrospector introspector = opaqueTokenIntrospector.getIfAvailable();
+            if (introspector == null) {
+                throw new IllegalStateException(
+                        "OAuth2 resource server requires a JwtDecoder or OpaqueTokenIntrospector");
+            }
+            http.oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(opaque -> opaque
+                    .introspector(introspector)
+                    .authenticationConverter(ApplicationSecurityConfiguration::authentication)));
         }
         H5SessionAuthenticationFilter h5Filter = h5SessionAuthenticationFilter.getIfAvailable();
         if (h5Filter != null) {
             http.addFilterBefore(h5Filter, BearerTokenAuthenticationFilter.class);
         }
-        SessionTokenAuthenticationFilter sessionTokenFilter = sessionTokenAuthenticationFilter.getIfAvailable();
-        if (sessionTokenFilter != null) {
-            if (h5Filter == null) {
-                http.addFilterBefore(sessionTokenFilter, BearerTokenAuthenticationFilter.class);
-            } else {
-                http.addFilterBefore(sessionTokenFilter, H5SessionAuthenticationFilter.class);
-            }
-        }
         return http.build();
-    }
-
-    @Bean
-    @ConditionalOnProperty(
-            prefix = "user-auth.authentication.access-token",
-            name = "provider",
-            havingValue = "session-token")
-    public SessionTokenAuthenticationFilter sessionTokenAuthenticationFilter(
-            SessionTokenStore sessionTokenStore
-    ) {
-        return new SessionTokenAuthenticationFilter(sessionTokenStore);
     }
 
     @Bean
@@ -107,12 +100,25 @@ public class ApplicationSecurityConfiguration {
     }
 
     private static AbstractAuthenticationToken authentication(Jwt jwt) {
-        ArrayList<GrantedAuthority> authorities = new ArrayList<>(
+        List<GrantedAuthority> authorities = new ArrayList<>(
                 SessionAuthenticationAuthorities.hostSession());
         authorities.addAll(new JwtGrantedAuthoritiesConverter().convert(jwt));
         return new UsernamePasswordAuthenticationToken(
                 AuthenticatedSessionResolver.resolve(jwt),
                 jwt,
+                authorities);
+    }
+
+    private static AbstractAuthenticationToken authentication(
+            String token,
+            OAuth2AuthenticatedPrincipal principal
+    ) {
+        List<GrantedAuthority> authorities = new ArrayList<>(
+                SessionAuthenticationAuthorities.hostSession());
+        authorities.addAll(principal.getAuthorities());
+        return new UsernamePasswordAuthenticationToken(
+                AuthenticatedSessionResolver.resolve(principal),
+                token,
                 authorities);
     }
 }

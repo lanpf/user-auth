@@ -1,6 +1,7 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.config;
 
 import com.cloud.framework.core.http.RestClientProperties;
+import com.cloud.userauth.api.authentication.OAuth2Scope;
 import com.cloud.userauth.infrastructure.oauth2.sas.config.validation.LoopbackTokenEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -21,7 +22,6 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties("user-auth.authentication.oauth2.authorization-server.sas")
 public class SasAuthorizationServerProperties {
-    private static final String OAUTH2_SCOPE_PATTERN = "^(?!SCOPE_)[^\\s]+$";
     @Valid
     private final InternalTokenClientProperties internalTokenClient = new InternalTokenClientProperties();
     @Valid
@@ -29,10 +29,7 @@ public class SasAuthorizationServerProperties {
     @NotBlank
     private String issuer = "http://localhost:8081";
     @NotEmpty
-    private final Set<
-            @NotBlank
-            @jakarta.validation.constraints.Pattern(regexp = OAUTH2_SCOPE_PATTERN)
-            String> scopes = new LinkedHashSet<>();
+    private final Set<@NotNull OAuth2Scope> scopes = new LinkedHashSet<>();
 
     @NotEmpty
     private final Set<@NotBlank String> audiences = new LinkedHashSet<>();

@@ -3,7 +3,9 @@ package com.cloud.userauth.infrastructure.oauth2.redis;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,7 +132,7 @@ public final class OAuth2AuthorizationRedisJsonMapper {
                 source.issuedAt(),
                 source.expiresAt(),
                 source.scopes());
-        builder.token(token, metadata -> metadata.putAll(readMap(source.metadata())));
+        builder.token(token, metadata -> metadata.putAll(readTokenMetadata(source.metadata())));
     }
 
     private void restoreRefreshToken(
@@ -142,7 +144,7 @@ public final class OAuth2AuthorizationRedisJsonMapper {
         }
         OAuth2RefreshToken token =
                 new OAuth2RefreshToken(source.value(), source.issuedAt(), source.expiresAt());
-        builder.token(token, metadata -> metadata.putAll(readMap(source.metadata())));
+        builder.token(token, metadata -> metadata.putAll(readTokenMetadata(source.metadata())));
     }
 
     private String writeMap(Map<String, Object> value) {
@@ -162,6 +164,41 @@ public final class OAuth2AuthorizationRedisJsonMapper {
             });
         } catch (Exception exception) {
             throw new IllegalArgumentException("Failed to deserialize OAuth2 metadata", exception);
+        }
+    }
+
+    private Map<String, Object> readTokenMetadata(String value) {
+        Map<String, Object> metadata = new LinkedHashMap<>(readMap(value));
+        Object claimsValue = metadata.get(OAuth2Authorization.Token.CLAIMS_METADATA_NAME);
+        if (!(claimsValue instanceof Map<?, ?> serializedClaims)) {
+            return metadata;
+        }
+        Map<String, Object> claims = new LinkedHashMap<>();
+        serializedClaims.forEach((name, claimValue) ->
+                claims.put(String.valueOf(name), claimValue));
+        restoreInstantClaim(claims, "iat");
+        restoreInstantClaim(claims, "exp");
+        restoreInstantClaim(claims, "nbf");
+        metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME, claims);
+        return metadata;
+    }
+
+    private static void restoreInstantClaim(Map<String, Object> claims, String name) {
+        Object value = claims.get(name);
+        if (value instanceof Instant) {
+            return;
+        }
+        if (value instanceof Number number) {
+            BigDecimal epochSeconds = new BigDecimal(number.toString());
+            long seconds = epochSeconds.longValue();
+            int nanos = epochSeconds.subtract(BigDecimal.valueOf(seconds))
+                    .movePointRight(9)
+                    .intValue();
+            claims.put(name, Instant.ofEpochSecond(seconds, nanos));
+            return;
+        }
+        if (value instanceof String text) {
+            claims.put(name, Instant.parse(text));
         }
     }
 

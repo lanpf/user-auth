@@ -25,7 +25,7 @@ import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
 import com.cloud.userauth.api.facade.UserAuthenticationCommandFacade;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
-import com.cloud.userauth.api.constants.JwtApiConstants;
+import com.cloud.userauth.api.constants.AccessTokenClaimApiConstants;
 import com.cloud.userauth.api.enums.LoginSessionStatusApiEnum;
 import com.cloud.userauth.interfaces.mapper.AuthenticationRestMapper;
 import com.cloud.userauth.interfaces.mapper.mapstruct.AuthenticationRestMapStructMapper;
@@ -90,44 +90,6 @@ class UserAuthenticationControllerTest {
     }
 
     @Test
-    void shouldReturnWebSessionTokenInResponseBodyWithoutCookie() throws Exception {
-        UserAuthenticationCommandFacade facade = sessionTokenFacade();
-        MockMvc mockMvc = mockMvc(facade);
-
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGIN_MOBILE_OTP)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(RequestHeader.CLIENT_APP_ID, "web-app")
-                        .header(RequestHeader.CLIENT_PLATFORM, "WEB")
-                        .header(RequestHeader.CHANNEL_CODE, "DIRECT")
-                        .content("{\"challengeId\":1001,\"code\":\"123456\"}"))
-                .andReturn();
-
-        assertEquals(200, result.getResponse().getStatus());
-        assertNull(result.getResponse().getHeader("Set-Cookie"));
-        assertTrue(result.getResponse().getContentAsString().contains(
-                "\"accessToken\":\"opaque-session-token\""));
-    }
-
-    @Test
-    void shouldReturnNativeSessionTokenInResponseBody() throws Exception {
-        UserAuthenticationCommandFacade facade = sessionTokenFacade();
-        MockMvc mockMvc = mockMvc(facade);
-
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGIN_MOBILE_OTP)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(RequestHeader.CLIENT_APP_ID, "mini-program")
-                        .header(RequestHeader.CLIENT_PLATFORM, "WECHAT_MINI_PROGRAM")
-                        .header(RequestHeader.CHANNEL_CODE, "DIRECT")
-                        .content("{\"challengeId\":1001,\"code\":\"123456\"}"))
-                .andReturn();
-
-        assertEquals(200, result.getResponse().getStatus());
-        assertNull(result.getResponse().getHeader("Set-Cookie"));
-        String body = result.getResponse().getContentAsString();
-        assertTrue(body.contains("\"accessToken\":\"opaque-session-token\""));
-    }
-
-    @Test
     void shouldPublishRefreshEndpointWithGatewayClientAppId() throws Exception {
         AtomicReference<RefreshTokenLoginApiCommand> capturedRequest = new AtomicReference<>();
         UserAuthenticationCommandFacade facade = new StubUserAuthenticationCommandFacade(new AtomicReference<>()) {
@@ -135,7 +97,7 @@ class UserAuthenticationControllerTest {
             public Result<RefreshTokenLoginApiCommandOutput> refreshTokenLogin(RefreshTokenLoginApiCommand request) {
                 capturedRequest.set(request);
                 return Result.success(new RefreshTokenLoginApiCommandOutput(
-                        "Bearer", "access-2", "refresh-2", 900L, "app.api",
+                        "Bearer", "access-2", "refresh-2", 900L, "app",
                         100001L, 1001L, "session-1"));
             }
         };
@@ -163,7 +125,7 @@ class UserAuthenticationControllerTest {
             ) {
                 capturedRequest.set(request);
                 return Result.success(new ExternalLoginApiCommandOutput(
-                        "Bearer", "access-token", null, 900L, "app.api", 100001L, 1001L, "session-1"));
+                        "Bearer", "access-token", null, 900L, "app", 100001L, 1001L, "session-1"));
             }
         };
         MockMvc mockMvc = mockMvc(facade);
@@ -316,12 +278,12 @@ class UserAuthenticationControllerTest {
                 .header("alg", "RS256")
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(300))
-                .claim(JwtApiConstants.SESSION_ID_CLAIM, sessionId);
+                .claim(AccessTokenClaimApiConstants.SESSION_ID_CLAIM, sessionId);
         if (userId != null) {
-            builder.claim(JwtApiConstants.USER_ID_CLAIM, userId);
+            builder.claim(AccessTokenClaimApiConstants.USER_ID_CLAIM, userId);
         }
         if (authAccountId != null) {
-            builder.claim(JwtApiConstants.AUTH_ACCOUNT_ID_CLAIM, authAccountId);
+            builder.claim(AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM, authAccountId);
         }
         return builder.build();
     }
@@ -335,27 +297,6 @@ class UserAuthenticationControllerTest {
 
     private static AuthenticationRestMapper authenticationRestMapper() {
         return Mappers.getMapper(AuthenticationRestMapStructMapper.class);
-    }
-
-    private static UserAuthenticationCommandFacade sessionTokenFacade() {
-        return new StubUserAuthenticationCommandFacade(new AtomicReference<>()) {
-            @Override
-            public Result<MobileOtpLoginApiCommandOutput> loginWithMobileOtp(
-                    MobileOtpLoginApiCommand request
-            ) {
-                return Result.success(new MobileOtpLoginApiCommandOutput(
-                        "SESSION_TOKEN",
-                        "opaque-session-token",
-                        null,
-                        1800L,
-                        null,
-                        100001L,
-                        1001L,
-                        "session-1",
-                        false,
-                        false));
-            }
-        };
     }
 
     private static class StubUserAuthenticationCommandFacade
@@ -404,7 +345,7 @@ class UserAuthenticationControllerTest {
                     "access-token",
                     null,
                     900L,
-                    "app.api",
+                    "app",
                     100001L,
                     1001L,
                     "session-1",

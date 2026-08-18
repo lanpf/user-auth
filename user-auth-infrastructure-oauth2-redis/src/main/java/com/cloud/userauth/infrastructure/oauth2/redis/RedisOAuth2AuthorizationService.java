@@ -44,13 +44,16 @@ public class RedisOAuth2AuthorizationService implements OAuth2AuthorizationServi
             OAuth2Authorization authorization =
                     store.findByTokenHash(tokenHash, OAuth2TokenType.ACCESS_TOKEN);
             if (authorization != null) {
-                return authorization;
+                return TOKEN_HASHER.restoreMatchedToken(
+                        authorization, token, OAuth2TokenType.ACCESS_TOKEN);
             }
             authorization = store.findByTokenHash(tokenHash, OAuth2TokenType.REFRESH_TOKEN);
             if (authorization == null) {
                 revokeReusedRefreshTokenFamily(tokenHash);
+                return null;
             }
-            return authorization;
+            return TOKEN_HASHER.restoreMatchedToken(
+                    authorization, token, OAuth2TokenType.REFRESH_TOKEN);
         }
         if (!isBearerToken(tokenType)) {
             return null;
@@ -59,7 +62,9 @@ public class RedisOAuth2AuthorizationService implements OAuth2AuthorizationServi
         if (authorization == null && OAuth2TokenType.REFRESH_TOKEN.equals(tokenType)) {
             revokeReusedRefreshTokenFamily(tokenHash);
         }
-        return authorization;
+        return authorization == null
+                ? null
+                : TOKEN_HASHER.restoreMatchedToken(authorization, token, tokenType);
     }
 
     private void revokeReusedRefreshTokenFamily(String refreshTokenHash) {

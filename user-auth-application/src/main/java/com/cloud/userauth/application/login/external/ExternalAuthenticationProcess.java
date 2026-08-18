@@ -10,8 +10,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ExternalAuthenticationProcess {
     private final ExternalLoginTransactionService transactionService;
-    private final UserGateway userGateway;
     private final UserChannelAuthorizationSynchronizer userChannelAuthorizationSynchronizer;
+    private final UserGateway userGateway;
 
     public ExternalAuthenticationCommandOutput authenticate(ExternalAuthenticationCommand command) {
         ExternalAccountPreparationOutput prepared = transactionService.prepareAccount(command);

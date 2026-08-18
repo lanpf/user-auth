@@ -2,6 +2,7 @@ package com.cloud.userauth.infrastructure.session.redis;
 
 import com.cloud.userauth.application.authentication.AuthenticatedSession;
 import com.cloud.userauth.application.port.H5SessionStore;
+import com.cloud.userauth.domain.authentication.session.LoginSession;
 import com.cloud.userauth.domain.authentication.session.LoginSessionRepository;
 import com.cloud.userauth.domain.authentication.session.SessionId;
 import com.cloud.userauth.domain.authentication.session.SessionStatus;
@@ -68,7 +69,7 @@ public final class RedisH5SessionStore implements H5SessionStore {
     }
 
     @Override
-    public void revokeByLoginSessionId(SessionId loginSessionId) {
+    public void revoke(SessionId loginSessionId) {
         String parentKey = PARENT_KEY_PREFIX + loginSessionId.value();
         Set<String> credentials = redisTemplate.opsForSet().members(parentKey);
         if (credentials != null && !credentials.isEmpty()) {
@@ -89,7 +90,7 @@ public final class RedisH5SessionStore implements H5SessionStore {
                 .filter(session -> session.getAuthAccountId().value()
                         .equals(authenticatedSession.authAccountId()))
                 .filter(session -> session.getExpiresAt().isAfter(now))
-                .map(session -> session.getExpiresAt())
+                .map(LoginSession::getExpiresAt)
                 .orElseThrow(() -> new IllegalStateException(
                         "Cannot create H5 session for an inactive login session"));
     }

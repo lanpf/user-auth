@@ -180,8 +180,8 @@ class ExternalLoginFlowIT {
         ExternalAuthenticationProcess authenticationProcess =
                 new ExternalAuthenticationProcess(
                         transactionService,
-                        ignored -> { },
-                        (ignoredUserId, ignoredChannelCode) -> { });
+                        (ignoredUserId, ignoredChannelCode) -> { },
+                        ignored -> { });
         return new Fixture(
                 clock, accounts, challenges, sessions, hasher,
                 preLoginService, authenticationProcess);

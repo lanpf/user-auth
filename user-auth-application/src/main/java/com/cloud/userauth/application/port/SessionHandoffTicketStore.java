@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.Optional;
 
 /** 会话一次性交接票据的存储端口。 */
-public interface SessionHandoffTicketStore extends LoginSessionArtifactRevoker {
+public interface SessionHandoffTicketStore extends LoginSessionRevoker {
     IssuedTicket issue(
             AuthenticatedSession authenticatedSession,
             String handoffId,

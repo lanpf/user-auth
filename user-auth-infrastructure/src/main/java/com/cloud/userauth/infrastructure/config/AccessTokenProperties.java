@@ -12,18 +12,18 @@ import java.time.Duration;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties("user-auth.authentication.access-token")
+@ConfigurationProperties("user-auth.authentication.oauth2.access-token")
 public class AccessTokenProperties {
 
     @NotNull
-    private Provider provider;
+    private Format format = Format.SELF_CONTAINED;
 
     @NotNull
     @DurationMin(seconds = 60)
     private Duration ttl = Duration.ofMinutes(15);
 
-    public enum Provider {
-        SAS,
-        SESSION_TOKEN
+    public enum Format {
+        SELF_CONTAINED,
+        REFERENCE
     }
 }

@@ -6,9 +6,9 @@ import com.cloud.userauth.application.login.external.ExternalAuthenticationProce
 import com.cloud.userauth.application.port.LoginTokenIssuer;
 import com.cloud.userauth.application.port.LoginTokenRefresher;
 import com.cloud.userauth.application.port.RefreshTokenRotationLock;
-import com.cloud.userauth.application.port.SessionAuthorizationRevoker;
+import com.cloud.userauth.application.port.LoginSessionRevoker;
 import com.cloud.userauth.application.port.ClientRenewalPolicyResolver;
-import com.cloud.userauth.infrastructure.oauth2.sas.logout.SasSessionAuthorizationRevoker;
+import com.cloud.userauth.infrastructure.oauth2.sas.logout.SasLoginSessionRevoker;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantAuthenticationConverter;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantAuthenticationProvider;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantRequestParser;
@@ -35,7 +35,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -57,10 +56,6 @@ import org.springframework.web.client.RestClient;
 import java.net.URI;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(
-        prefix = "user-auth.authentication.oauth2.authorization-server",
-        name = "enabled",
-        havingValue = "true")
 @EnableConfigurationProperties(SasAuthorizationServerProperties.class)
 public class SasAuthorizationServerConfiguration {
     @Bean
@@ -215,11 +210,10 @@ public class SasAuthorizationServerConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(SessionAuthorizationRevoker.class)
-    public SessionAuthorizationRevoker sessionAuthorizationRevoker(
+    public LoginSessionRevoker sasLoginSessionRevoker(
             OAuth2AuthorizationService authorizationService
     ) {
-        return new SasSessionAuthorizationRevoker(authorizationService);
+        return new SasLoginSessionRevoker(authorizationService);
     }
 
     @Bean

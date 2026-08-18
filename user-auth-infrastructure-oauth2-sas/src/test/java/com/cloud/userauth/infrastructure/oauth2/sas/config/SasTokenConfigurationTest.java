@@ -1,6 +1,6 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.config;
 
-import com.cloud.userauth.api.constants.JwtApiConstants;
+import com.cloud.userauth.api.constants.AccessTokenClaimApiConstants;
 import com.cloud.userauth.infrastructure.oauth2.sas.protocol.SasAuthorizationAttributes;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
@@ -37,9 +37,9 @@ class SasTokenConfigurationTest {
         assertEquals(
                 properties.getAudiences(),
                 Set.copyOf(claims.getAudience()));
-        assertEquals(Long.valueOf(100001L), claims.getClaim(JwtApiConstants.USER_ID_CLAIM));
-        assertEquals(Long.valueOf(1001L), claims.getClaim(JwtApiConstants.AUTH_ACCOUNT_ID_CLAIM));
-        assertEquals("session-1", claims.getClaim(JwtApiConstants.SESSION_ID_CLAIM));
+        assertEquals(Long.valueOf(100001L), claims.getClaim(AccessTokenClaimApiConstants.USER_ID_CLAIM));
+        assertEquals(Long.valueOf(1001L), claims.getClaim(AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM));
+        assertEquals("session-1", claims.getClaim(AccessTokenClaimApiConstants.SESSION_ID_CLAIM));
     }
 
     @Test
@@ -47,9 +47,9 @@ class SasTokenConfigurationTest {
         JwtClaimsSet claims = customize(properties(), ID_TOKEN);
 
         assertNull(claims.getAudience());
-        assertNull(claims.getClaim(JwtApiConstants.USER_ID_CLAIM));
-        assertNull(claims.getClaim(JwtApiConstants.AUTH_ACCOUNT_ID_CLAIM));
-        assertNull(claims.getClaim(JwtApiConstants.SESSION_ID_CLAIM));
+        assertNull(claims.getClaim(AccessTokenClaimApiConstants.USER_ID_CLAIM));
+        assertNull(claims.getClaim(AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM));
+        assertNull(claims.getClaim(AccessTokenClaimApiConstants.SESSION_ID_CLAIM));
     }
 
     @Test

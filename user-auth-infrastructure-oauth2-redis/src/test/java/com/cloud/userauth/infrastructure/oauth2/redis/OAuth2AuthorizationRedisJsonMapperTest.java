@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.security.Principal;
 import java.time.Instant;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class OAuth2AuthorizationRedisJsonMapperTest {
         assertEquals(
                 "metadata-value",
                 restored.getAccessToken().getMetadata().get("metadata-key"));
+        assertEquals(
+                Instant.parse("2026-07-30T00:00:10Z"),
+                restored.getAccessToken().getClaims().get("nbf"));
         assertNotNull(restored.getAttribute(Principal.class.getName()));
     }
 
@@ -65,8 +69,15 @@ class OAuth2AuthorizationRedisJsonMapperTest {
                                 List.of()))
                 .attribute("user_id", 1001L)
                 .refreshToken(refreshToken);
-        builder.token(accessToken, metadata ->
-                metadata.put("metadata-key", "metadata-value"));
+        builder.token(accessToken, metadata -> {
+            metadata.put("metadata-key", "metadata-value");
+            metadata.put(
+                    OAuth2Authorization.Token.CLAIMS_METADATA_NAME,
+                    Map.of(
+                            "iat", now,
+                            "exp", now.plusSeconds(300),
+                            "nbf", now.plusSeconds(10)));
+        });
         return builder.build();
     }
 

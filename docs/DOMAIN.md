@@ -45,9 +45,9 @@
 - **Client**：LoginSession 中的终端客户端快照，保存本次登录时解析出的 appId、platform 和版本；它不是 OAuth2 `RegisteredClient`。
 - **ChannelContext**：经入口安全校验后的业务渠道上下文；独立于 ClientApp，可作为渠道功能授权策略的授权来源，不决定 Credential 归属或 Token scope。
 - **Device**：登录时提交的设备上下文快照，用于会话记录和审计；当前普通 deviceId 不构成 DPoP 或设备私钥持有证明。
-- **LoginSession**：一次成功登录形成的领域会话，以 SessionId 标识，关联 User、AuthAccount、本次实际使用的 Credential、Client、Device、登录场景、状态和绝对到期时间。协议授权、Bearer Token、Session Token 和 H5 Session 都通过 SessionId 关联这个领域事实。
-- **Host Access Credential**：认证成功后交付给宿主、用于后续恢复 LoginSession 的访问凭据。当前实现为 OAuth2 Bearer Access Token 或 `X-Session-Token`；它们不是 AuthAccount Credential。
-- **AuthenticatedSession**：接口层从 Bearer Token 或 Session Token 恢复出的统一 Principal，携带 `userId + authAccountId + sessionId`。它是当前请求的认证结果，不是新的领域聚合。
+- **LoginSession**：一次成功登录形成的领域会话，以 SessionId 标识，关联 User、AuthAccount、本次实际使用的 Credential、Client、Device、登录场景、状态和绝对到期时间。协议授权、Bearer Access Token 和 H5 Session 都通过 SessionId 关联这个领域事实。
+- **Host Access Credential**：认证成功后交付给宿主、用于后续恢复 LoginSession 的访问凭据。当前统一为 OAuth2 Bearer Access Token，可采用自包含 JWT 或不透明 Reference Token；它不是 AuthAccount Credential。
+- **AuthenticatedSession**：接口层从已验证的 Bearer Access Token 恢复出的统一 Principal，携带 `userId + authAccountId + sessionId`。它是当前请求的认证结果，不是新的领域聚合。
 - **Session Handoff Ticket / H5 Session**：前者是宿主向另一载体交接当前认证结果的一次性短期票据；后者是 H5 兑换后取得的独立 Cookie 会话。二者都不是账户 Credential，也不能用于改变父 AuthAccount 的身份绑定。
 
 ### Credential 的建立与登录路径
@@ -89,7 +89,7 @@ Credential 的建立必须遵循“先完成本次证明，再创建或查找 Au
 
 #### 已认证宿主绑定与后续外部登录
 
-`POST /api/user-auth/credentials/external/bind` 必须使用 Bearer Access Token 或 `X-Session-Token` 恢复的宿主 AuthenticatedSession。服务端从 Principal 决定 User/AuthAccount，客户端只能提交 issuer 与 authorizationCode。验证得到的 ExternalIdentity 已绑定当前账户时幂等成功；已绑定其他账户时拒绝，不能静默迁移或合并账户。
+`POST /api/user-auth/credentials/external/bind` 必须使用 Bearer Access Token 恢复的宿主 AuthenticatedSession。服务端从 Principal 决定 User/AuthAccount，客户端只能提交 issuer 与 authorizationCode。验证得到的 ExternalIdentity 已绑定当前账户时幂等成功；已绑定其他账户时拒绝，不能静默迁移或合并账户。
 
 绑定完成后，`POST /api/user-auth/login/external/bound` 才能作为该公共三方的无状态登录/续期入口。该入口只查找既有绑定，要求 AuthAccount 和 Mobile Credential 有效；它不建账、不补手机号、不绑定 Credential，并由 ClientApp `renewalPolicy=EXTERNAL_AUTHORIZATION_CODE` 控制。
 
@@ -103,9 +103,9 @@ Credential 的建立必须遵循“先完成本次证明，再创建或查找 Au
 | `POST /api/user-auth/login/external` | 确认 LoginAttempt 并完成外部身份登录。 | 无 |
 | `POST /api/user-auth/login/external/bound` | 使用已绑定外部 Credential 的授权码无状态登录或续期。 | 无 |
 | `POST /api/user-auth/login/external/trusted-mobile` | 网关已验签的合作方以外部授权码和已核验手机号完成首次登录。 | 无（仅受保护网关链路） |
-| `POST /api/user-auth/credentials/external/bind` | 将已验证的外部授权码身份绑定至当前宿主登录态所属认证账户。 | 宿主登录态（Bearer Access Token / `X-Session-Token`） |
-| `POST /api/user-auth/logout` | 登出当前宿主登录态所属的 LoginSession。请求体不携带 session id。 | 宿主登录态（Bearer Access Token / `X-Session-Token`） |
-| `POST /api/user-auth/web-view-handoffs` | 小程序或 App 以当前 SAS Access Token 或 Session Token 创建首次 WebView 一次性交接 ticket。 | 宿主登录态（Bearer Access Token / `X-Session-Token`） |
+| `POST /api/user-auth/credentials/external/bind` | 将已验证的外部授权码身份绑定至当前宿主登录态所属认证账户。 | 宿主登录态（Bearer Access Token） |
+| `POST /api/user-auth/logout` | 登出当前宿主登录态所属的 LoginSession。请求体不携带 session id。 | 宿主登录态（Bearer Access Token） |
+| `POST /api/user-auth/web-view-handoffs` | 小程序或 App 以当前 Bearer Access Token 创建首次 WebView 一次性交接 ticket。 | 宿主登录态（Bearer Access Token） |
 | `POST /api/user-auth/web-view-handoffs/exchange` | H5 以一次性 ticket 换取 `H5_SESSION` Cookie。 | 一次性 ticket |
 
 登录成功后，应用层通过协议端口请求令牌，并返回 Token 响应。首次认证所需的 user 初始化通过 `UserGateway` 应用端口完成。
@@ -129,13 +129,13 @@ REST / Facade
 | Challenge | `AuthChallengeDispatcher`、`OneTimeCodeGenerator`、`ChallengeSecretHasher`、`AuthChallengePolicyProvider` | 生成、哈希、派发并按配置约束一次性 challenge | 通用 infrastructure；派发适配器可替换为短信等实现，应用层不感知供应商 |
 | 外部身份验证 | `ExternalIdentityVerifier`、`ExternalIdentityVerifierRegistry`、`IssuerMobileTrustPolicyProvider` | 按 issuer 和 proof type 验证一次性外部证明，取得可信 ExternalIdentity，并解析手机号信任策略 | 通用 infrastructure 注册表；微信小程序 verifier 是当前公共三方实例 |
 | 并发与原子性 | `AuthChallengeIssueLock`、`MobileOtpLoginLock`、`RefreshTokenRotationLock` | 对 challenge 签发、同手机号首次注册、Refresh Token rotation 建立用例级串行边界 | Redis lock adapter；测试可使用 direct 实现 |
-| 登录结果交付 | `LoginTokenIssuer` | 在认证流程完成后交付宿主访问凭据，同时保持手机号登录和外部登录相同的应用输入输出语义 | `SasLoginTokenIssuer` 或 `SessionTokenLoginTokenIssuer`，由 boot/config 选择 |
-| 访问凭据续期 | `LoginTokenRefresher`、`ClientRenewalPolicyResolver` | 解析受管 ClientApp 策略，并在允许时取得新的宿主访问凭据 | SAS refresher 或 Session Token 明确拒绝 refresh-token；共享 ClientApp properties resolver |
-| 会话存储与交接 | `SessionTokenStore`、`H5SessionStore`、`SessionHandoffTicketStore` | 创建/解析 Session Token、H5 会话以及原子签发/消费 handoff ticket | `user-auth-infrastructure-session-redis` |
-| 统一生命周期撤销 | `LoginSessionArtifactRevoker`、`SessionAuthorizationRevoker` | LoginSession 撤销后，级联撤销协议授权、宿主凭据、子会话和未消费 ticket | SAS revoker 以及 Session Token/H5/handoff Redis Store；Session-Token-only 模式可以没有协议 revoker |
+| 登录结果交付 | `LoginTokenIssuer` | 在认证流程完成后交付宿主访问凭据，同时保持手机号登录和外部登录相同的应用输入输出语义 | `SasLoginTokenIssuer`；JWT/Reference 格式由 SAS 配置决定 |
+| 访问凭据续期 | `LoginTokenRefresher`、`ClientRenewalPolicyResolver` | 解析受管 ClientApp 策略，并在允许时取得新的宿主访问凭据 | SAS refresher；共享 ClientApp properties resolver |
+| 会话存储与交接 | `H5SessionStore`、`SessionHandoffTicketStore` | 创建/解析 H5 会话以及原子签发/消费 handoff ticket | `user-auth-infrastructure-session-redis` |
+| 统一生命周期撤销 | `LoginSessionRevoker` | LoginSession 撤销后，级联撤销协议授权、子会话和未消费 ticket | SAS revoker 以及 H5/handoff Redis Store |
 | 跨服务协作 | `UserGateway` | 新 User 注册后初始化 | 由运行时显式提供的 infrastructure adapter；缺失时装配失败 |
 
-这些 Port 是服务可替换性的正式边界，而不是为了隐藏任意代码而增加的接口。例如 `LoginTokenIssuer` 允许认证用例保持不变，同时在运行时选择 SAS Bearer Token 或 Session Token；`ExternalIdentityVerifier` 允许增加新的公共三方 issuer，而不用把第三方 HTTP 响应模型带入 application/domain；`SessionTokenStore`、`H5SessionStore` 和 `SessionHandoffTicketStore` 分开，则防止不同会话生命周期被一个 Redis 接口混合。
+这些 Port 是服务可替换性的正式边界，而不是为了隐藏任意代码而增加的接口。例如 `LoginTokenIssuer` 让认证用例不依赖 SAS grant 与 Token 表示；`ExternalIdentityVerifier` 允许增加新的公共三方 issuer，而不用把第三方 HTTP 响应模型带入 application/domain；`H5SessionStore` 和 `SessionHandoffTicketStore` 分开，则防止目标会话生命周期与通用一次性交接票据被一个 Redis 接口混合。
 
 Challenge 交付尤其依赖外层装配：非生产 profile 使用固定验证码和 `NoopAuthChallengeDispatcher`，只记录派发请求；生产 profile 使用安全随机验证码，但必须由部署额外提供真实的 `AuthChallengeDispatcher`（例如短信 adapter），否则不能形成可用的手机号认证链路。领域和 application 不直接选择短信供应商。
 
@@ -143,60 +143,51 @@ Boot 只负责选择和装配具体 adapter。若某个实现模块没有进入�
 
 ### 认证成功后的宿主访问凭据
 
-手机号验证码、外部身份和外部授权码回答“如何证明用户身份”；Bearer Access Token 与 Session Token 回答“认证成功后，宿主以后使用什么凭据访问服务”。因此后两者不是两种身份认证方法，而是同一个认证结果的两种宿主访问凭据交付方式：
+手机号验证码、外部身份和外部授权码回答“如何证明用户身份”；OAuth2 Bearer Access Token 回答“认证成功后，宿主以后使用什么凭据访问服务”。Access Token 可采用两种表示，但不是两种身份认证方法：
 
 ```text
 手机号验证码 / 外部身份 / 外部授权码
   → 完成身份认证
   → 创建 LoginSession
-  → 根据 authentication.access-token.provider 交付宿主访问凭据
+  → SAS 根据 oauth2.access-token.format 签发 Bearer Access Token
 ```
 
-| 交付方式 | 客户端携带 | 签发实现 | 服务端保存 | 访问验证 |
+| Access Token 格式 | 客户端携带 | 签发实现 | 服务端保存 | 访问验证 |
 | --- | --- | --- | --- | --- |
-| OAuth2 Bearer Access Token | `Authorization: Bearer <JWT>` | `user-auth-infrastructure-oauth2-sas` 通过 SAS Token Endpoint、`JwtGenerator` 和 RSA 私钥签发 RS256 JWT | `user-auth-infrastructure-oauth2-redis` 保存 OAuth2Authorization 与 Token 状态；Access/Refresh Token 值以 SHA-256 哈希进入 Redis，客户端持有实际 Token | 资源服务器本地校验 JWT 签名、issuer、audience、有效期和 `user_id/auth_account_id/session_id` 必备声明 |
-| Session Token | `X-Session-Token: <opaque credential>` | `user-auth-infrastructure-session-redis` 使用高熵随机数生成不透明 credential | 同一 session-redis 模块保存 credential 到 `AuthenticatedSession` 的 Redis 映射和固定 TTL；客户端只看到随机值，无法自行解析 | 以 credential 查询 Session Store，并再次确认关联 LoginSession 为 ACTIVE 且未过期 |
+| `SELF_CONTAINED` | `Authorization: Bearer <JWT>` | SAS `JwtGenerator` 与 RSA 私钥签发 RS256 JWT | OAuth2 Redis 保存 OAuth2Authorization 与 Token 状态；Token 原值只由客户端持有，Redis 保存 SHA-256 哈希 | 网关和 user-auth 本地校验签名、issuer、audience、有效期和必备声明 |
+| `REFERENCE` | `Authorization: Bearer <opaque access token>` | SAS `OAuth2AccessTokenGenerator` 生成高熵不透明值 | OAuth2 Redis 保存授权状态、声明及 Token 哈希 | 网关调用标准 introspection endpoint；user-auth 直接查询本地 OAuth2AuthorizationService；两者都校验 active 状态与必备声明 |
 
-两种宿主访问令牌统一使用 `user-auth.authentication.access-token.provider/ttl` 配置交付实现与有效期，默认 TTL 均为 15 分钟。该共同配置表达“宿主访问凭据必须短时”的安全规则，而不是把两种令牌的验证和撤销机制合并：JWT 仍由资源服务器离线验签并自然失效，Session Token 仍由服务端在线查询并可即时删除。LoginSession 的绝对生命周期单独配置，不等同于访问令牌 TTL。
+`user-auth.authentication.oauth2.access-token.format/ttl` 配置格式与有效期，默认 `SELF_CONTAINED`、15 分钟。JWT 由离线校验节点自然失效，Reference Token 由在线授权状态即时控制；两者的登录响应、Bearer 携带方式、scope、Refresh Token 能力和 LoginSession 语义相同。LoginSession 的绝对生命周期单独配置，不等同于 Access Token TTL。
 
 #### OAuth2 Bearer Access Token 的签发与保存
 
-`SasLoginTokenIssuer` 是 application `LoginTokenIssuer` 的 SAS adapter。它把 application 登录命令映射为服务内部的 OAuth2 自定义 grant，请求本机 SAS Token Endpoint。SAS 完成领域认证流程后创建 OAuth2Authorization，并签发包含 `user_id`、`auth_account_id`、`session_id` 的短期 JWT Access Token；是否同时签发 Refresh Token 由 ClientApp renewalPolicy 决定。
+`SasLoginTokenIssuer` 是 application `LoginTokenIssuer` 的 SAS adapter。它把 application 登录命令映射为服务内部的 OAuth2 自定义 grant，请求本机 SAS Token Endpoint。SAS 完成领域认证流程后创建 OAuth2Authorization，并签发包含 `user_id`、`auth_account_id`、`session_id` 的短期 JWT 或 Reference Access Token；是否同时签发 Refresh Token 由 ClientApp renewalPolicy 决定。
 
 协议职责由两个模块协作完成：
 
-- `user-auth-infrastructure-oauth2-sas`：Token Endpoint、grant converter/provider、RegisteredClient、scope、JWT/JWK、签名与 Token 生成。
+- `user-auth-infrastructure-oauth2-sas`：Token Endpoint、grant converter/provider、RegisteredClient、scope、JWT/JWK、Reference Token、签名与 Token 生成。
 - `user-auth-infrastructure-oauth2-redis`：实现 SAS `OAuth2AuthorizationService`，保存授权记录、Token 状态、session_id 关联和 Refresh Token family 所需索引；持久化前以 SHA-256 替换 Access/Refresh Token 原值。
 
-JWT 本身由客户端持有，资源服务器通常本地验证，因此 Redis 中撤销协议状态不会让已发出的 JWT 在所有资源服务器上即时失效；当前仍采用短期 JWT 自然失效策略。Redis 协议状态主要服务于刷新、重放检测、Token family 撤销、协议查询和登出联动。
+JWT 本身由客户端持有并通常本地验证，因此 Redis 中撤销协议状态不会让已发出的 JWT 在所有资源服务器上即时失效；Reference Token 每次在线查询授权状态，logout 后可即时失效，但依赖 Redis 和 introspection 的可用性。Redis 协议状态同时服务于刷新、重放检测、Token family 撤销、Reference Token introspection、协议查询和登出联动。
 
-#### Session Token 的签发与保存
-
-`SessionTokenLoginTokenIssuer` 是同一 `LoginTokenIssuer` Port 的另一实现。它直接调用相同的 application authentication process 完成认证并取得 LoginSession，再由 `SessionTokenStore` 创建随机不透明 credential。当前 `RedisSessionTokenStore` 位于 `user-auth-infrastructure-session-redis`，以固定 TTL 保存 credential 对应的 `sessionId + userId + authAccountId`。
-
-Session Token credential 没有 JWT 结构、签名、issuer、audience、scope 或标准 OAuth2 Refresh Token 语义；客户端不能从值中解析身份。每次请求都必须查 Redis，并回查 LoginSession 的状态与绝对到期时间。因此它可以即时受服务端状态控制，但可用性依赖 Session Store。后续请求只通过 `X-Session-Token` Header 携带，不签发或接受 `SESSION_TOKEN` Cookie。
-
-两种方式都关联认证域的 LoginSession，并在接口层归一为 `AuthenticatedSession` Principal、获得宿主会话权限。Session Token credential 不是 OAuth2 Access Token，不提供 OAuth2 scope、Refresh Token 或标准 token endpoint 语义。配置中的 `access-token` 是认证域对宿主访问令牌的统一概念，不意味着 Session Token 变成 OAuth2 Token。交付方式由服务端 `user-auth.authentication.access-token.provider` 决定，调用方不能在单次登录请求中选择或切换。登录 API 对两种实现统一返回 `tokenType + accessToken`；`accessToken` 在 Session Token 模式下承载不透明凭据值。
-
-访问凭据只解决当前请求的身份恢复。Bearer JWT 当前采用本地签名与声明校验；Session Token 采用服务端状态查询。业务接口在恢复 `AuthenticatedSession` 后仍需继续执行功能权限和业务资源范围判断。
+两种 Access Token 格式都在接口层归一为 `AuthenticatedSession` Principal 并获得宿主会话权限。调用方不能在单次登录请求中选择格式；登录 API 始终返回 `tokenType + accessToken`，其中 `tokenType` 为 `Bearer`。访问凭据只解决当前请求的身份恢复，业务接口仍需继续执行功能权限和业务资源范围判断。
 
 ### 单个 LoginSession 的统一生命周期与级联撤销
 
-当前以 `LoginSession.sessionId` 作为一次成功登录及其派生对象的统一关联根，不额外创建 SessionFamily。一个 LoginSession 可以关联 SAS OAuth2Authorization/Refresh Token、一个或多个 Session Token credential、H5 Session 和尚未消费的 handoff ticket。
+当前以 `LoginSession.sessionId` 作为一次成功登录及其派生对象的统一关联根，不额外创建 SessionFamily。一个 LoginSession 可以关联 SAS OAuth2Authorization、Access/Refresh Token、H5 Session 和尚未消费的 handoff ticket。
 
-`POST /api/user-auth/logout` 先把当前 LoginSession 变为 REVOKED，再通过 `LoginSessionArtifactRevoker` 集合执行幂等级联清理：
+`POST /api/user-auth/logout` 先把当前 LoginSession 变为 REVOKED，再通过 `LoginSessionRevoker.revoke` 集合执行幂等级联清理：
 
 ```text
 LoginSession(REVOKED)
   → SAS OAuth2Authorization / Refresh Token 状态失效
-  → 删除 Session Token credential 与 loginSessionId 反向索引
   → 删除 H5 Session 与 loginSessionId 反向索引
   → 删除未消费 handoff ticket 与 loginSessionId 反向索引
 ```
 
-Session Token 与 H5 Session 在正常解析时仍会回查父 LoginSession，作为物理删除失败或并发窗口的安全兜底。Handoff ticket 在兑换后同样重新校验父 LoginSession；已登出、已过期或 User/AuthAccount 不匹配时，ticket 即使尚未被清理也不能创建 H5 Session。Session Token、H5 和 handoff ticket 创建时的实际 TTL 均取自身配置与父 LoginSession 剩余时间的较小值，不能越过父会话的绝对到期时间。
+H5 Session 在正常解析时仍会回查父 LoginSession，作为物理删除失败或并发窗口的安全兜底。Handoff ticket 在兑换后同样重新校验父 LoginSession；已登出、已过期或 User/AuthAccount 不匹配时，ticket 即使尚未被清理也不能创建 H5 Session。H5 和 handoff ticket 创建时的实际 TTL 均取自身配置与父 LoginSession 剩余时间的较小值，不能越过父会话的绝对到期时间。
 
-JWT Access Token 是明确例外：logout 会使 Redis 中的 SAS 协议授权状态失效，并阻止 Refresh Token 继续使用，但已经签发的 JWT 仍由资源服务器本地验证，在 `exp` 前不会查询 LoginSession 或 deny-list。当前安全边界仍是短期 JWT 自然失效；若未来要求 JWT 立即失效，必须增加 introspection、session deny-list 或资源服务器在线会话校验。
+JWT Access Token 是明确例外：logout 会使 Redis 中的 SAS 协议授权状态失效，并阻止 Refresh Token 继续使用，但已经签发的 JWT 仍由资源服务器本地验证，在 `exp` 前不会查询 LoginSession 或 deny-list。Reference Token 则通过在线 introspection 立即看到 inactive 状态。若未来要求 JWT 立即失效，必须增加 deny-list 或资源服务器在线会话校验。
 
 当前**尚未引入 SessionFamily**。策略二“外部一次性授权码无状态续期”本质上是重新认证，会创建新的 LoginSession；新旧 LoginSession 之间没有 familyId 或 lineage 关联。因此目前只完成“单个父 LoginSession 及其所有派生对象”的统一撤销，尚未完成“同一次初始登录及其所有重新认证续期代际一起撤销”。如果未来需要该能力，应新增 SessionFamilyId，把初始 LoginSession 与策略二产生的后续 LoginSession 纳入同一 family，再在 family 维度撤销；不能用 UserId 直接替代，否则会误伤该用户其他设备上的独立登录。
 
@@ -221,22 +212,21 @@ X-Channel-Code: PARTNER_A
 
 `POST /api/user-auth/login/external/bound` 是通用的无状态登录/续期入口，请求体为 `issuer`、`authorizationCode` 和可选设备字段。它验证外部授权码后，只允许使用已绑定到 AuthAccount 的外部 Credential 登录；对应账户必须已有有效 LoginMobile。该接口不接受 `mobile`、不建账、不绑定 Credential，也不需要旧 Access Token。微信小程序只是 `issuer = WECHAT_MINI_PROGRAM` 的一个实现：Access Token 到期后重新执行 `wx.login` 并调用此接口。
 
-已登录宿主可使用 `POST /api/user-auth/credentials/external/bind` 绑定外部 Credential。Bearer Access Token 与 `X-Session-Token` 均转换为统一的 `AuthenticatedSession` Principal，接口从中取得 `userId` 与 `authAccountId`，客户端不得指定绑定账户；请求体只提交 `issuer` 和 `authorizationCode`。同一外部 Credential 已绑定当前账户时幂等成功，已绑定其他账户时拒绝，不能自动迁移或合并账户。`H5_SESSION` 只代表受限的 WebView 会话，不允许绑定或修改账户 Credential。
+已登录宿主可使用 `POST /api/user-auth/credentials/external/bind` 绑定外部 Credential。JWT 或 Reference Bearer Access Token 均转换为统一的 `AuthenticatedSession` Principal，接口从中取得 `userId` 与 `authAccountId`，客户端不得指定绑定账户；请求体只提交 `issuer` 和 `authorizationCode`。同一外部 Credential 已绑定当前账户时幂等成功，已绑定其他账户时拒绝，不能自动迁移或合并账户。`H5_SESSION` 只代表受限的 WebView 会话，不允许绑定或修改账户 Credential。
 
 ### 宿主访问凭据的续期
 
-面向移动端、小程序、桌面端等 public client，宿主访问凭据应保持短期。“续期”的统一语义是：当前访问凭据即将或已经失效后，重新取得新的宿主访问凭据。SAS 模式取得新的 Bearer Access Token；Session Token 模式取得新的 `X-Session-Token` 不透明凭据。
+面向移动端、小程序、桌面端等 public client，Bearer Access Token 应保持短期。“续期”的统一语义是：当前访问凭据即将或已经失效后，重新取得新的 Bearer Access Token。
 
 续期能力由服务端 `user-auth.authentication.client-apps.<clientAppId>.renewal-policy` 配置，调用方不得在请求中提交或切换策略：
 
-| 当前交付方式 | `REFRESH_TOKEN_ROTATION` | `EXTERNAL_AUTHORIZATION_CODE` | `NONE` |
+| Access Token 格式 | `REFRESH_TOKEN_ROTATION` | `EXTERNAL_AUTHORIZATION_CODE` | `NONE` |
 | --- | --- | --- | --- |
-| Bearer Access Token | 支持；返回新的 Access Token 与 Refresh Token | 支持；验证外部一次性授权码后返回新的 Access Token | 不提供自动续期 |
-| Session Token | 禁止配置，服务启动失败 | 支持；验证外部一次性授权码后返回新的 Session Token credential | 不提供自动续期 |
+| `SELF_CONTAINED` / `REFERENCE` | 支持；返回新的 Access Token 与 Refresh Token | 支持；验证外部一次性授权码后返回新的 Access Token | 不提供自动续期 |
 
 续期不会绕过账户、Credential 与 ClientApp 校验。策略二会重新完成一次外部身份认证并创建新的 LoginSession；它是相对于 Refresh Token 协议状态而言的“无状态续期”，不表示 Credential、LoginSession 或访问凭据存储全部无状态。
 
-#### 策略一：Refresh Token rotation（仅 Bearer Access Token）
+#### 策略一：Refresh Token rotation
 
 客户端持有 Access Token 和 Refresh Token，以 Refresh Token 换取新的令牌对。它的前提是客户端本地存储可被视为**相对受保护**的客户端存储：它不像 H5 `localStorage` 那样能被同源页面 JavaScript 直接读取，但仍可能因 root/越狱、运行时注入、篡改客户端、调试或日志泄漏而失窃。因此 Refresh Token 是“可能失窃的长期凭据”，不是绝对安全的密钥。
 
@@ -249,7 +239,7 @@ X-Channel-Code: PARTNER_A
 
 rotation 与 reuse detection 只能缩短 Refresh Token 泄漏后的持续利用窗口并发现重放：攻击者若先使用被窃 token，仍可能先得到新的 token，直至合法客户端下一次刷新触发检测。
 
-Bearer Access Token 模式下，当前实现由受管理的 `ClientApp.renewalPolicy` 选择策略：
+当前实现由受管理的 `ClientApp.renewalPolicy` 选择策略：
 
 - `REFRESH_TOKEN_ROTATION`：登录响应同时返回 Access Token 与 Refresh Token；允许调用 `POST /api/user-auth/login/refresh`。该接口只接收 `refreshToken`，ClientApp 从网关注入的 `X-Client-App-Id` 取得。
 - `EXTERNAL_AUTHORIZATION_CODE`：登录响应不含 Refresh Token，只能使用下述外部一次性授权码入口续期；调用 refresh 接口会被拒绝。
@@ -259,7 +249,7 @@ Refresh Token 由 SAS 生成，Redis 仅保存不可逆哈希。每次刷新在 
 
 #### 策略二：外部一次性授权码无状态续期
 
-客户端只持有短期宿主访问凭据。凭据到期或即将到期时，客户端从已接入的外部身份提供方取得一次性授权码，再调用 `POST /api/user-auth/login/external/bound`。服务仅允许 `renewalPolicy=EXTERNAL_AUTHORIZATION_CODE` 的 ClientApp 使用该入口；验证成功后，SAS 模式返回新的 Access Token，Session Token 模式返回新的 Session Token credential，两者都不签发新的凭据给 `NONE` ClientApp。
+客户端只持有短期 Bearer Access Token。凭据到期或即将到期时，客户端从已接入的外部身份提供方取得一次性授权码，再调用 `POST /api/user-auth/login/external/bound`。服务仅允许 `renewalPolicy=EXTERNAL_AUTHORIZATION_CODE` 的 ClientApp 使用该入口；验证成功后返回新的 Access Token，且不向 `NONE` ClientApp 签发新的凭据。
 
 此策略有两个不可省略的前提：
 
@@ -270,7 +260,7 @@ Refresh Token 由 SAS 生成，Redis 仅保存不可逆哈希。每次刷新在 
 
 微信小程序是策略二的具体实例：小程序调用 `wx.login` 取得 code，`user-auth` 以服务端持有的微信 app secret 交换并验证 code，使用返回的 openid 查找 `WECHAT_MINI_PROGRAM` Credential。前端直接提交 openid 不构成可信登录证明。
 
-当前服务已实现策略一及策略二的微信小程序实例；其他外部身份提供方只有在实现相同的一次性授权码验证契约后才能使用策略二。Session Token 模式只允许 `EXTERNAL_AUTHORIZATION_CODE` 或 `NONE`，任一 ClientApp 配置为 `REFRESH_TOKEN_ROTATION` 都会导致启动失败。
+当前服务已实现策略一及策略二的微信小程序实例；其他外部身份提供方只有在实现相同的一次性授权码验证契约后才能使用策略二。两种 Access Token 格式都支持全部 ClientApp renewalPolicy。
 
 ### 宿主 App 进入 WebView H5 的会话交接
 
@@ -279,7 +269,7 @@ Refresh Token 由 SAS 生成，Redis 仅保存不可逆哈希。每次刷新在 
 一次性交接票据本身是与目标会话实现无关的通用应用能力：`SessionHandoffTicketService` 只负责签发和原子消费票据，不创建 H5 Session，也不持有 H5 的 idle/absolute TTL。票据必须绑定 `SessionHandoffTarget`；当前仅登记 `H5_SESSION`。`H5SessionHandoffCommandService` 才负责以 `H5_SESSION` 目标消费票据并调用 `H5SessionStore` 创建具体会话。未来新增其他目标会话时，应新增对应的目标类型和专用交接用例，不能把目标会话创建逻辑重新放回通用票据服务。
 
 ```text
-宿主当前 LoginSession + Bearer Access Token / X-Session-Token
+宿主当前 LoginSession + Bearer Access Token
   → 创建短时、一次性的 handoff ticket
   → 将 ticket 交给初始 H5 页面
   → H5 原子兑换 ticket
@@ -290,26 +280,26 @@ H5 正常请求
   → 未超过 absolute TTL 时按 idle window 滑动续期
 
 宿主再次进入 H5
-  → 使用当前 Bearer Access Token / X-Session-Token 创建新的 handoff ticket
+  → 使用当前 Bearer Access Token 创建新的 handoff ticket
   → H5 创建或刷新独立 H5_SESSION
 ```
 
 初始 ticket 应仅放入 H5 URL fragment，H5 读取后立即调用 exchange endpoint，并使用 `history.replaceState` 清除 fragment；不得放入 query string、日志、埋点或 Referer。H5 Cookie 不是宿主 Access Token 的载体，不能把 JWT Access Token 直接写入 Cookie。
 
-两种宿主访问凭据都可以创建目标为 `H5_SESSION` 的 handoff ticket，H5 原子兑换后取得独立的 `H5_SESSION` HttpOnly Cookie。handoff ticket 不是宿主续期凭据，H5 Session 也不是 Bearer/Session Token 凭据的另一种传输形式。H5 Session 在 absolute TTL 内按 idle window 滑动续期；达到 absolute TTL 后，宿主必须先确保自己的访问凭据仍有效，必要时按 ClientApp 策略取得新凭据，再重新创建 handoff ticket。
+宿主 Bearer Access Token 可以创建目标为 `H5_SESSION` 的 handoff ticket，H5 原子兑换后取得独立的 `H5_SESSION` HttpOnly Cookie。handoff ticket 不是宿主续期凭据，H5 Session 也不是 Bearer Token 的另一种传输形式。H5 Session 在 absolute TTL 内按 idle window 滑动续期；达到 absolute TTL 后，宿主必须先确保自己的 Access Token 仍有效，必要时按 ClientApp 策略取得新凭据，再重新创建 handoff ticket。
 
 该方案必须搭配以下安全设计：
 
 - **原子单次兑换**：ticket 是随机高熵、短时凭据（建议 30–60 秒）。兑换必须使用 Redis `GETDEL` 或等价 Lua 脚本完成“读取并删除”；不得先查询再删除。并发兑换时仅一个请求可成功。服务端应以 ticket 哈希或 HMAC 派生值作为 Redis 索引，避免持久化原始 ticket。消费成功后创建 H5 Session 失败时，不恢复 ticket，宿主重新申请即可。
 - **严格绑定**：ticket 当前绑定 `userId`、`authAccountId`、宿主 `parentLoginSessionId`、`handoffId`、目标会话类型与有效期；兑换入口必须以期望的目标会话类型消费，目标不一致时票据无效，不能把 H5 ticket 用于未来的其他会话。目标 H5 ClientApp/origin 的进一步绑定必须以受管理的目标应用与 origin 目录为前提，不能把客户端任意提交的字符串当成可信绑定；该目录尚未实现。
 - **父会话关联与级联失效**：每个 H5 Session 记录 `parentLoginSessionId`。H5 鉴权除校验自身状态、idle TTL 与 absolute TTL 外，还确认父 LoginSession 为 `ACTIVE`。宿主主动登出或当前会话被强制下线时，通过已实现的 `parentLoginSessionId → H5 credential` Redis 反向索引立即删除全部关联 H5 Session；父会话状态校验是级联删除的兜底。全账户强制下线和跨重新认证代际撤销仍需要未来的 SessionFamily/账户会话能力。
-- **会话职责隔离**：Session Token 与 H5 Session 是不同的认证交付能力。Session Token 通过 Header 携带并使用固定 TTL；H5 Session 通过 HttpOnly Cookie 携带，具有 idle/absolute 双重生命周期和滑动续期。两者不得共用一个存储端口或认证 Filter。
-- **宿主权限隔离**：Bearer Access Token 与 `X-Session-Token` 在接口层获得宿主会话权限；`H5_SESSION` 只获得受限 H5 会话权限。H5 Cookie 不得调用绑定外部 Credential、登出父 LoginSession 或创建新 handoff ticket 等宿主级命令。H5 自身退出需要独立的 H5 Session 结束能力，不能复用宿主 `logout`；该独立端点当前尚未实现。
+- **会话职责隔离**：Bearer Access Token 是宿主访问凭据，H5 Session 是派生的浏览器 Cookie 会话。二者具有不同的传输、存储和生命周期，不能共用一个存储端口或认证 Filter。
+- **宿主权限隔离**：Bearer Access Token 在接口层获得宿主会话权限；`H5_SESSION` 只获得受限 H5 会话权限。H5 Cookie 不得调用绑定外部 Credential、登出父 LoginSession 或创建新 handoff ticket 等宿主级命令。H5 自身退出需要独立的 H5 Session 结束能力，不能复用宿主 `logout`；该独立端点当前尚未实现。
 - **有限滑动窗口**：普通 H5 请求只在剩余 idle TTL 低于设定阈值时延长会话并刷新 Cookie，避免每次请求写存储。必须同时配置不可滑动的 absolute TTL，防止持续访问令会话无限存活。达到 absolute TTL 或父 LoginSession 失效时，必须由宿主重新创建 ticket。
 - **Cookie 与 CSRF 防护**：`H5_SESSION` 必须使用 `HttpOnly`、`Secure` 和恰当的 `SameSite`（优先 `Lax`，不依赖跨站跳转时可用 `Strict`）。Cookie 鉴权的写操作仍必须实施 Origin/Referer 校验及 CSRF token 或双提交 token，不能仅依赖 SameSite。
 - **最小暴露与审计**：H5 永不读取宿主 Access Token；ticket 创建、兑换失败、重复兑换、会话滑动、宿主登出和级联撤销均应审计，并按 ClientApp、origin、账户和会话维度限流。
 
-本方案不需要 H5 与宿主之间为 Cookie 续期建立 SSE、长轮询或 `renewalChannelKey` 通道。当前代码中的 WebView SSE handoff 是早期基础实现；在本方案落地时，应由上述“宿主再次进入时重新 ticket 交接 + H5 Cookie 滑动窗口”模型替换。
+本方案不需要 H5 与宿主之间为 Cookie 续期建立 SSE、长轮询或 `renewalChannelKey` 通道。早期 WebView SSE handoff 实现已删除；当前采用“宿主再次进入时重新 ticket 交接 + H5 Cookie 滑动窗口”模型。
 
 ### 关键业务约束
 
@@ -317,8 +307,8 @@ H5 正常请求
 - 外部登录必须先取得有效的 LoginAttempt，再完成确认；外部身份归属应保持唯一且可追溯。LoginAttempt 是多步骤登录流程聚合，AuthChallenge 仍是短信验证码等原子认证证明。
 - 外部授权码登录仅适用于网关已经验证合作方签名、调用方绑定、时效和重放的受保护链路。请求中的 `issuer + authorizationCode` 是 `AUTHORIZATION_CODE` 型一次性证明：它只进入本次短期 LoginAttempt，绝不能绑定为长期 `Credential`；账户仅按已核验的手机号查找或创建。
 - 登录会话是认证成功的领域事实；协议授权记录以 `session_id` 将 Token 与该会话关联。
-- `logout` 只处理当前 Bearer Access Token 或 `X-Session-Token` 归一后的 `AuthenticatedSession.sessionId`，不会接受客户端指定任意会话，也不接受 `H5_SESSION`。存在协议授权记录时会一并撤销；JWT Access Token 采用短期自然失效策略，资源服务器不执行实时撤销查询。
-- Session handoff ticket 为随机一次性凭据，默认 60 秒；它绑定 `userId`、`AuthAccountId`、`LoginSession`、服务端生成的 `handoffId` 与目标会话类型。签发 TTL 不超过父 LoginSession 剩余时间，兑换时重新校验父会话；logout 通过 loginSessionId 反向索引删除未消费 ticket。通用票据服务不创建任何具体会话；WebView H5 专用用例只接受目标为 `H5_SESSION` 的 ticket，不能取得宿主 Access Token 或 Session Token。
+- `logout` 只处理当前 Bearer Access Token 归一后的 `AuthenticatedSession.sessionId`，不会接受客户端指定任意会话，也不接受 `H5_SESSION`。存在协议授权记录时会一并撤销；JWT Access Token 采用短期自然失效策略，Reference Token 在线 introspection 后即时失效。
+- Session handoff ticket 为随机一次性凭据，默认 60 秒；它绑定 `userId`、`AuthAccountId`、`LoginSession`、服务端生成的 `handoffId` 与目标会话类型。签发 TTL 不超过父 LoginSession 剩余时间，兑换时重新校验父会话；logout 通过 loginSessionId 反向索引删除未消费 ticket。通用票据服务不创建任何具体会话；WebView H5 专用用例只接受目标为 `H5_SESSION` 的 ticket，不能取得宿主 Access Token。
 
 ## 功能授权子域
 
@@ -342,15 +332,15 @@ H5 正常请求
 - 管理接口可以查询用户的有效角色、有效 PermissionCode 及每条授予来源，但当前 `user-auth` 不提供供业务资源服务器逐请求调用的功能鉴权接口。
 - 渠道策略只能引用已经登记且启用的全局 Role/Permission；当前已经提供目录项管理 API，人工直接授权 API 尚未交付。
 
-业务登录中的渠道策略同步必须由入口已校验的 `ChannelContext.channelCode` 触发，而不等同于 `clientAppId`。手机号和外部身份登录在访问凭据签发前同步 ACTIVE 策略；缺少策略时不影响登录，也不产生授权。管理接口不借用当前请求的 ChannelContext，而是由具备 `admin.api` 的调用方在请求体中显式提交 `targetChannelCode`；用户授权管理查询同样显式提交 `targetUserId`。更新 ACTIVE 策略、激活和停用只提交策略版本；显式 reconciliation 接口按 `batchSize` 重放一个批次并返回是否仍有待处理用户，用于失败重试。同一 ClientApp 可以进入多个渠道；签名与调用方绑定等入口安全规则、ClientApp 与渠道的完整设计见 [CLIENT_AND_CHANNEL_CONTEXT.md](CLIENT_AND_CHANNEL_CONTEXT.md)。
+业务登录中的渠道策略同步必须由入口已校验的 `ChannelContext.channelCode` 触发，而不等同于 `clientAppId`。手机号和外部身份登录在访问凭据签发前同步 ACTIVE 策略；缺少策略时不影响登录，也不产生授权。管理接口不借用当前请求的 ChannelContext，而是由具备 `admin` scope 的调用方在请求体中显式提交 `targetChannelCode`；用户授权管理查询同样显式提交 `targetUserId`。更新 ACTIVE 策略、激活和停用只提交策略版本；显式 reconciliation 接口按 `batchSize` 重放一个批次并返回是否仍有待处理用户，用于失败重试。同一 ClientApp 可以进入多个渠道；签名与调用方绑定等入口安全规则、ClientApp 与渠道的完整设计见 [CLIENT_AND_CHANNEL_CONTEXT.md](CLIENT_AND_CHANNEL_CONTEXT.md)。
 
-功能授权管理和用户授权查询位于 `/admin/user-auth/authorization/**`，要求 Bearer JWT 具有 OAuth2 `admin.api` scope；Session Token/H5 会话不能操作。管理调用只要求网关注入 `X-Client-App-Id`，目标 Permission、Role、渠道与用户分别通过请求体 `targetPermissionCode`、`targetRoleCode`、`targetChannelCode`、`targetUserId` 显式声明，不能由 `X-Channel-Code` 或 `X-User-Id` 代替。Permission 管理提供保存、启用、停用、按 code 查询和分页目录查询；Role 管理提供保存、启用、停用、按 code 查询和分页目录查询。分页默认每页 20 条，单页最多 200 条，按 code 升序返回。渠道策略更新、激活和停用必须携带 `expectedVersion`。角色编码非法使用错误 `304`；Permission 使用 `400-403`，其中不存在、已存在、停用和编码非法分别为 `400-403`；渠道策略不存在、已存在和版本冲突分别使用 `500`、`501`、`502`。
+功能授权管理和用户授权查询位于 `/admin/user-auth/authorization/**`，要求 Bearer Access Token 具有 OAuth2 `admin` scope；H5 会话不能操作。管理调用只要求网关注入 `X-Client-App-Id`，目标 Permission、Role、渠道与用户分别通过请求体 `targetPermissionCode`、`targetRoleCode`、`targetChannelCode`、`targetUserId` 显式声明，不能由 `X-Channel-Code` 或 `X-User-Id` 代替。Permission 管理提供保存、启用、停用、按 code 查询和分页目录查询；Role 管理提供保存、启用、停用、按 code 查询和分页目录查询。分页默认每页 20 条，单页最多 200 条，按 code 升序返回。渠道策略更新、激活和停用必须携带 `expectedVersion`。角色编码非法使用错误 `304`；Permission 使用 `400-403`，其中不存在、已存在、停用和编码非法分别为 `400-403`；渠道策略不存在、已存在和版本冲突分别使用 `500`、`501`、`502`。
 
 ## 跨服务授权分工
 
 一个业务请求的完整判断可分为：
 
-1. 资源服务器验证 Access Token 的签名、发行者、有效期和受众。
+1. 资源服务器按 Access Token 格式执行 JWT 本地验证，或 Reference Token introspection，并校验发行者、有效期和受众。
 2. 功能授权能力根据 `UserId` 的有效角色和直接授权判断是否拥有所需的 PermissionCode；当前已有内部计算与管理查询，业务资源服务器的集成方式尚未交付。
 3. 具体业务服务按自身领域规则判断该用户是否可访问目标资源。
 

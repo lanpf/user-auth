@@ -5,8 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.cloud.userauth.infrastructure.oauth2.sas.config.SasAuthorizationServerProperties;
-import com.cloud.userauth.infrastructure.oauth2.sas.config.SasRegisteredClientConfiguration;
+import com.cloud.userauth.api.authentication.OAuth2Scope;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.external.ExternalIdentityGrantTypes;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantTypes;
 import com.cloud.userauth.infrastructure.config.AccessTokenProperties;
@@ -19,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 
 class SasRegisteredClientConfigurationTest {
 
@@ -32,7 +32,7 @@ class SasRegisteredClientConfigurationTest {
                 SasAuthorizationServerPropertiesFixtures.withInternalClient(
                         "user-auth-internal-test",
                         clientSecret);
-        properties.getScopes().addAll(Set.of("app.api", "admin.api"));
+        properties.getScopes().addAll(Set.of(OAuth2Scope.APP, OAuth2Scope.ADMIN));
         InMemoryRegisteredClientRepository repository =
                 new InMemoryRegisteredClientRepository(unrelatedClient());
 
@@ -58,7 +58,7 @@ class SasRegisteredClientConfigurationTest {
                         ExternalIdentityGrantTypes.EXTERNAL_IDENTITY,
                         MobileOtpGrantTypes.MOBILE_OTP),
                 registeredClient.getAuthorizationGrantTypes());
-        assertEquals(properties.getScopes(), registeredClient.getScopes());
+        assertEquals(Set.of("app", "admin"), registeredClient.getScopes());
         assertTrue(passwordEncoder.matches(
                 clientSecret,
                 registeredClient.getClientSecret()));
@@ -69,6 +69,31 @@ class SasRegisteredClientConfigurationTest {
                 registeredClient.getTokenSettings().getRefreshTokenTimeToLive());
         assertEquals(Duration.ofMinutes(15),
                 registeredClient.getTokenSettings().getAccessTokenTimeToLive());
+        assertEquals(OAuth2TokenFormat.SELF_CONTAINED,
+                registeredClient.getTokenSettings().getAccessTokenFormat());
+    }
+
+    @Test
+    void shouldRegisterReferenceAccessTokenFormat() throws Exception {
+        SasRegisteredClientConfiguration configuration = new SasRegisteredClientConfiguration();
+        PasswordEncoder passwordEncoder = configuration.passwordEncoder();
+        SasAuthorizationServerProperties properties =
+                SasAuthorizationServerPropertiesFixtures.withInternalClient(
+                        "user-auth-internal-reference", "secret");
+        properties.getScopes().add(OAuth2Scope.APP);
+        InMemoryRegisteredClientRepository repository =
+                new InMemoryRegisteredClientRepository(unrelatedClient());
+        AccessTokenProperties accessTokenProperties = hostAccessTokenProperties();
+        accessTokenProperties.setFormat(AccessTokenProperties.Format.REFERENCE);
+
+        configuration.bootstrapRegisteredClient(
+                repository, passwordEncoder, properties, accessTokenProperties).afterPropertiesSet();
+
+        RegisteredClient registeredClient = repository.findByClientId(
+                properties.getInternalTokenClient().getClientId());
+        assertNotNull(registeredClient);
+        assertEquals(OAuth2TokenFormat.REFERENCE,
+                registeredClient.getTokenSettings().getAccessTokenFormat());
     }
 
     @Test
@@ -80,7 +105,7 @@ class SasRegisteredClientConfigurationTest {
                 SasAuthorizationServerPropertiesFixtures.withInternalClient(
                         "user-auth-internal-test",
                         "new-secret");
-        properties.getScopes().addAll(Set.of("app.api", "admin.api"));
+        properties.getScopes().addAll(Set.of(OAuth2Scope.APP, OAuth2Scope.ADMIN));
         RegisteredClient existingClient = RegisteredClient.withId("existing-id")
                 .clientId(properties.getInternalTokenClient().getClientId())
                 .clientSecret(passwordEncoder.encode("old-secret"))
@@ -109,7 +134,7 @@ class SasRegisteredClientConfigurationTest {
                         ExternalIdentityGrantTypes.EXTERNAL_IDENTITY,
                         MobileOtpGrantTypes.MOBILE_OTP),
                 registeredClient.getAuthorizationGrantTypes());
-        assertEquals(properties.getScopes(), registeredClient.getScopes());
+        assertEquals(Set.of("app", "admin"), registeredClient.getScopes());
         assertTrue(passwordEncoder.matches(
                 "new-secret",
                 registeredClient.getClientSecret()));

@@ -12,7 +12,7 @@ class RefreshTokenLoginCommandServiceTest {
     @Test
     void shouldRefreshWhenClientPolicyUsesRotation() {
         RefreshTokenLoginCommandOutput expected = new RefreshTokenLoginCommandOutput(
-                "Bearer", "access-2", "refresh-2", 900L, "app.api",
+                "Bearer", "access-2", "refresh-2", 900L, "app",
                 1L, 2L, "session-1");
         RefreshTokenLoginCommandService service = new RefreshTokenLoginCommandService(
                 clientAppId -> ClientRenewalPolicy.REFRESH_TOKEN_ROTATION,

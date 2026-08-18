@@ -43,9 +43,6 @@ public enum DomainError implements BaseError {
     LOGIN_SESSION_NOT_FOUND(250, "登录会话不存在"),
     LOGIN_SESSION_ALREADY_EXISTS(251, "登录会话已存在"),
     LOGIN_SESSION_INACTIVE(252, "登录会话不可用"),
-    LOGIN_SESSION_TOKEN_NOT_FOUND(253, "令牌不存在"),
-    LOGIN_SESSION_TOKEN_ALREADY_EXISTS(254, "令牌已存在"),
-    LOGIN_SESSION_TOKEN_INACTIVE(255, "令牌不可用"),
 
     ROLE_NOT_FOUND(300, "角色不存在"),
     ROLE_ALREADY_EXISTS(301, "角色已存在"),

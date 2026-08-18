@@ -5,10 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.cloud.userauth.application.login.MobileAuthenticationCommand;
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantParameterConverter;
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantParameterNames;
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantRequest;
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantTypes;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.mapper.MobileOtpGrantRequestMapper;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.mapper.mapstruct.MobileOtpGrantRequestMapStructMapper;
 import org.junit.jupiter.api.Test;
@@ -24,13 +20,13 @@ class MobileOtpGrantRequestMapperTest {
     void shouldMapLoginCommandToGrantRequestAndAuthenticationCommand() {
         MobileOtpGrantRequest request = mapper.toGrantRequest(
                 loginCommand(),
-                "app.api");
+                "app");
 
         MobileAuthenticationCommand authenticationCommand =
                 mapper.toAuthenticationCommand(request);
 
         assertEquals(1001L, request.challengeId());
-        assertEquals("app.api", request.scope());
+        assertEquals("app", request.scope());
         assertEquals("app", request.clientAppId());
         assertEquals("DIRECT", request.channelCode());
         assertEquals(1001L, authenticationCommand.challengeId());
@@ -44,7 +40,7 @@ class MobileOtpGrantRequestMapperTest {
     void shouldEncodeOnlyDefinedProtocolParameters() {
         MobileOtpGrantRequest request = mapper.toGrantRequest(
                 loginCommand(),
-                "app.api");
+                "app");
 
         MultiValueMap<String, String> form =
                 MobileOtpGrantParameterConverter.toTokenRequestForm(request);
@@ -57,7 +53,7 @@ class MobileOtpGrantRequestMapperTest {
         assertEquals(
                 "1001",
                 form.getFirst(MobileOtpGrantParameterNames.CHALLENGE_ID));
-        assertEquals("app.api", form.getFirst(OAuth2ParameterNames.SCOPE));
+        assertEquals("app", form.getFirst(OAuth2ParameterNames.SCOPE));
         assertEquals(
                 "DIRECT",
                 form.getFirst(MobileOtpGrantParameterNames.CHANNEL_CODE));

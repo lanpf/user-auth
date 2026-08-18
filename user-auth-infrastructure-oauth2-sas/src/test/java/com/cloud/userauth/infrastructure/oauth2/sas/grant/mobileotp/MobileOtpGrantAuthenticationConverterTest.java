@@ -4,11 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantAuthenticationConverter;
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantAuthenticationToken;
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantParameterNames;
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantRequestParser;
-import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantTypes;
 import jakarta.validation.Validation;
 import jakarta.validation.ValidatorFactory;
 import java.util.List;
@@ -55,7 +50,7 @@ class MobileOtpGrantAuthenticationConverterTest {
     @Test
     void shouldParseTypedGrantRequest() {
         MockHttpServletRequest request = validRequest();
-        request.addParameter(OAuth2ParameterNames.SCOPE, "app.api");
+        request.addParameter(OAuth2ParameterNames.SCOPE, "app");
 
         MobileOtpGrantAuthenticationToken authentication = assertInstanceOf(
                 MobileOtpGrantAuthenticationToken.class,
@@ -65,7 +60,7 @@ class MobileOtpGrantAuthenticationConverterTest {
         assertEquals("123456", authentication.request().code());
         assertEquals("app", authentication.request().clientAppId());
         assertEquals("DIRECT", authentication.request().channelCode());
-        assertEquals("app.api", authentication.request().scope());
+        assertEquals("app", authentication.request().scope());
         assertEquals(
                 "1001",
                 authentication.getAdditionalParameters().get(

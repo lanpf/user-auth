@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.cloud.userauth.api.authentication.OAuth2Scope;
+import com.cloud.userauth.application.port.ClientRenewalPolicy;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import java.time.Duration;
 import java.util.Map;
-import com.cloud.userauth.application.port.ClientRenewalPolicy;
+import java.util.Set;
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -95,11 +97,11 @@ class ConfigurationPropertiesValidationTest {
                 "user-auth.authentication.client-apps.mini-program.renewal-policy",
                 "EXTERNAL_AUTHORIZATION_CODE",
                 "user-auth.authentication.client-apps.mini-program.oauth2-scopes[0]",
-                "app.api",
+                "app",
                 "user-auth.authentication.client-apps.app.renewal-policy",
                 "REFRESH_TOKEN_ROTATION",
                 "user-auth.authentication.client-apps.app.oauth2-scopes[0]",
-                "app.api"));
+                "app"));
 
         ClientAppRegistryProperties properties = new Binder(source)
                 .bind("user-auth.authentication", Bindable.of(ClientAppRegistryProperties.class))
@@ -112,7 +114,7 @@ class ConfigurationPropertiesValidationTest {
                 ClientRenewalPolicy.REFRESH_TOKEN_ROTATION,
                 properties.getClientApps().get("app").getRenewalPolicy());
         assertEquals(
-                java.util.Set.of("app.api"),
+                Set.of(OAuth2Scope.APP),
                 properties.getClientApps().get("app").getOauth2Scopes());
         assertTrue(VALIDATOR.validate(properties).isEmpty());
     }

@@ -8,8 +8,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 public final class SessionAuthenticationAuthorities {
     private SessionAuthenticationAuthorities() {
     }
-    public static final String HOST_SESSION = "USER_AUTH_HOST_SESSION";
-    public static final String H5_SESSION = "USER_AUTH_H5_SESSION";
+    public static final String HOST_SESSION = "AUTH_HOST_SESSION";
+    public static final String H5_SESSION = "AUTH_H5_SESSION";
 
     public static List<GrantedAuthority> hostSession() {
         return List.of(new SimpleGrantedAuthority(HOST_SESSION));

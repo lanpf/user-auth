@@ -14,9 +14,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 @RequiredArgsConstructor
 public final class RedisSessionHandoffTicketStore implements SessionHandoffTicketStore {
-    private static final String TICKET_PREFIX = "user-auth:session-handoff:ticket:";
-    private static final String LOGIN_SESSION_KEY_PREFIX =
-            "user-auth:session-handoff:login-session:";
+    private static final String PREFIX = "user-auth:session-handoff:";
+    private static final String TICKET_PREFIX = PREFIX + "ticket:";
+    private static final String LOGIN_SESSION_PREFIX = PREFIX + "login-session:";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final StringRedisTemplate redisTemplate;
@@ -30,7 +30,7 @@ public final class RedisSessionHandoffTicketStore implements SessionHandoffTicke
     ) {
         String ticket = randomValue();
         redisTemplate.opsForValue().set(
-                TICKET_PREFIX + ticket,
+                ticketKey(ticket),
                 serialize(authenticatedSession, handoffId, target),
                 ttl);
         String loginSessionKey = loginSessionKey(authenticatedSession.sessionId());
@@ -45,19 +45,19 @@ public final class RedisSessionHandoffTicketStore implements SessionHandoffTicke
             return Optional.empty();
         }
         Optional<ConsumedTicket> consumed = parse(
-                redisTemplate.opsForValue().getAndDelete(TICKET_PREFIX + ticket));
+                redisTemplate.opsForValue().getAndDelete(ticketKey(ticket)));
         consumed.ifPresent(value -> redisTemplate.opsForSet().remove(
                 loginSessionKey(value.authenticatedSession().sessionId()), ticket));
         return consumed;
     }
 
     @Override
-    public void revokeByLoginSessionId(SessionId loginSessionId) {
+    public void revoke(SessionId loginSessionId) {
         String loginSessionKey = loginSessionKey(loginSessionId);
         Set<String> tickets = redisTemplate.opsForSet().members(loginSessionKey);
         if (tickets != null && !tickets.isEmpty()) {
             redisTemplate.delete(tickets.stream()
-                    .map(ticket -> TICKET_PREFIX + ticket)
+                    .map(RedisSessionHandoffTicketStore::ticketKey)
                     .toList());
         }
         redisTemplate.delete(loginSessionKey);
@@ -103,6 +103,10 @@ public final class RedisSessionHandoffTicketStore implements SessionHandoffTicke
     }
 
     private static String loginSessionKey(SessionId loginSessionId) {
-        return LOGIN_SESSION_KEY_PREFIX + loginSessionId.value();
+        return LOGIN_SESSION_PREFIX + loginSessionId.value();
+    }
+
+    private static String ticketKey(String ticket) {
+        return TICKET_PREFIX + ticket;
     }
 }

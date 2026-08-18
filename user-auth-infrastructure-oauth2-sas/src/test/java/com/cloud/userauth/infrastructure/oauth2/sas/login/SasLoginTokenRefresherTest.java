@@ -143,7 +143,7 @@ class SasLoginTokenRefresherTest {
         @Override
         public SasRefreshTokenEndpointPayload requestRefreshToken(String refreshToken) {
             return new SasRefreshTokenEndpointPayload(
-                    "Bearer", "access-2", "refresh-2", 900L, "app.api");
+                    "Bearer", "access-2", "refresh-2", 900L, "app");
         }
     }
 

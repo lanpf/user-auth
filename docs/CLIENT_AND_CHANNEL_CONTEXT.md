@@ -121,7 +121,7 @@ GrantSource.sourceId   = channelCode
 
 ## 管理与查询 API
 
-以下接口均位于 `/admin/user-auth/authorization`，并要求 Bearer JWT 具有 OAuth2 `admin.api` scope。普通 `X-Session-Token` 与 `H5_SESSION` 不具备管理资格。
+以下接口均位于 `/admin/user-auth/authorization`，并要求 Bearer Access Token 具有 OAuth2 `admin` scope。JWT 与 Reference Token 使用相同 scope 语义；`H5_SESSION` 不具备管理资格。
 
 | 接口 | 语义 |
 | --- | --- |

@@ -9,7 +9,6 @@ import com.cloud.userauth.infrastructure.oauth2.redis.OAuth2AuthorizationRedisSt
 import com.cloud.userauth.infrastructure.oauth2.redis.RedisOAuth2AuthorizationService;
 import com.cloud.userauth.infrastructure.oauth2.redis.StringRedisOAuth2AuthorizationStore;
 import java.time.Clock;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -18,10 +17,6 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(
-        prefix = "user-auth.authentication.oauth2.authorization-server",
-        name = "enabled",
-        havingValue = "true")
 @EnableConfigurationProperties(OAuth2AuthorizationStoreProperties.class)
 public class RedisOAuth2AuthorizationConfiguration {
     @Bean

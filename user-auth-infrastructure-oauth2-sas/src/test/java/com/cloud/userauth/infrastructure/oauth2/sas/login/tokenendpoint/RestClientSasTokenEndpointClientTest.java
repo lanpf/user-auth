@@ -7,11 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.application.common.ApplicationException;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantRequest;
-import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.RestClientSasTokenEndpointClient;
-import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasRefreshTokenEndpointPayload;
-import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasTokenEndpointClient;
-import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasTokenEndpointJsonMapper;
-import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasTokenEndpointPayload;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.springboot3.bulkhead.autoconfigure.BulkheadAutoConfiguration;
 import jakarta.validation.Validation;
@@ -65,7 +60,7 @@ class RestClientSasTokenEndpointClientTest {
                     assertTrue(body.contains(
                             "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type"
                                     + "%3Amobile_otp"));
-                    assertTrue(body.contains("scope=app.api"));
+                    assertTrue(body.contains("scope=app"));
                     assertTrue(body.contains("client_app_id=app"));
                 })
                 .andRespond(httpRequest -> jsonResponse());
@@ -174,7 +169,7 @@ class RestClientSasTokenEndpointClientTest {
         return new MobileOtpGrantRequest(
                 1001L,
                 "123456",
-                "app.api",
+                "app",
                 "device-1",
                 "PHONE",
                 "Test phone",
@@ -189,7 +184,7 @@ class RestClientSasTokenEndpointClientTest {
                   "token_type": "Bearer",
                   "access_token": "access-token",
                   "expires_in": 900,
-                  "scope": "app.api",
+                  "scope": "app",
                   "user_id": 100001,
                   "auth_account_id": 200001,
                   "session_id": "session-1",
@@ -212,7 +207,7 @@ class RestClientSasTokenEndpointClientTest {
                   "access_token": "access-token-2",
                   "refresh_token": "refresh-token-2",
                   "expires_in": 900,
-                  "scope": "app.api"
+                  "scope": "app"
                 }
                 """;
         MockClientHttpResponse response = new MockClientHttpResponse(

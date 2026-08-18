@@ -1,12 +1,12 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.config;
 
+import com.cloud.userauth.api.authentication.OAuth2Scope;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp.MobileOtpGrantTypes;
 import com.cloud.userauth.infrastructure.oauth2.sas.grant.external.ExternalIdentityGrantTypes;
 import com.cloud.userauth.infrastructure.config.AccessTokenProperties;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -22,10 +22,6 @@ import org.springframework.security.oauth2.server.authorization.settings.OAuth2T
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(
-        prefix = "user-auth.authentication.oauth2.authorization-server",
-        name = "enabled",
-        havingValue = "true")
 public class SasRegisteredClientConfiguration {
 
     @Bean
@@ -65,13 +61,22 @@ public class SasRegisteredClientConfiguration {
                             .requireAuthorizationConsent(false)
                             .build())
                     .tokenSettings(TokenSettings.builder()
-                            .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED)
+                            .accessTokenFormat(accessTokenFormat(accessTokenProperties.getFormat()))
                             .accessTokenTimeToLive(accessTokenProperties.getTtl())
                             .refreshTokenTimeToLive(properties.getRefreshToken().getTtl())
                             .reuseRefreshTokens(false)
                             .build());
-            properties.getScopes().forEach(builder::scope);
+            properties.getScopes().stream()
+                    .map(OAuth2Scope::value)
+                    .forEach(builder::scope);
             repository.save(builder.build());
+        };
+    }
+
+    private static OAuth2TokenFormat accessTokenFormat(AccessTokenProperties.Format format) {
+        return switch (format) {
+            case SELF_CONTAINED -> OAuth2TokenFormat.SELF_CONTAINED;
+            case REFERENCE -> OAuth2TokenFormat.REFERENCE;
         };
     }
 

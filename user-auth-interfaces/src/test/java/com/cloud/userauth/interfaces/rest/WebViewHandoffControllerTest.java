@@ -14,7 +14,7 @@ import com.cloud.userauth.api.authentication.CreateH5SessionHandoffApiCommand;
 import com.cloud.userauth.api.authentication.CreateH5SessionHandoffApiCommandOutput;
 import com.cloud.userauth.api.authentication.ExchangeH5SessionHandoffApiCommand;
 import com.cloud.userauth.api.authentication.ExchangeH5SessionHandoffApiCommandOutput;
-import com.cloud.userauth.api.constants.JwtApiConstants;
+import com.cloud.userauth.api.constants.AccessTokenClaimApiConstants;
 import com.cloud.userauth.api.facade.SessionHandoffCommandFacade;
 import com.cloud.userauth.interfaces.mapper.mapstruct.SessionHandoffRestMapStructMapper;
 import java.time.Instant;
@@ -93,9 +93,9 @@ class WebViewHandoffControllerTest {
                 .header("alg", "RS256")
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(300))
-                .claim(JwtApiConstants.USER_ID_CLAIM, 1001L)
-                .claim(JwtApiConstants.AUTH_ACCOUNT_ID_CLAIM, 2001L)
-                .claim(JwtApiConstants.SESSION_ID_CLAIM, "session-1")
+                .claim(AccessTokenClaimApiConstants.USER_ID_CLAIM, 1001L)
+                .claim(AccessTokenClaimApiConstants.AUTH_ACCOUNT_ID_CLAIM, 2001L)
+                .claim(AccessTokenClaimApiConstants.SESSION_ID_CLAIM, "session-1")
                 .build();
     }
 

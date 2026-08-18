@@ -112,7 +112,7 @@ class SessionHandoffTicketServiceTest {
         }
 
         @Override
-        public void revokeByLoginSessionId(SessionId loginSessionId) {
+        public void revoke(SessionId loginSessionId) {
         }
     }
 
@@ -136,7 +136,7 @@ class SessionHandoffTicketServiceTest {
         }
 
         @Override
-        public void revokeByLoginSessionId(SessionId loginSessionId) {
+        public void revoke(SessionId loginSessionId) {
         }
     }
 

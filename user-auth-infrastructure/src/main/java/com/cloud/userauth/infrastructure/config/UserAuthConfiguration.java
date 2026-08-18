@@ -35,7 +35,7 @@ import com.cloud.userauth.application.port.ChallengeSecretHasher;
 import com.cloud.userauth.application.port.ExternalIdentityVerifier;
 import com.cloud.userauth.application.port.ExternalIdentityVerifierRegistry;
 import com.cloud.userauth.application.port.IssuerMobileTrustPolicyProvider;
-import com.cloud.userauth.application.port.LoginSessionArtifactRevoker;
+import com.cloud.userauth.application.port.LoginSessionRevoker;
 import com.cloud.userauth.application.port.UserGateway;
 import com.cloud.userauth.application.registration.RegistrationProcessRepository;
 import com.cloud.userauth.domain.authentication.account.AuthAccountRepository;
@@ -89,6 +89,7 @@ import com.cloud.userauth.infrastructure.repository.adapter.UserRoleGrantReposit
 import com.cloud.userauth.infrastructure.security.HmacSha256ChallengeSecretHasher;
 import java.time.Clock;
 import java.util.List;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -454,11 +455,11 @@ public class UserAuthConfiguration {
     @ConditionalOnMissingBean
     public ExternalAuthenticationProcess externalAuthenticationProcess(
             ExternalLoginTransactionService transactionService,
-            UserGateway userGateway,
-            UserChannelAuthorizationSynchronizer userChannelAuthorizationSynchronizer
-    ) {
+            UserChannelAuthorizationSynchronizer userChannelAuthorizationSynchronizer,
+            ObjectProvider<UserGateway> userGateway
+            ) {
         return new ExternalAuthenticationProcess(
-                transactionService, userGateway, userChannelAuthorizationSynchronizer);
+                transactionService, userChannelAuthorizationSynchronizer, userGateway.getObject());
     }
 
     @Bean
@@ -535,15 +536,15 @@ public class UserAuthConfiguration {
             AuthChallengeRepository challengeRepository,
             RegistrationProcessRepository registrationRepository,
             AuthAccountRepository authAccountRepository,
-            UserGateway userGateway,
             MobileOtpLoginLock mobileOtpLoginLock,
             MobileOtpLoginTransactionService mobileOtpLoginTransactionService,
-            UserChannelAuthorizationSynchronizer userChannelAuthorizationSynchronizer
+            UserChannelAuthorizationSynchronizer userChannelAuthorizationSynchronizer,
+            ObjectProvider<UserGateway> userGateway
     ) {
         return new MobileOtpAuthenticationProcess(
                 challengeRepository, registrationRepository, authAccountRepository,
-                userGateway, mobileOtpLoginLock, mobileOtpLoginTransactionService,
-                userChannelAuthorizationSynchronizer
+                mobileOtpLoginLock, mobileOtpLoginTransactionService,
+                userChannelAuthorizationSynchronizer, userGateway.getObject()
         );
     }
 
@@ -568,12 +569,12 @@ public class UserAuthConfiguration {
     @ConditionalOnMissingBean
     public LogoutCommandService logoutCommandService(
             LoginSessionRepository sessionRepository,
-            List<LoginSessionArtifactRevoker> artifactRevokers,
+            List<LoginSessionRevoker> loginSessionRevokers,
             SessionDomainService sessionDomainService,
             DomainEventStore domainEventStore,
             Clock clock
     ) {
         return new LogoutCommandService(
-                sessionRepository, artifactRevokers, sessionDomainService, domainEventStore, clock);
+                sessionRepository, loginSessionRevokers, sessionDomainService, domainEventStore, clock);
     }
 }

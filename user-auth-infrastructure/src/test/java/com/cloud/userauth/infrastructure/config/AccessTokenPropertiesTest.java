@@ -21,17 +21,17 @@ class AccessTokenPropertiesTest {
             .getValidator();
 
     @Test
-    void shouldBindAccessTokenProviderAndTtl() {
+    void shouldBindOAuth2AccessTokenFormatAndTtl() {
         MapConfigurationPropertySource source = new MapConfigurationPropertySource(Map.of(
-                "user-auth.authentication.access-token.provider", "session-token",
-                "user-auth.authentication.access-token.ttl", "20m"));
+                "user-auth.authentication.oauth2.access-token.format", "reference",
+                "user-auth.authentication.oauth2.access-token.ttl", "20m"));
 
         AccessTokenProperties properties = new Binder(source)
-                .bind("user-auth.authentication.access-token",
+                .bind("user-auth.authentication.oauth2.access-token",
                         Bindable.of(AccessTokenProperties.class))
                 .orElseThrow(IllegalStateException::new);
 
-        assertEquals(AccessTokenProperties.Provider.SESSION_TOKEN, properties.getProvider());
+        assertEquals(AccessTokenProperties.Format.REFERENCE, properties.getFormat());
         assertEquals(Duration.ofMinutes(20), properties.getTtl());
         assertTrue(VALIDATOR.validate(properties).isEmpty());
     }

@@ -56,21 +56,20 @@ user-auth:
       mini-program:
         renewal-policy: ${USER_AUTH_MINI_PROGRAM_RENEWAL_POLICY:EXTERNAL_AUTHORIZATION_CODE}
         oauth2-scopes:
-          - app.api
+          - app
       app:
         renewal-policy: ${USER_AUTH_APP_RENEWAL_POLICY:REFRESH_TOKEN_ROTATION}
         oauth2-scopes:
-          - app.api
+          - app
       admin:
         renewal-policy: ${USER_AUTH_ADMIN_RENEWAL_POLICY:NONE}
         oauth2-scopes:
-          - admin.api
-    access-token:
-      provider: ${USER_AUTH_ACCESS_TOKEN_PROVIDER:sas}
-      ttl: ${USER_AUTH_ACCESS_TOKEN_TTL:15m}
+          - admin
     oauth2:
+      access-token:
+        format: ${USER_AUTH_OAUTH2_ACCESS_TOKEN_FORMAT:SELF_CONTAINED}
+        ttl: ${USER_AUTH_OAUTH2_ACCESS_TOKEN_TTL:15m}
       authorization-server:
-        enabled: ${USER_AUTH_OAUTH2_ENABLED:true}
         sas:
           issuer: ${USER_AUTH_OAUTH2_ISSUER:http://localhost:8081}
           internal-token-client:
@@ -83,10 +82,10 @@ user-auth:
           refresh-token:
             ttl: ${USER_AUTH_OAUTH2_REFRESH_TOKEN_TTL:30d}
           scopes:
-            - app.api
-            - admin.api
+            - app
+            - admin
           audiences:
-            - cloud-platform-api
+            - cloud-api
           signature:
             key-store:
               type: ${USER_AUTH_OAUTH2_KEY_STORE_TYPE:PKCS12}

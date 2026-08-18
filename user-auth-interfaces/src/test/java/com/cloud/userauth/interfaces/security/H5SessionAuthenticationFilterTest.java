@@ -65,7 +65,7 @@ class H5SessionAuthenticationFilterTest {
         }
 
         @Override
-        public void revokeByLoginSessionId(SessionId loginSessionId) {
+        public void revoke(SessionId loginSessionId) {
             throw new UnsupportedOperationException();
         }
     }
