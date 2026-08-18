@@ -512,6 +512,7 @@ public class UserAuthConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public MobileOtpLoginTransactionService mobileOtpLoginTransactionService(
+            LoginSessionProperties loginSessionProperties,
             AuthChallengeRepository challengeRepository,
             RegistrationProcessRepository registrationRepository,
             AuthAccountRepository authAccountRepository,
@@ -521,15 +522,13 @@ public class UserAuthConfiguration {
             ChallengeSecretHasher secretHasher,
             AuthenticationDomainService authenticationDomainService,
             DomainEventStore domainEventStore,
-            Clock clock,
-            LoginSessionProperties loginSessionProperties
+            Clock clock
     ) {
         return new MobileOtpLoginTransactionService(
-                challengeRepository, registrationRepository, authAccountRepository,
-                sessionRepository, userIdGenerator, credentialIdGenerator,
-                secretHasher, authenticationDomainService, domainEventStore,
-                clock,
-                loginSessionProperties.getTtl());
+                loginSessionProperties.getTtl(), challengeRepository,
+                registrationRepository, authAccountRepository, sessionRepository,
+                userIdGenerator, credentialIdGenerator, secretHasher,
+                authenticationDomainService, domainEventStore, clock);
     }
 
     @Bean

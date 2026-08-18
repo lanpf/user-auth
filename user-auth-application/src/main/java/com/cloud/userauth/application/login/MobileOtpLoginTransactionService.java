@@ -41,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 /** 手机号登录流程中的本地事务命令服务。 */
 @RequiredArgsConstructor
 public class MobileOtpLoginTransactionService {
+    private final Duration sessionTtl;
     private final AuthChallengeRepository challengeRepository;
     private final RegistrationProcessRepository registrationRepository;
     private final AuthAccountRepository authAccountRepository;
@@ -51,7 +52,6 @@ public class MobileOtpLoginTransactionService {
     private final AuthenticationDomainService authenticationDomainService;
     private final DomainEventStore domainEventStore;
     private final Clock clock;
-    private final Duration sessionTtl;
 
     @Transactional
     public AuthChallenge verifyChallenge(MobileOtpAuthenticationCommand command) {
