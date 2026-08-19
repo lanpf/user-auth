@@ -125,8 +125,8 @@ user-auth:
           trusted-mobile: ${USER_AUTH_EXTERNAL_WECHAT_MINI_PROGRAM_TRUSTED_MOBILE:true}
       wechat-mini-program:
         enabled: ${USER_AUTH_WECHAT_MINI_PROGRAM_ENABLED:false}
-        app-id: ${USER_AUTH_WECHAT_MINI_PROGRAM_APP_ID:wxdab042eed39eee98}
-        app-secret: ${USER_AUTH_WECHAT_MINI_PROGRAM_APP_SECRET:c896e173137a5e99389abfe656667c0a}
+        app-id: ${USER_AUTH_WECHAT_MINI_PROGRAM_APP_ID:}
+        app-secret: ${USER_AUTH_WECHAT_MINI_PROGRAM_APP_SECRET:}
         access-token-refresh-skew: ${USER_AUTH_WECHAT_MINI_PROGRAM_ACCESS_TOKEN_REFRESH_SKEW:1m}
         rest-client:
           connect-timeout: ${USER_AUTH_WECHAT_MINI_PROGRAM_CONNECT_TIMEOUT:2s}

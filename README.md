@@ -47,6 +47,7 @@
 
 - [领域文档](docs/DOMAIN.md)：认证域、功能授权领域模型、边界、当前交付状态和业务 API 语义。涉及领域规则、错误或 API 业务语义时必须阅读。
 - [Client 与 Channel 上下文设计](docs/CLIENT_AND_CHANNEL_CONTEXT.md)：ClientApp、platform、channelCode、入口信任边界和渠道功能授权策略。涉及登录入口、调用方身份或渠道授权时必须阅读。
+- [网关职责与信任边界](docs/GATEWAY_RESPONSIBILITIES.md)：统一入口安全、Access Token 校验、可信 Header、内部调用、H5 流量及网关与服务的职责边界。
 - [OAuth2/OIDC 协议基础设施](docs/OAUTH2_OIDC_PROTOCOL_INFRASTRUCTURE.md)：SAS Provider、grant、Token、scope、JWK、协议存储与端点安全。涉及 OAuth2、OIDC、SAS、Token 生命周期或协议配置时必须阅读。
 
 ## 本地验证
