@@ -3,8 +3,8 @@ package com.cloud.userauth.domain.authentication.service;
 import com.cloud.framework.domain.DomainEventIdGenerator;
 import com.cloud.userauth.domain.authentication.account.AuthAccount;
 import com.cloud.userauth.domain.authentication.account.AuthAccountId;
-import com.cloud.framework.domain.DomainEvent;
 import com.cloud.userauth.domain.authentication.credential.CredentialId;
+import com.cloud.userauth.domain.authentication.credential.CredentialStatus;
 import com.cloud.userauth.domain.authentication.credential.LoginMobile;
 import com.cloud.userauth.domain.authentication.event.AuthAccountCreatedEvent;
 import com.cloud.userauth.domain.authentication.event.UserLoggedInEvent;
@@ -13,9 +13,10 @@ import com.cloud.userauth.domain.authentication.session.Device;
 import com.cloud.userauth.domain.authentication.session.LoginScene;
 import com.cloud.userauth.domain.authentication.session.LoginSession;
 import com.cloud.userauth.domain.authentication.session.SessionId;
+import com.cloud.userauth.domain.common.DomainError;
+import com.cloud.userauth.domain.common.DomainException;
 import com.cloud.userauth.domain.user.UserId;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 
@@ -53,12 +54,11 @@ public class AuthenticationDomainService {
         authAccount.ensureCanLogin();
         boolean credentialActive = authAccount.credentials().stream()
                 .anyMatch(credential -> credential.id().equals(authenticatedCredentialId)
-                        && credential.status() == com.cloud.userauth.domain.authentication.credential.CredentialStatus.ACTIVE);
+                        && credential.status() == CredentialStatus.ACTIVE);
         if (!credentialActive) {
-            throw new com.cloud.userauth.domain.common.DomainException(
-                    com.cloud.userauth.domain.common.DomainError.AUTH_ACCOUNT_CREDENTIAL_NOT_FOUND);
+            throw new DomainException(DomainError.AUTH_ACCOUNT_CREDENTIAL_NOT_FOUND);
         }
-        LoginSession session = LoginSession.create(
+        LoginSession loginSession = LoginSession.create(
                 sessionId,
                 authAccount.userId(),
                 authAccount.id(),
@@ -69,10 +69,11 @@ public class AuthenticationDomainService {
                 loggedInAt,
                 sessionExpiresAt
         );
-        List<DomainEvent> events = new ArrayList<>();
-        events.add(new UserLoggedInEvent(
-                domainEventIdGenerator.nextId(), loggedInAt, authAccount.userId(), authAccount.id(), session.id()
-        ));
-        return new LoginAuthenticationEffect(session, events);
+        return new LoginAuthenticationEffect(
+                loginSession,
+                List.of(new UserLoggedInEvent(
+                        domainEventIdGenerator.nextId(), loggedInAt, authAccount.userId(), authAccount.id(), loginSession.id()
+                ))
+        );
     }
 }

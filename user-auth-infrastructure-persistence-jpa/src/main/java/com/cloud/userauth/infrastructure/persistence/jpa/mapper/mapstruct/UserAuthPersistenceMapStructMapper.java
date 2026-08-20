@@ -100,7 +100,7 @@ public interface UserAuthPersistenceMapStructMapper extends UserAuthPersistenceM
     @Mapping(target = "id", source = "id.value")
     @Mapping(target = "issuer", source = "issuer.code")
     @Mapping(target = "issuerType", source = "issuer.issuerType")
-    @Mapping(target = "externalPrincipal", source = "externalPrincipal.value")
+    @Mapping(target = "principal", source = "principal.value")
     @Mapping(target = "mobile", source = "mobile.value")
     @Mapping(target = "status", source = "status")
     @Mapping(target = "sessionId", source = "sessionId.value")
@@ -193,7 +193,7 @@ public interface UserAuthPersistenceMapStructMapper extends UserAuthPersistenceM
                 new CredentialIssuer(
                         source.getIssuer(),
                         CredentialIssuerType.valueOf(source.getIssuerType())),
-                new Principal(source.getExternalPrincipal()),
+                new Principal(source.getPrincipal()),
                 source.getDisplayName(),
                 loginMobile(source.getMobile()),
                 source.isMobileVerified(),

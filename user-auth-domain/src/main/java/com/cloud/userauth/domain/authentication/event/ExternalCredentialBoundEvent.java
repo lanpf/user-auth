@@ -12,18 +12,18 @@ import lombok.Getter;
 public class ExternalCredentialBoundEvent extends AbstractDomainEvent {
     private final AuthAccountId authAccountId;
     private final CredentialIssuer issuer;
-    private final Principal externalPrincipal;
+    private final Principal principal;
 
     public ExternalCredentialBoundEvent(
             DomainEventId eventId,
             Instant occurredAt,
             AuthAccountId authAccountId,
             CredentialIssuer issuer,
-            Principal externalPrincipal
+            Principal principal
     ) {
         super(eventId, occurredAt);
         this.authAccountId = authAccountId;
         this.issuer = issuer;
-        this.externalPrincipal = externalPrincipal;
+        this.principal = principal;
     }
 }

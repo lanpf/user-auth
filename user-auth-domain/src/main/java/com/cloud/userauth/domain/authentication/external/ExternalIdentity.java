@@ -8,13 +8,13 @@ import com.cloud.userauth.domain.authentication.credential.Principal;
 
 public record ExternalIdentity(
         CredentialIssuer issuer,
-        Principal externalPrincipal,
+        Principal principal,
         LoginMobile mobile,
         boolean mobileVerified,
         String displayName
 ) {
     public ExternalIdentity {
-        if (issuer == null || externalPrincipal == null) {
+        if (issuer == null || principal == null) {
             throw new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID);
         }
     }

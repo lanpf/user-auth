@@ -56,7 +56,7 @@ public class Credential {
     public static Credential external(
             CredentialId credentialId,
             CredentialIssuer issuer,
-            Principal externalPrincipal,
+            Principal principal,
             Instant createdAt
     ) {
         if (issuer == null || issuer.isLocal()) {
@@ -66,7 +66,7 @@ public class Credential {
                 credentialId,
                 CredentialType.EXTERNAL,
                 issuer,
-                externalPrincipal,
+                principal,
                 CredentialStatus.ACTIVE,
                 createdAt,
                 createdAt,

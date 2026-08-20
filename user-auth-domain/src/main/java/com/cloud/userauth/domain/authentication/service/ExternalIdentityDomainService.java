@@ -19,6 +19,17 @@ import java.util.List;
 public class ExternalIdentityDomainService {
     private final DomainEventIdGenerator domainEventIdGenerator;
 
+    public ExternalIdentityAcceptanceEffect acceptExternalIdentityBinding(
+            ExternalIdentity identity,
+            LoginAttemptId loginAttemptId,
+            Instant acceptedAt,
+            Instant loginAttemptExpiresAt
+    ) {
+        LoginAttempt loginAttempt = LoginAttempt.createReady(
+                loginAttemptId, identity, null, acceptedAt, loginAttemptExpiresAt);
+        return acceptanceEffect(identity, null, loginAttempt, acceptedAt);
+    }
+
     public ExternalIdentityAcceptanceEffect acceptExternalIdentity(
             ExternalIdentity identity,
             IssuerMobileTrustPolicy trustPolicy,
@@ -47,17 +58,6 @@ public class ExternalIdentityDomainService {
         ));
     }
 
-    public ExternalIdentityAcceptanceEffect acceptBoundExternalIdentity(
-            ExternalIdentity identity,
-            LoginAttemptId loginAttemptId,
-            Instant acceptedAt,
-            Instant loginAttemptExpiresAt
-    ) {
-        LoginAttempt loginAttempt = LoginAttempt.createReady(
-                loginAttemptId, identity, null, acceptedAt, loginAttemptExpiresAt);
-        return acceptanceEffect(identity, null, loginAttempt, acceptedAt);
-    }
-
     private ExternalIdentityAcceptanceEffect acceptanceEffect(
             ExternalIdentity identity,
             LoginMobile trustedMobile,
@@ -73,7 +73,7 @@ public class ExternalIdentityDomainService {
                         acceptedAt,
                         loginAttempt.id(),
                         loginAttempt.issuer(),
-                        loginAttempt.externalPrincipal()
+                        loginAttempt.principal()
                 )));
     }
 }

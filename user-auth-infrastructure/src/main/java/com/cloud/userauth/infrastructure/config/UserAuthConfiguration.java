@@ -4,7 +4,7 @@ import com.cloud.framework.domain.DomainEventIdGenerator;
 import com.cloud.framework.domain.DomainEventStore;
 import com.cloud.framework.id.LongIdGenerator;
 import com.cloud.framework.lock.LockExecutor;
-import com.cloud.userauth.application.challenge.AuthChallengeCommandService;
+import com.cloud.userauth.application.challenge.AuthChallengeIssueCommandService;
 import com.cloud.userauth.application.authorization.AuthorizationQueryService;
 import com.cloud.userauth.application.authorization.AuthorizationCatalogCommandService;
 import com.cloud.userauth.application.authorization.ChannelAuthorizationPolicyCommandService;
@@ -240,7 +240,7 @@ public class UserAuthConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AuthChallengeCommandService authChallengeCommandService(
+    public AuthChallengeIssueCommandService authChallengeIssueCommandService(
             AuthChallengeRepository challengeRepository,
             OneTimeCodeGenerator codeGenerator,
             ChallengeSecretHasher secretHasher,
@@ -249,7 +249,7 @@ public class UserAuthConfiguration {
             AuthChallengePolicyProvider policyProvider,
             Clock clock
     ) {
-        return new AuthChallengeCommandService(
+        return new AuthChallengeIssueCommandService(
                 challengeRepository,
                 codeGenerator,
                 secretHasher,
@@ -525,10 +525,10 @@ public class UserAuthConfiguration {
             Clock clock
     ) {
         return new MobileOtpLoginTransactionService(
-                loginSessionProperties.getTtl(), challengeRepository,
+                challengeRepository,
                 registrationRepository, authAccountRepository, sessionRepository,
                 userIdGenerator, credentialIdGenerator, secretHasher,
-                authenticationDomainService, domainEventStore, clock);
+                authenticationDomainService, domainEventStore, clock, loginSessionProperties.getTtl());
     }
 
     @Bean

@@ -15,7 +15,7 @@ import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class AuthChallengeCommandService {
+public class AuthChallengeIssueCommandService {
     private final AuthChallengeRepository repository;
     private final OneTimeCodeGenerator codeGenerator;
     private final ChallengeSecretHasher secretHasher;
@@ -41,10 +41,10 @@ public class AuthChallengeCommandService {
                 .map(challenge -> new IssueAuthChallengeOutput(
                         challenge.id().value(), challenge.getExpiresAt(), true
                 ))
-                .orElseGet(() -> executeNew(command, target, now));
+                .orElseGet(() -> issueNew(command, target, now));
     }
 
-    private IssueAuthChallengeOutput executeNew(
+    private IssueAuthChallengeOutput issueNew(
             IssueAuthChallengeCommand command,
             ChallengeTarget target,
             Instant now

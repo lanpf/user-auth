@@ -12,18 +12,18 @@ import lombok.Getter;
 public class LoginAttemptCreatedEvent extends AbstractDomainEvent {
     private final LoginAttemptId loginAttemptId;
     private final CredentialIssuer issuer;
-    private final Principal externalPrincipal;
+    private final Principal principal;
 
     public LoginAttemptCreatedEvent(
             DomainEventId eventId,
             Instant occurredAt,
             LoginAttemptId loginAttemptId,
             CredentialIssuer issuer,
-            Principal externalPrincipal
+            Principal principal
     ) {
         super(eventId, occurredAt);
         this.loginAttemptId = loginAttemptId;
         this.issuer = issuer;
-        this.externalPrincipal = externalPrincipal;
+        this.principal = principal;
     }
 }

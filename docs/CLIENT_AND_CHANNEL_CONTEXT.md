@@ -39,9 +39,9 @@ status                ENABLED / DISABLED
 displayName           运维展示名称
 ```
 
-`appId + platform` 必须在管理系统中登记；以全局唯一的 `appId` 为标识、将 `platform` 作为不可随意改写的属性。这样一次登录请求只需带 `appId` 与可选版本，服务端从 ClientApp 解析 `platform`，而非相信调用方提交的 platform。
+`appId + platform` 必须在管理系统中登记；以全局唯一的 `appId` 为标识，一个 appId 唯一绑定一个不可原地迁移的 platform。平台变化应登记新的 appId。这样一次登录请求只需带 `appId` 与可选版本，服务端从 ClientApp 解析 `platform`，而非相信调用方提交的 platform。
 
-`LoginSession.Client` 保存的是解析后的历史快照：`appId`、`platform`、`version`。ClientApp 后续被改名、停用或迁移时，历史会话仍能表达当时实际的接入形态。
+`LoginSession.Client` 保存的是解析后的历史快照：`appId`、`platform`、`version`。ClientApp 后续被停用或由新的 appId 替代时，历史会话仍能表达当时实际的接入形态；platform 不在原 appId 上迁移。
 
 ### 内部服务
 
@@ -53,7 +53,7 @@ displayName           运维展示名称
 | 管理服务 | `admin-service` | `SERVICE` |
 | 批处理任务 | `coupon-batch-job` | `JOB` |
 
-服务的真实身份由 mTLS、workload identity、client credential 或服务 JWT 确认，再映射为 appId。若内部服务只是代理终端用户请求，`LoginSession.Client` 应保留最终用户客户端；中间服务身份进入网关与操作审计链路，不覆盖终端 Client。
+当前内部服务位于可信内网，不额外设计 workload identity、service token 或 delegation。内部接口需要 ClientApp 上下文时仍使用约定的 appId 与 `SERVICE`/`JOB` platform；代理终端用户请求时保留并传播最终用户 Client、Channel、User、Session、Subject Type 与 trace 上下文，不覆盖 `LoginSession.Client`。
 
 ## ChannelContext
 
@@ -78,17 +78,17 @@ verifiedAt
 requestId
 ```
 
-当前 REST 入口使用以下网关注入 Header：`X-Client-App-Id`、`X-Client-Platform`、`X-Client-Version`、`X-Channel-Code`；认证后的请求由网关写入 `X-User-Id` 与 `X-Session-Id`。所有有业务参数的 Controller 接口必须将参数收敛为一个 `ClientRequest` 子类型。`ClientRequest` 是共同基类；渠道能力由 `ChannelRequestContext` 组合，认证会话能力由 `AuthenticatedSessionRequestContext` 组合。框架提供 `ClientChannelRequest`、`AuthenticatedSessionRequest` 和同时组合两种能力的 `AuthenticatedSessionChannelRequest`。
+目标 REST 入口使用以下网关注入 Header：`X-Client-App-Id`、`X-Client-Platform`、`X-Client-Version`、`X-Channel-Code`；认证后的请求由网关写入 `X-Subject-Type`、`X-User-Id` 与 `X-Session-Id`。`X-Subject-Type` 区分 `HOST_SESSION` 与 `BROWSER_SESSION`，下游不得把缺失或未知类型默认解释为宿主权限；该 Header 及 Browser Session gateway 验证尚待代码迁移。所有有业务参数的 Controller 接口必须将参数收敛为一个 `ClientRequest` 子类型。`ClientRequest` 是共同基类；渠道能力由 `ChannelRequestContext` 组合，认证会话能力由 `AuthenticatedSessionRequestContext` 组合。框架提供 `ClientChannelRequest`、`AuthenticatedSessionRequest` 和同时组合两种能力的 `AuthenticatedSessionChannelRequest`。
 
 有业务请求体时继承所需框架类型，或自行继承 `ClientRequest` 并实现一个或两个上下文能力接口，由 `RequestBodyAdvice` 注入上下文；Advice 只绑定 Header，随后由 Spring MVC 根据 `@Valid` 执行 Bean Validation。无业务请求体但需要上下文时，Controller 直接声明不带 `@RequestBody` 的框架具体请求类型，由统一的 argument resolver 创建。所有 `ClientRequest` 及其子类型的 Controller 参数都必须标注 `@Valid`。
 
-这些 Header 只在网关到服务的受控链路内可信。网关必须删除调用方提交的所有受保护 Header，再根据 ClientApp 配置推导平台、验证渠道组合，并在 Access Token 校验成功后从 `sub` 与 `session_id` 写入用户和会话。user-auth 不再对业务 REST 接口重复解析 Bearer Token，但会使用 `userId + sessionId` 回查 LoginSession，验证会话归属和状态。
+这些 Header 只在 gateway 与可信内网中有效。gateway 必须删除外部调用方提交的所有受保护 Header，再根据 IngressClientAppPolicy 推导平台、根据 IngressChannelAccessPolicy 验证渠道组合，并根据 IngressRouteAccessPolicy 选择 Bearer 或 Browser Session 认证。认证成功后写入 Subject Type、UserId 与 SessionId；user-auth 不再对业务 REST 接口重复解析 Bearer Token 或 Browser Cookie，但会使用 `userId + sessionId` 回查 LoginSession，验证会话归属和状态。
 
 继承关系表达接口的强制上下文需求：继承 `ClientRequest` 表示 `X-Client-App-Id` 必须存在；继承 `ClientChannelRequest` 表示该接口确实需要渠道，因此 `X-Channel-Code` 也必须存在。无需渠道的接口不得继承 `ClientChannelRequest`，不得通过把 `channelCode` 改为可选值来兼容两种语义。
 
 业务入口与管理入口必须区分“当前请求上下文”和“管理员操作目标”。业务入口继承 `ClientChannelRequest` 时，`channelCode` 只来自网关注入的 `X-Channel-Code`；管理入口只继承 `ClientRequest`，调用上下文仅要求 `X-Client-App-Id`，并在 JSON 中使用 `targetChannelCode` 或 `targetUserId` 显式声明管理目标。即使网关额外携带 `X-Channel-Code` 或 `X-User-Id`，Header Binder 也不会覆盖这些目标字段。管理目标不得命名为 `channelCode` 或 `userId`，避免与上下文语义混淆。
 
-`channelCode` 的存在、状态以及与 ClientApp 的合法组合由渠道/网关边界管理。`user-auth` 不维护渠道主数据；它只校验编码格式，并把该值用于查找自身的渠道功能授权策略。未配置策略时登录仍可继续，但不会产生任何渠道来源授权。
+`channelCode` 是否为端点必填由 gateway 的 IngressRouteAccessPolicy 决定，`ClientAppId + ChannelCode` 的合法组合由 IngressChannelAccessPolicy 决定。目标形态由 gateway 的 Admin API 维护并通过统一快照发布；当前代码仍由 gateway infrastructure 的本地配置提供。`user-auth` 不维护这些入口策略，只校验编码格式，并把已验证 channelCode 用于查找自身的渠道功能授权策略。未配置功能授权策略时登录仍可继续，但不会产生任何渠道来源授权。
 
 ## 渠道功能授权策略
 
@@ -152,4 +152,4 @@ GrantSource.sourceId   = channelCode
 | interfaces | REST/RPC 仅接收或读取受保护的入口上下文，不实现业务策略。 |
 | boot | 选择配置和适配器并完成装配。 |
 
-当前已交付 Permission/Role 目录管理、渠道策略持久化、管理查询 API、登录同步和显式批量重放。补偿使用 `(channelCode, appliedVersion, userId)` 索引按稳定 userId 顺序选择未达到目标版本的用户；每个用户同步与游标写入在同一本地事务内提交，因此失败重试从已提交边界继续。策略停用或用户游标落后于当前策略版本时，查询会 fail-closed，不把该渠道来源的旧授权视为有效。ClientApp/Channel 主数据目录、人工授权 API、异步批量触发器以及资源服务器运行时鉴权仍未交付。
+当前已交付 Permission/Role 目录管理、渠道策略持久化、管理查询 API、登录同步和显式批量重放。补偿使用 `(channelCode, appliedVersion, userId)` 索引按稳定 userId 顺序选择未达到目标版本的用户；每个用户同步与游标写入在同一本地事务内提交，因此失败重试从已提交边界继续。策略停用或用户游标落后于当前策略版本时，查询会 fail-closed，不把该渠道来源的旧授权视为有效。gateway 当前仍以本地配置提供三类入口策略；目标是由 gateway Admin API 修改其中任一类后，通过技术无关的快照发布端口完整校验并发布统一 IngressPolicySnapshot，Nacos 只是优先候选 adapter。人工授权 API、异步批量触发器以及资源服务器运行时功能鉴权仍未交付。

@@ -38,7 +38,7 @@
 | `user-auth-infrastructure-oauth2-sas` | OAuth2/OIDC 协议基础设施的 SAS 实现；OIDC 端点按显式配置启用。                                                                                                                                                        |
 | `user-auth-infrastructure-oauth2-redis` | OAuth2 授权记录与 Token 状态的 Redis 持久化。                                                                                                                                                                         |
 | `user-auth-infrastructure-session-redis` | Session handoff ticket 与 Browser Session 的 Redis 实现。                                                                                                                                                                  |
-| `user-auth-interfaces` | REST 接口、可信网关会话 Header 接入和 Browser Cookie 会话安全配置。                                                                                                                                                        |
+| `user-auth-interfaces` | REST 接口与可信网关会话 Header 接入；当前仍保留待迁移的 Browser Cookie 认证实现，目标由 gateway 统一验证 Browser Session。                                                                                                  |
 | `user-auth-boot` | 运行时组装与启动。                                                                                                                                                                                                    |
 
 依赖方向为：`api/domain` ← `application` ← `infrastructure/interfaces` ← `boot`。协议基础设施是 `application` 端口的外层实现，不能反向依赖领域模型以外的外层模块。
@@ -74,4 +74,4 @@ Maven 或运行可执行 jar 时，Spring 会从 `./config/` 加载 `application
 
 `user-auth` 的服务配置按子域隔离：认证、登录会话、宿主访问令牌、外部身份及 OAuth2/OIDC 协议基础设施统一位于 `user-auth.authentication`；`user-auth.authorization` 专门保留给功能授权子域。当前 Permission、Role、渠道授权策略均由关系型数据管理，功能授权子域没有独立运行时 Properties，因此配置文件不声明空的 `authorization` 节点。
 
-OAuth2 Access Token 的格式与有效期统一配置在 `user-auth.authentication.oauth2.access-token.format/ttl`，默认 `SELF_CONTAINED`、TTL 15 分钟；选择 `REFERENCE` 时仍以标准 `Authorization: Bearer` 携带，但由授权存储和 introspection 在线校验。ClientApp 的续期策略和 OAuth2 scope 分别使用 `renewal-policy` 与 `oauth2-scopes`；后者只是协议 scope，不是功能授权 Permission。外部业务 Access Token 只由同级 gateway 验证；user-auth 的业务 REST 接口消费网关覆盖写入的 `X-User-Id`、`X-Session-Id` 等可信上下文，并通过 LoginSession 再校验命令归属。SAS 自身的 OAuth2/OIDC 协议端点仍由 SAS 安全链负责。
+OAuth2 Access Token 的格式与有效期统一配置在 `user-auth.authentication.oauth2.access-token.format/ttl`，默认 `SELF_CONTAINED`、TTL 15 分钟；选择 `REFERENCE` 时仍以标准 `Authorization: Bearer` 携带，但由授权存储和 introspection 在线校验。ClientApp 的续期策略和 OAuth2 scope 分别使用 `renewal-policy` 与 `oauth2-scopes`；后者只是协议 scope，不是功能授权 Permission。外部业务 Access Token 与 Browser Session 都由同级 gateway 验证；user-auth 的业务 REST 接口消费 gateway 覆盖写入的 `X-Subject-Type`、`X-User-Id`、`X-Session-Id` 等可信上下文，并通过 LoginSession 再校验命令归属。SAS 自身的 OAuth2/OIDC 协议端点仍由 SAS 安全链负责。Browser Session gateway 验证及 Subject Type Header 尚待代码迁移。

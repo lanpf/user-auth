@@ -76,7 +76,7 @@ public class ExternalLoginTransactionService {
         }
 
         CredentialKey externalKey = CredentialKey.external(
-                loginAttempt.getIssuer(), loginAttempt.getExternalPrincipal());
+                loginAttempt.getIssuer(), loginAttempt.getPrincipal());
         AuthAccount externalAccount = authAccountRepository.findByCredential(externalKey).orElse(null);
         if (externalAccount != null) {
             ensureMobileAccountDoesNotConflict(loginAttempt, externalAccount);
@@ -96,7 +96,7 @@ public class ExternalLoginTransactionService {
                 account,
                 credentialIdGenerator.nextId(),
                 loginAttempt.getIssuer(),
-                loginAttempt.getExternalPrincipal(),
+                loginAttempt.getPrincipal(),
                 now);
         authAccountRepository.save(binding.authAccount());
         domainEventStore.appendAll(binding.events());

@@ -6,8 +6,8 @@ import com.cloud.userauth.domain.authentication.credential.Principal;
 import java.util.Optional;
 
 public interface LoginAttemptRepository extends Repository<LoginAttempt, LoginAttemptId> {
-    Optional<LoginAttempt> findPendingByIssuerAndExternalPrincipal(
+    Optional<LoginAttempt> findPendingByIssuerAndPrincipal(
             CredentialIssuer issuer,
-            Principal externalPrincipal
+            Principal principal
     );
 }

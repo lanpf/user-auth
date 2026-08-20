@@ -37,9 +37,9 @@ class WechatMiniProgramExternalIdentityVerifierTest {
         ExternalIdentity identity = verifier.verify(
                 ProofType.AUTHORIZATION_CODE,
                 Map.of(
-                        WechatMiniProgramProofParameterNames.LOGIN_CODE,
+                        WechatMiniProgramProofParameters.LOGIN_CODE,
                         "login-code",
-                        WechatMiniProgramProofParameterNames.PHONE_CODE,
+                        WechatMiniProgramProofParameters.PHONE_CODE,
                         "phone-code"));
 
         assertEquals(
@@ -48,7 +48,7 @@ class WechatMiniProgramExternalIdentityVerifierTest {
         assertEquals(
                 CredentialIssuerType.PUBLIC_THIRD_PARTY,
                 identity.issuer().issuerType());
-        assertEquals("openid-1", identity.externalPrincipal().value());
+        assertEquals("openid-1", identity.principal().value());
         assertEquals("13800138000", identity.mobile().value());
         assertTrue(identity.mobileVerified());
         assertEquals(1, client.phoneExchangeCount);
@@ -62,7 +62,7 @@ class WechatMiniProgramExternalIdentityVerifierTest {
         ExternalIdentity identity = verifier(client).verify(
                 ProofType.AUTHORIZATION_CODE,
                 Map.of(
-                        WechatMiniProgramProofParameterNames.LOGIN_CODE,
+                        WechatMiniProgramProofParameters.LOGIN_CODE,
                         "login-code"));
 
         assertNull(identity.mobile());
@@ -80,14 +80,14 @@ class WechatMiniProgramExternalIdentityVerifierTest {
                 () -> verifier.verify(
                         ProofType.SIGNED_ASSERTION,
                         Map.of(
-                                WechatMiniProgramProofParameterNames.LOGIN_CODE,
+                                WechatMiniProgramProofParameters.LOGIN_CODE,
                                 "login-code")));
         ApplicationException invalid = assertThrows(
                 ApplicationException.class,
                 () -> verifier.verify(
                         ProofType.AUTHORIZATION_CODE,
                         Map.of(
-                                WechatMiniProgramProofParameterNames.PHONE_CODE,
+                                WechatMiniProgramProofParameters.PHONE_CODE,
                                 "phone-code")));
 
         assertEquals(ApplicationError.APP_LOGIN_REJECTED.errorCode(), unsupported.getErrorCode());

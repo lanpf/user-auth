@@ -10,7 +10,7 @@ import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommand;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommandOutput;
 import com.cloud.userauth.api.authentication.TrustedMobileLoginApiCommand;
 import com.cloud.userauth.api.facade.UserAuthenticationCommandFacade;
-import com.cloud.userauth.application.challenge.AuthChallengeCommandService;
+import com.cloud.userauth.application.challenge.AuthChallengeIssueCommandService;
 import com.cloud.userauth.application.login.MobileOtpLoginCommandService;
 import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandService;
 import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommand;
@@ -35,7 +35,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @RequiredArgsConstructor
 public class DefaultUserAuthenticationCommandFacade implements UserAuthenticationCommandFacade {
-    private final AuthChallengeCommandService authChallengeCommandService;
+    private final AuthChallengeIssueCommandService authChallengeIssueCommandService;
     private final MobileOtpLoginCommandService mobileOtpLoginCommandService;
     private final RefreshTokenLoginCommandService refreshTokenLoginCommandService;
     private final ExternalLoginAttemptCommandService externalLoginAttemptCommandService;
@@ -48,19 +48,13 @@ public class DefaultUserAuthenticationCommandFacade implements UserAuthenticatio
 
     @Override
     public Result<IssueAuthChallengeApiCommandOutput> issueAuthChallenge(IssueAuthChallengeApiCommand command) {
-        return Result.success(mapper.toOutput(authChallengeCommandService.execute(mapper.toCommand(command))));
+        return Result.success(mapper.toOutput(authChallengeIssueCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
     public Result<MobileOtpLoginApiCommandOutput> loginWithMobileOtp(MobileOtpLoginApiCommand command) {
         return Result.success(mapper.toOutput(
                 mobileOtpLoginCommandService.execute(mapper.toCommand(command))));
-    }
-
-    @Override
-    public Result<RefreshTokenLoginApiCommandOutput> refreshTokenLogin(RefreshTokenLoginApiCommand command) {
-        return Result.success(mapper.toOutput(
-                refreshTokenLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
@@ -95,13 +89,18 @@ public class DefaultUserAuthenticationCommandFacade implements UserAuthenticatio
                 boundCredentialLoginCommandService.execute(mapper.toCommand(command))));
     }
 
-
     @Override
     public Result<Void> bindExternalCredential(
             BindExternalCredentialApiCommand command
     ) {
         bindExternalCredentialCommandService.execute(mapper.toCommand(command));
         return Result.success();
+    }
+
+    @Override
+    public Result<RefreshTokenLoginApiCommandOutput> refreshTokenLogin(RefreshTokenLoginApiCommand command) {
+        return Result.success(mapper.toOutput(
+                refreshTokenLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override

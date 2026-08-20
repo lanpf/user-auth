@@ -27,22 +27,22 @@ public class CredentialDomainService {
             AuthAccount authAccount,
             CredentialId credentialId,
             CredentialIssuer issuer,
-            Principal externalPrincipal,
+            Principal principal,
             Instant boundAt
     ) {
-        CredentialKey key = CredentialKey.external(issuer, externalPrincipal);
+        CredentialKey key = CredentialKey.external(issuer, principal);
         authAccountRepository.findByCredential(key)
                 .filter(existing -> !existing.id().equals(authAccount.id()))
                 .ifPresent(existing -> {
                     throw new DomainException(DomainError.AUTH_ACCOUNT_CREDENTIAL_ALREADY_EXISTS);
                 });
         Credential credential = authAccount.bindExternalCredential(
-                credentialId, issuer, externalPrincipal, boundAt);
+                credentialId, issuer, principal, boundAt);
         return new CredentialChangeEffect(
                 authAccount,
                 credential,
                 List.of(new ExternalCredentialBoundEvent(
-                        domainEventIdGenerator.nextId(), boundAt, authAccount.id(), issuer, externalPrincipal
+                        domainEventIdGenerator.nextId(), boundAt, authAccount.id(), issuer, principal
                 ))
         );
     }

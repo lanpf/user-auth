@@ -4,9 +4,7 @@ import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.application.common.ApplicationException;
 import com.cloud.userauth.application.port.ClientRenewalPolicy;
 import com.cloud.userauth.application.port.ClientRenewalPolicyResolver;
-import com.cloud.userauth.domain.authentication.external.ProofType;
 import jakarta.validation.Valid;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 
@@ -26,8 +24,8 @@ public class BoundCredentialLoginCommandService {
             throw new ApplicationException(ApplicationError.APP_LOGIN_CLIENT_NOT_ALLOWED);
         }
         ExternalLoginAttemptOutput attempt = externalLoginAttemptCommandService.execute(
-                new ExternalLoginAttemptCommand(command.issuer(), ProofType.AUTHORIZATION_CODE,
-                        Map.of("authorizationCode", command.authorizationCode())));
+                ExternalLoginAttemptCommand.withAuthorizationCode(command.issuer(), command.authorizationCode())
+        );
         if (attempt.mobileVerificationRequired()) {
             throw new ApplicationException(ApplicationError.APP_LOGIN_REJECTED);
         }

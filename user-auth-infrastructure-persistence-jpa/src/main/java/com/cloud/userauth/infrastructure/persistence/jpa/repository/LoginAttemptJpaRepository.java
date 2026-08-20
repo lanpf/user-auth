@@ -5,9 +5,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LoginAttemptJpaRepository extends JpaRepository<LoginAttemptDO, String> {
-    Optional<LoginAttemptDO> findFirstByIssuerAndExternalPrincipalAndStatusInOrderByCreatedAtDesc(
+    Optional<LoginAttemptDO> findFirstByIssuerAndPrincipalAndStatusInOrderByCreatedAtDesc(
             String issuer,
-            String externalPrincipal,
+            String principal,
             Iterable<String> statuses
     );
 }

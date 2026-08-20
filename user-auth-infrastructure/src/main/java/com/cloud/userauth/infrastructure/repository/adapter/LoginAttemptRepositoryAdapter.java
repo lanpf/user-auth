@@ -30,10 +30,10 @@ public class LoginAttemptRepositoryAdapter implements LoginAttemptRepository {
     }
 
     @Override
-    public Optional<LoginAttempt> findPendingByIssuerAndExternalPrincipal(
+    public Optional<LoginAttempt> findPendingByIssuerAndPrincipal(
             CredentialIssuer issuer,
-            Principal externalPrincipal
+            Principal principal
     ) {
-        return persistenceRepository.findPendingByIssuerAndExternalPrincipal(issuer, externalPrincipal);
+        return persistenceRepository.findPendingByIssuerAndPrincipal(issuer, principal);
     }
 }

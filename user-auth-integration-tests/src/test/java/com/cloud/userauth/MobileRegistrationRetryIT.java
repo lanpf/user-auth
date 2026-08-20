@@ -1,7 +1,7 @@
 package com.cloud.userauth;
 
 import com.cloud.framework.domain.DomainEventId;
-import com.cloud.userauth.application.challenge.AuthChallengeCommandService;
+import com.cloud.userauth.application.challenge.AuthChallengeIssueCommandService;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeCommand;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeOutput;
 import com.cloud.userauth.application.common.ApplicationError;
@@ -73,7 +73,7 @@ class MobileRegistrationRetryIT {
     void shouldApplyRefreshedChallengePolicyOnlyToNewChallenges() {
         Challenges challenges = new Challenges();
         AuthChallengeProperties properties = new AuthChallengeProperties();
-        AuthChallengeCommandService service = new AuthChallengeCommandService(
+        AuthChallengeIssueCommandService service = new AuthChallengeIssueCommandService(
                 challenges,
                 () -> "123456",
                 new HmacSha256ChallengeSecretHasher("test-pepper"),
@@ -218,7 +218,7 @@ class MobileRegistrationRetryIT {
         MobileOtpLoginTransactionService transactionalService = transactionalService(
                 challenges, accounts, registrations, sessions, hasher);
         return new Services(
-                new AuthChallengeCommandService(
+                new AuthChallengeIssueCommandService(
                         challenges,
                         () -> "123456",
                         hasher,
@@ -271,7 +271,7 @@ class MobileRegistrationRetryIT {
     }
 
     private record Services(
-            AuthChallengeCommandService challengeService,
+            AuthChallengeIssueCommandService challengeService,
             MobileOtpAuthenticationProcess loginService
     ) {
     }

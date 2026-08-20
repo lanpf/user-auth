@@ -52,13 +52,16 @@ public class ExternalLoginAttemptCommandService {
         Instant now = clock.instant();
         Instant expiresAt = now.plus(loginAttemptTtl);
         AuthAccount boundAccount = authAccountRepository
-                .findByCredential(CredentialKey.external(identity.issuer(), identity.externalPrincipal()))
+                .findByCredential(CredentialKey.external(identity.issuer(), identity.principal()))
                 .orElse(null);
         ExternalIdentityAcceptanceEffect acceptanceEffect;
         if (boundAccount != null) {
             boundAccount.ensureCanLogin();
-            acceptanceEffect = externalIdentityDomainService.acceptBoundExternalIdentity(
-                    identity, loginAttemptRepository.nextId(), now, expiresAt);
+            acceptanceEffect = externalIdentityDomainService.acceptExternalIdentityBinding(
+                    identity,
+                    loginAttemptRepository.nextId(),
+                    now,
+                    expiresAt);
         } else {
             acceptanceEffect = externalIdentityDomainService.acceptExternalIdentity(
                     identity,

@@ -1,5 +1,6 @@
 package com.cloud.userauth.application.login.external;
 
+import com.cloud.userauth.domain.authentication.external.ProofParameters;
 import com.cloud.userauth.domain.authentication.external.ProofType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -12,7 +13,11 @@ public record ExternalLoginAttemptCommand(
         @NotEmpty Map<@NotBlank String, @NotBlank String> proofParameters
 ) {
     public ExternalLoginAttemptCommand {
-        proofParameters =
-                proofParameters == null ? null : Map.copyOf(proofParameters);
+        proofParameters = proofParameters == null ? null : Map.copyOf(proofParameters);
+    }
+
+    public static ExternalLoginAttemptCommand withAuthorizationCode(String issuer, String authorizationCode) {
+        return new ExternalLoginAttemptCommand(issuer, ProofType.AUTHORIZATION_CODE,
+                Map.of(ProofParameters.AUTHORIZATION_CODE, authorizationCode));
     }
 }

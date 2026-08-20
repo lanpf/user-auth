@@ -11,8 +11,8 @@ public interface LoginAttemptPersistenceRepository {
 
     Optional<LoginAttempt> findById(LoginAttemptId id);
 
-    Optional<LoginAttempt> findPendingByIssuerAndExternalPrincipal(
+    Optional<LoginAttempt> findPendingByIssuerAndPrincipal(
             CredentialIssuer issuer,
-            Principal externalPrincipal
+            Principal principal
     );
 }

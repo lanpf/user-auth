@@ -1,7 +1,7 @@
 package com.cloud.userauth.domain.authentication.loginattempt;
 
 public enum LoginAttemptStatus {
-    PENDING_MOBILE,
+    PENDING,
     READY,
     COMPLETED,
     EXPIRED

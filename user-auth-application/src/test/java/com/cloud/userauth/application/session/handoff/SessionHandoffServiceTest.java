@@ -46,9 +46,9 @@ class SessionHandoffServiceTest {
     void shouldConsumeTicketForExpectedTargetSessionType() {
         SessionHandoffService service = new SessionHandoffService(
                 new FixedStore(SessionHandoffTarget.BROWSER_SESSION),
-                Duration.ofSeconds(60),
                 new LoginSessions(activeSession()),
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                Duration.ofSeconds(60));
 
         ConsumedSessionHandoff handoff = service.consume(
                 "ticket", SessionHandoffTarget.BROWSER_SESSION);
@@ -61,9 +61,9 @@ class SessionHandoffServiceTest {
     void shouldRejectTicketWithoutExpectedTargetSessionBinding() {
         SessionHandoffService service = new SessionHandoffService(
                 new FixedStore(null),
-                Duration.ofSeconds(60),
                 new LoginSessions(activeSession()),
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                Duration.ofSeconds(60));
 
         assertThrows(ApplicationException.class, () -> service.consume(
                 "ticket", SessionHandoffTarget.BROWSER_SESSION));
@@ -148,9 +148,9 @@ class SessionHandoffServiceTest {
     ) {
         return new SessionHandoffService(
                 store,
-                Duration.ofSeconds(60),
                 new LoginSessions(loginSession),
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                Duration.ofSeconds(60));
     }
 
     private static LoginSession activeSession() {

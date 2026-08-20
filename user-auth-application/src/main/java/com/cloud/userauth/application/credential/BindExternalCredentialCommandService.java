@@ -4,6 +4,7 @@ import com.cloud.framework.domain.DomainEventStore;
 import com.cloud.userauth.application.port.ExternalIdentityVerifierRegistry;
 import com.cloud.userauth.domain.authentication.account.AuthAccount;
 import com.cloud.userauth.domain.authentication.account.AuthAccountRepository;
+import com.cloud.userauth.domain.authentication.external.ProofParameters;
 import com.cloud.userauth.domain.authentication.session.LoginSession;
 import com.cloud.userauth.domain.authentication.session.LoginSessionRepository;
 import com.cloud.userauth.domain.authentication.session.SessionId;
@@ -52,13 +53,13 @@ public class BindExternalCredentialCommandService {
         account.ensureCanLogin();
         ExternalIdentity identity = verifierRegistry.verify(
                 command.issuer(), ProofType.AUTHORIZATION_CODE,
-                Map.of("authorizationCode", command.authorizationCode()));
-        CredentialKey key = CredentialKey.external(identity.issuer(), identity.externalPrincipal());
+                Map.of(ProofParameters.AUTHORIZATION_CODE, command.authorizationCode()));
+        CredentialKey key = CredentialKey.external(identity.issuer(), identity.principal());
         if (account.hasActiveCredential(key)) {
             return;
         }
         CredentialChangeEffect effect = credentialDomainService.bindExternalCredential(
-                account, credentialIdGenerator.nextId(), identity.issuer(), identity.externalPrincipal(),
+                account, credentialIdGenerator.nextId(), identity.issuer(), identity.principal(),
                 clock.instant());
         authAccountRepository.save(effect.authAccount());
         domainEventStore.appendAll(effect.events());

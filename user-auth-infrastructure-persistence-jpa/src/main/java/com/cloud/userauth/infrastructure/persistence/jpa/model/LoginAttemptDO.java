@@ -14,7 +14,7 @@ public class LoginAttemptDO {
     private String id;
     private String issuer;
     private String issuerType;
-    private String externalPrincipal;
+    private String principal;
     private String displayName;
     private String mobile;
     private boolean mobileVerified;

@@ -20,7 +20,7 @@ public class SessionHandoffConfiguration {
             Clock clock
     ) {
         return new SessionHandoffService(
-                handoffStore, handoffProperties.getTtl(), loginSessionRepository, clock);
+                handoffStore, loginSessionRepository, clock, handoffProperties.getTtl());
     }
 
     @Bean

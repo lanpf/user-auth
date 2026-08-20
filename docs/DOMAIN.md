@@ -25,7 +25,7 @@
 - **AuthAccount**：User 的可登录认证账户聚合，以 `AuthAccountId` 标识，维护账户状态和 Credential 集合。当前一个有效 AuthAccount 必须且只能有一个 ACTIVE Mobile Credential；External Credential 可以有多个。
 - **Credential**：已经过验证、持久绑定在 AuthAccount 上、可作为后续登录身份入口的长期认证关联。当前只有 `MOBILE` 与 `EXTERNAL` 两类。Credential 不是验证码、授权码、Access Token 或 Session。
 - **Mobile Credential**：`CredentialType.MOBILE + issuer=LOCAL + principal=规范化手机号`。它是当前账户的基础登录入口，也是新建 AuthAccount 的必要组成部分；更换手机号时旧 Mobile Credential 进入 REVOKED，新手机号产生新的 ACTIVE Credential。
-- **External Credential**：`CredentialType.EXTERNAL + issuer + externalPrincipal`。它表达公共三方平台等外部主体与 AuthAccount 的唯一绑定，例如 `WECHAT_MINI_PROGRAM + openid`。它只能在账户已有有效 Mobile Credential 后绑定，不能脱离 AuthAccount 独立存在。
+- **External Credential**：`CredentialType.EXTERNAL + issuer + principal`。它表达公共三方平台等外部主体与 AuthAccount 的唯一绑定，例如 `WECHAT_MINI_PROGRAM + openid`。它只能在账户已有有效 Mobile Credential 后绑定，不能脱离 AuthAccount 独立存在。
 - **Public Third-party External Credential**：不是新的 CredentialType，而是 `CredentialType.EXTERNAL + CredentialIssuerType.PUBLIC_THIRD_PARTY` 的业务称呼，用于区分公共身份平台与受信任合作方。当前微信小程序 Credential 属于这一类。
 - **CredentialIssuer**：Credential 或外部身份的签发来源，由稳定的 issuer code 和 issuer type 组成。当前类型包括 `LOCAL`、`INTERNAL_SYSTEM`、`TRUSTED_PARTNER`、`PUBLIC_THIRD_PARTY`；issuer type 描述信任边界，issuer code 标识具体来源。
 - **Principal**：某个 CredentialIssuer 命名空间内的稳定主体标识。Mobile Credential 的 Principal 是手机号；公共三方 External Credential 的 Principal 通常是 openid、partner user id 等经服务端验证后取得的标识。
@@ -34,7 +34,7 @@
 
 - **Proof**：调用方在本次认证中提交的短期证明，例如短信验证码、外部 `AUTHORIZATION_CODE` 或 `SIGNED_ASSERTION`。Proof 只回答“本次如何证明”，不是 Credential；不得把一次性授权码本身当作长期 External Credential Principal，除非外部协议明确把验证结果解析为另一个稳定 subject。
 - **AuthChallenge**：本服务签发的一次性认证挑战，以 `AuthChallengeId` 标识，绑定 challenge type、scene、target、过期时间、尝试次数和消费方。手机号验证码是 `SMS_OTP` AuthChallenge 的 secret；服务只保存经 `ChallengeSecretHasher` 处理的值。
-- **ExternalIdentity**：`ExternalIdentityVerifier` 使用外部 Proof 与外部服务端安全交换或验签后得到的已验证事实，包含 issuer、稳定 externalPrincipal、可选手机号及手机号是否已由该 issuer 可靠验证。客户端直接提交 subject 不构成 ExternalIdentity。
+- **ExternalIdentity**：`ExternalIdentityVerifier` 使用外部 Proof 与外部服务端安全交换或验签后得到的已验证事实，包含 issuer、稳定 principal、可选手机号及手机号是否已由该 issuer 可靠验证。客户端直接提交 subject 不构成 ExternalIdentity。
 - **IssuerMobileTrustPolicy**：决定某个 issuer 声明的已验证手机号能否直接成为本次登录的可信手机号。网关验签只证明请求来自约定调用方，并不自动等同于 user-auth 信任其手机号声明。
 - **LoginAttempt**：外部身份登录的短期过程聚合。它保存已验证 ExternalIdentity 的 issuer/principal、手机号验证状态、`PENDING_MOBILE → READY → COMPLETED` 状态和最终 SessionId；用于跨越“外部身份已验证”和“手机号补充验证已完成”两个步骤，不是可访问业务接口的会话。
 - **RegistrationProcess**：手机号首次注册的应用层过程状态，用于在本地账户创建、user 初始化与最终登录之间提供幂等恢复。它是跨系统注册编排记录，不是认证领域长期身份入口。
@@ -47,7 +47,7 @@
 - **Device**：登录时提交的设备上下文快照，用于会话记录和审计；当前普通 deviceId 不构成 DPoP 或设备私钥持有证明。
 - **LoginSession**：一次成功登录形成的领域会话，以 SessionId 标识，关联 User、AuthAccount、本次实际使用的 Credential、Client、Device、登录场景、状态和绝对到期时间。协议授权、Bearer Access Token 和 Browser Session 都通过 SessionId 关联这个领域事实。
 - **Host Access Credential**：认证成功后交付给宿主、用于后续恢复 LoginSession 的访问凭据。当前统一为 OAuth2 Bearer Access Token，可采用自包含 JWT 或不透明 Reference Token；它不是 AuthAccount Credential。
-- **AuthenticatedSession**：应用内部使用的已认证会话快照，携带 `userId + authAccountId + sessionId`。gateway 向业务接口只传递 `userId + sessionId`，user-auth 必须从 LoginSession 恢复并校验 AuthAccount，不能信任调用方指定账户。
+- **AuthenticatedSession**：应用内部使用的已认证会话快照，携带 `userId + authAccountId + sessionId`。gateway 向业务接口传递 `subjectType + userId + sessionId`；user-auth 必须区分 `HOST_SESSION` 与 `BROWSER_SESSION`，并从 LoginSession 恢复和校验 AuthAccount，不能信任调用方指定账户。
 - **Session Handoff Ticket / Browser Session**：前者是宿主向另一载体交接当前认证结果的一次性短期票据；后者是 H5 兑换后取得的独立 Cookie 会话。二者都不是账户 Credential，也不能用于改变父 AuthAccount 的身份绑定。
 
 ### Credential 的建立与登录路径
@@ -58,7 +58,7 @@ Credential 的建立必须遵循“先完成本次证明，再创建或查找 Au
 | --- | --- | --- |------------------------------------------------------------------------------------------| --- |
 | 手机验证码注册/登录 | `SMS_OTP` AuthChallenge 的 code | 手机号无账户时，注册事务创建 AuthAccount 并同时创建；已有账户时复用，不重复创建 | 不创建                                                                                   | Mobile Credential |
 | 合作方可信手机号授权码直接注册/登录 | 网关已验签且 user-auth issuer policy 信任的 `issuer + authorizationCode + mobile` | 手机号无账户时创建；已有账户时复用 | 不创建。合作方 authorizationCode 只进入短期 LoginAttempt，使用 `DO_NOT_BIND` 完成登录    | Mobile Credential |
-| 公共三方平台两步注册/登录 | 第一步验证外部 authorization code；第二步以 `COMPLETE_EXTERNAL_LOGIN` 手机验证码确认手机号 | 手机号无账户时先创建；已有手机号账户时复用 | Mobile Credential 已存在后，在同一外部登录流程中绑定 `issuer + stable externalPrincipal` | 新绑定的 External Credential；之后可直接复用 |
+| 公共三方平台两步注册/登录 | 第一步验证外部 authorization code；第二步以 `COMPLETE_EXTERNAL_LOGIN` 手机验证码确认手机号 | 手机号无账户时先创建；已有手机号账户时复用 | Mobile Credential 已存在后，在同一外部登录流程中绑定 `issuer + stable principal` | 新绑定的 External Credential；之后可直接复用 |
 | 先手机号注册/登录，再绑定公共三方平台 | 已认证宿主登录态 + 新的外部 authorization code | 已存在且保持 ACTIVE | `POST /api/user-auth/credentials/external/bind` 验证外部身份后绑定                       | 本次不创建 LoginSession；后续外部登录使用该 External Credential |
 | 已绑定公共三方平台的无状态登录/续期 | 新的一次性外部 authorization code | 必须已经存在，不创建、不替换 | 必须已经绑定且 ACTIVE，不创建、不迁移                                                    | 既有 External Credential |
 
@@ -80,7 +80,7 @@ Credential 的建立必须遵循“先完成本次证明，再创建或查找 Au
 
 典型公共三方平台不能直接替代本服务的首次手机号确认：
 
-1. `POST /api/user-auth/login/external/attempts` 提交 issuer 与 authorizationCode。`ExternalIdentityVerifier` 在服务端向第三方交换并验证 code，取得稳定 externalPrincipal，创建短期 LoginAttempt。
+1. `POST /api/user-auth/login/external/attempts` 提交 issuer 与 authorizationCode。`ExternalIdentityVerifier` 在服务端向第三方交换并验证 code，取得稳定 principal，创建短期 LoginAttempt。
 2. 若该 External Credential 已绑定现有 AuthAccount，LoginAttempt 直接 READY；账户本身已经满足有效 Mobile Credential 不变量，不再要求补手机号。
 3. 若尚未绑定且 issuer 的手机号不受信任，LoginAttempt 为 PENDING_MOBILE。客户端为目标手机号申请 scene=`COMPLETE_EXTERNAL_LOGIN` 的 SMS OTP AuthChallenge，再调用 `POST /api/user-auth/login/external` 提交 loginAttemptId + challengeId + code。
 4. 手机号验证成功后，服务先按手机号查找 AuthAccount；不存在时创建 AuthAccount 和 Mobile Credential，存在时复用。随后才绑定公共三方 External Credential，并以该 External Credential 创建 LoginSession。
@@ -170,7 +170,7 @@ Boot 只负责选择和装配具体 adapter。若某个实现模块没有进入�
 
 JWT 本身由客户端持有并通常本地验证，因此 Redis 中撤销协议状态不会让已发出的 JWT 在所有资源服务器上即时失效；Reference Token 每次在线查询授权状态，logout 后可即时失效，但依赖 Redis 和 introspection 的可用性。Redis 协议状态同时服务于刷新、重放检测、Token family 撤销、Reference Token introspection、协议查询和登出联动。
 
-两种 Access Token 格式都由 gateway 归一为可信 `X-User-Id + X-Session-Id` 请求上下文。user-auth 接口层据此授予宿主会话入口权限，应用层再回查 LoginSession 验证归属并恢复认证账户。调用方不能在单次登录请求中选择格式；登录 API 始终返回 `tokenType + accessToken`，其中 `tokenType` 为 `Bearer`。访问凭据只解决当前请求的身份恢复，业务接口仍需继续执行功能权限和业务资源范围判断。
+两种 Access Token 格式都由 gateway 归一为可信 `X-Subject-Type=HOST_SESSION + X-User-Id + X-Session-Id` 请求上下文。user-auth 接口层据此授予宿主会话入口权限，应用层再回查 LoginSession 验证归属并恢复认证账户。`X-Subject-Type` 尚待 gateway、framework 与 user-auth 完成代码迁移；迁移后缺失类型不得默认按 HOST_SESSION 处理。调用方不能在单次登录请求中选择格式；登录 API 始终返回 `tokenType + accessToken`，其中 `tokenType` 为 `Bearer`。访问凭据只解决当前请求的身份恢复，业务接口仍需继续执行功能权限和业务资源范围判断。
 
 ### 单个 LoginSession 的统一生命周期与级联撤销
 
@@ -276,7 +276,8 @@ Refresh Token 由 SAS 生成，Redis 仅保存不可逆哈希。每次刷新在 
   → Set-Cookie: BROWSER_SESSION
 
 H5 正常请求
-  → 校验 BROWSER_SESSION 与父 LoginSession
+  → gateway 校验 BROWSER_SESSION 与父 LoginSession
+  → 写入 X-Subject-Type=BROWSER_SESSION + X-User-Id + X-Session-Id
   → 未超过 absolute TTL 时按 idle window 滑动续期
 
 宿主再次进入 H5
@@ -292,8 +293,8 @@ H5 正常请求
 
 - **原子单次兑换**：ticket 是随机高熵、短时凭据（建议 30–60 秒）。兑换必须使用 Redis `GETDEL` 或等价 Lua 脚本完成“读取并删除”；不得先查询再删除。并发兑换时仅一个请求可成功。服务端应以 ticket 哈希或 HMAC 派生值作为 Redis 索引，避免持久化原始 ticket。消费成功后创建 Browser Session 失败时，不恢复 ticket，宿主重新申请即可。
 - **严格绑定**：ticket 当前绑定 `userId`、`authAccountId`、宿主 `parentLoginSessionId`、`handoffId`、目标会话类型与有效期；兑换入口必须以期望的目标会话类型消费，目标不一致时票据无效，不能把 H5 ticket 用于未来的其他会话。目标 H5 ClientApp/origin 的进一步绑定必须以受管理的目标应用与 origin 目录为前提，不能把客户端任意提交的字符串当成可信绑定；该目录尚未实现。
-- **父会话关联与级联失效**：每个 Browser Session 记录 `parentLoginSessionId`。Browser Session 鉴权除校验自身状态、idle TTL 与 absolute TTL 外，还确认父 LoginSession 为 `ACTIVE`。宿主主动登出或当前会话被强制下线时，通过已实现的 `parentLoginSessionId → Browser Session credential` Redis 反向索引立即删除全部关联 Browser Session；父会话状态校验是级联删除的兜底。全账户强制下线和跨重新认证代际撤销仍需要未来的 SessionFamily/账户会话能力。
-- **会话职责隔离**：Bearer Access Token 是宿主访问凭据，Browser Session 是派生的浏览器 Cookie 会话。二者具有不同的传输、存储和生命周期，不能共用一个存储端口或认证 Filter。
+- **父会话关联与级联失效**：每个 Browser Session 记录 `parentLoginSessionId`。gateway 的 BrowserSessionAuthenticator 在线校验自身状态、idle TTL、absolute TTL，并确认父 LoginSession 为 `ACTIVE`。宿主主动登出或当前会话被强制下线时，通过已实现的 `parentLoginSessionId → Browser Session credential` Redis 反向索引立即删除全部关联 Browser Session；父会话状态校验是级联删除的兜底。全账户强制下线和跨重新认证代际撤销仍需要未来的 SessionFamily/账户会话能力。
+- **会话职责隔离**：Bearer Access Token 是宿主访问凭据，Browser Session 是派生的浏览器 Cookie 会话。二者具有不同的传输、存储和生命周期，gateway 必须使用不同的 authenticator，并通过 `X-Subject-Type` 保留权限差异；不能把 Browser Session 转换成宿主 Header 权限。
 - **宿主权限隔离**：Bearer Access Token 在接口层获得宿主会话权限；`BROWSER_SESSION` 只获得受限 H5 会话权限。Browser Cookie 不得调用绑定外部 Credential、登出父 LoginSession 或创建新 handoff ticket 等宿主级命令。H5 自身退出需要独立的 Browser Session 结束能力，不能复用宿主 `logout`；该独立端点当前尚未实现。
 - **有限滑动窗口**：普通 H5 请求只在剩余 idle TTL 低于设定阈值时延长会话并刷新 Cookie，避免每次请求写存储。必须同时配置不可滑动的 absolute TTL，防止持续访问令会话无限存活。达到 absolute TTL 或父 LoginSession 失效时，必须由宿主重新创建 ticket。
 - **Cookie 与 CSRF 防护**：`BROWSER_SESSION` 必须使用 `HttpOnly`、`Secure` 和恰当的 `SameSite`（优先 `Lax`，不依赖跨站跳转时可用 `Strict`）。Cookie 鉴权的写操作仍必须实施 Origin/Referer 校验及 CSRF token 或双提交 token，不能仅依赖 SameSite。

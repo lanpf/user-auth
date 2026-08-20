@@ -13,6 +13,7 @@ import com.cloud.userauth.domain.authentication.credential.Principal;
 import com.cloud.userauth.domain.authentication.loginattempt.LoginAttempt;
 import com.cloud.userauth.domain.authentication.loginattempt.LoginAttemptId;
 import com.cloud.userauth.domain.authentication.loginattempt.LoginAttemptRepository;
+import com.cloud.userauth.domain.authentication.loginattempt.LoginAttemptStatus;
 import com.cloud.userauth.domain.authentication.session.*;
 import com.cloud.userauth.domain.user.UserId;
 import java.time.Instant;
@@ -96,17 +97,15 @@ public final class UserAuthTestRepositories {
         }
 
         @Override
-        public Optional<LoginAttempt> findPendingByIssuerAndExternalPrincipal(
+        public Optional<LoginAttempt> findPendingByIssuerAndPrincipal(
                 CredentialIssuer issuer,
-                Principal externalPrincipal
+                Principal principal
         ) {
             return values.values().stream()
                     .filter(value -> value.getIssuer().equals(issuer)
-                            && value.getExternalPrincipal().equals(externalPrincipal)
-                            && (value.getStatus()
-                            == com.cloud.userauth.domain.authentication.loginattempt.LoginAttemptStatus.PENDING_MOBILE
-                            || value.getStatus()
-                            == com.cloud.userauth.domain.authentication.loginattempt.LoginAttemptStatus.READY))
+                            && value.getPrincipal().equals(principal)
+                            && (value.getStatus() == LoginAttemptStatus.PENDING
+                            || value.getStatus() == LoginAttemptStatus.READY))
                     .findFirst();
         }
     }

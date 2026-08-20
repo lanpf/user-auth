@@ -4,6 +4,7 @@ import com.cloud.userauth.domain.authentication.credential.CredentialIssuer;
 import com.cloud.userauth.domain.authentication.credential.Principal;
 import com.cloud.userauth.domain.authentication.loginattempt.LoginAttempt;
 import com.cloud.userauth.domain.authentication.loginattempt.LoginAttemptId;
+import com.cloud.userauth.domain.authentication.loginattempt.LoginAttemptStatus;
 import com.cloud.userauth.infrastructure.persistence.jpa.mapper.UserAuthPersistenceMapper;
 import com.cloud.userauth.infrastructure.persistence.repository.LoginAttemptPersistenceRepository;
 import java.util.List;
@@ -26,15 +27,15 @@ public class LoginAttemptJpaPersistenceRepository implements LoginAttemptPersist
     }
 
     @Override
-    public Optional<LoginAttempt> findPendingByIssuerAndExternalPrincipal(
+    public Optional<LoginAttempt> findPendingByIssuerAndPrincipal(
             CredentialIssuer issuer,
-            Principal externalPrincipal
+            Principal principal
     ) {
         return repository
-                .findFirstByIssuerAndExternalPrincipalAndStatusInOrderByCreatedAtDesc(
+                .findFirstByIssuerAndPrincipalAndStatusInOrderByCreatedAtDesc(
                         issuer.code(),
-                        externalPrincipal.value(),
-                        List.of("PENDING_MOBILE", "READY"))
+                        principal.value(),
+                        List.of(LoginAttemptStatus.PENDING.name(), LoginAttemptStatus.READY.name()))
                 .map(mapper::toDomain);
     }
 }

@@ -15,7 +15,7 @@ import lombok.Getter;
 public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
     private final LoginAttemptId id;
     private final CredentialIssuer issuer;
-    private final Principal externalPrincipal;
+    private final Principal principal;
     private final String displayName;
     private LoginMobile mobile;
     private boolean mobileVerified;
@@ -28,7 +28,7 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
     private LoginAttempt(
             LoginAttemptId id,
             CredentialIssuer issuer,
-            Principal externalPrincipal,
+            Principal principal,
             String displayName,
             LoginMobile mobile,
             boolean mobileVerified,
@@ -40,7 +40,7 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
     ) {
         this.id = id;
         this.issuer = issuer;
-        this.externalPrincipal = externalPrincipal;
+        this.principal = principal;
         this.displayName = displayName;
         this.mobile = mobile;
         this.mobileVerified = mobileVerified;
@@ -57,7 +57,7 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
             Instant createdAt,
             Instant expiresAt
     ) {
-        return create(id, identity, null, false, LoginAttemptStatus.PENDING_MOBILE, createdAt, expiresAt);
+        return create(id, identity, null, false, LoginAttemptStatus.PENDING, createdAt, expiresAt);
     }
 
     public static LoginAttempt createReady(
@@ -86,7 +86,7 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
         return new LoginAttempt(
                 id,
                 identity.issuer(),
-                identity.externalPrincipal(),
+                identity.principal(),
                 identity.displayName(),
                 mobile,
                 mobileVerified,
@@ -101,7 +101,7 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
     public static LoginAttempt restore(
             LoginAttemptId id,
             CredentialIssuer issuer,
-            Principal externalPrincipal,
+            Principal principal,
             String displayName,
             LoginMobile mobile,
             boolean mobileVerified,
@@ -112,7 +112,7 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
             Instant updatedAt
     ) {
         return new LoginAttempt(
-                id, issuer, externalPrincipal, displayName, mobile, mobileVerified,
+                id, issuer, principal, displayName, mobile, mobileVerified,
                 status, sessionId, expiresAt, createdAt, updatedAt);
     }
 
@@ -135,17 +135,17 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
         return issuer;
     }
 
-    public Principal externalPrincipal() {
-        return externalPrincipal;
+    public Principal principal() {
+        return principal;
     }
 
     public boolean requiresMobileVerification() {
-        return status == LoginAttemptStatus.PENDING_MOBILE;
+        return status == LoginAttemptStatus.PENDING;
     }
 
     public void verifyMobile(LoginMobile verifiedMobile, Instant verifiedAt) {
         ensureUsable(verifiedAt);
-        if (status != LoginAttemptStatus.PENDING_MOBILE || verifiedMobile == null) {
+        if (status != LoginAttemptStatus.PENDING || verifiedMobile == null) {
             throw new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID);
         }
         this.mobile = verifiedMobile;
@@ -172,7 +172,7 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
     }
 
     public void expire(Instant expiredAt) {
-        if (status == LoginAttemptStatus.PENDING_MOBILE || status == LoginAttemptStatus.READY) {
+        if (status == LoginAttemptStatus.PENDING || status == LoginAttemptStatus.READY) {
             this.status = LoginAttemptStatus.EXPIRED;
             this.updatedAt = expiredAt;
         }

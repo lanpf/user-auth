@@ -31,9 +31,9 @@ class SessionHandoffCommandServiceTest {
                 new AuthenticatedSession(1L, 2L, new SessionId("s1"));
         SessionHandoffService handoffService = new SessionHandoffService(
                 new Store(authenticatedSession),
-                Duration.ofSeconds(60),
                 new LoginSessions(activeSession(authenticatedSession.sessionId())),
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                Duration.ofSeconds(60));
         SessionHandoffCommandService service = new SessionHandoffCommandService(
                 handoffService,
                 new Sessions(),

@@ -117,15 +117,15 @@ public class AuthAccount implements AggregateRoot<AuthAccountId> {
     public Credential bindExternalCredential(
             CredentialId credentialId,
             CredentialIssuer issuer,
-            Principal externalPrincipal,
+            Principal principal,
             Instant boundAt
     ) {
         ensureCanLogin();
-        CredentialKey key = CredentialKey.external(issuer, externalPrincipal);
+        CredentialKey key = CredentialKey.external(issuer, principal);
         if (hasActiveCredential(key)) {
             throw new DomainException(DomainError.AUTH_ACCOUNT_CREDENTIAL_ALREADY_EXISTS);
         }
-        Credential credential = Credential.external(credentialId, issuer, externalPrincipal, boundAt);
+        Credential credential = Credential.external(credentialId, issuer, principal, boundAt);
         credentials.add(credential);
         updatedAt = boundAt;
         return credential;
