@@ -7,6 +7,6 @@ import com.cloud.userauth.domain.user.UserId;
 public record ExternalAccountPreparationOutput(
         UserId userId,
         AuthAccountId authAccountId,
-        CredentialId externalCredentialId
+        CredentialId authenticatedCredentialId
 ) {
 }

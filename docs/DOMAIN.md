@@ -57,56 +57,64 @@ Credential 的建立必须遵循“先完成本次证明，再创建或查找 Au
 | 场景 | 本次证明 | Mobile Credential | External Credential                                                                      | 最终用于创建 LoginSession 的 Credential |
 | --- | --- | --- |------------------------------------------------------------------------------------------| --- |
 | 手机验证码注册/登录 | `SMS_OTP` AuthChallenge 的 code | 手机号无账户时，注册事务创建 AuthAccount 并同时创建；已有账户时复用，不重复创建 | 不创建                                                                                   | Mobile Credential |
-| 合作方可信手机号授权码直接注册/登录 | 网关已验签且 user-auth issuer policy 信任的 `issuer + authorizationCode + mobile` | 手机号无账户时创建；已有账户时复用 | 不创建。合作方 authorizationCode 只进入短期 LoginAttempt，使用 `DO_NOT_BIND` 完成登录    | Mobile Credential |
+| 合作方可信手机号直连注册/登录 | 网关已验签且 user-auth issuer policy 信任的 `partnerCode + partnerBizId + mobile` 断言 | 手机号无账户时创建；已有账户时复用 | 不创建。`partnerBizId` 仅作为合作方业务追踪标识进入短期 LoginAttempt，使用 `DO_NOT_BIND` 完成登录 | Mobile Credential |
+| 外部身份与手机号证明单步注册/登录 | 同一外部 proof 同时验证稳定外部身份和手机号，且 issuer policy 接受该已验证手机号 | 手机号无账户时创建；已有账户时复用 | 绑定 `issuer + stable principal` | 新绑定或已绑定的 External Credential |
 | 公共三方平台两步注册/登录 | 第一步验证外部 authorization code；第二步以 `COMPLETE_EXTERNAL_LOGIN` 手机验证码确认手机号 | 手机号无账户时先创建；已有手机号账户时复用 | Mobile Credential 已存在后，在同一外部登录流程中绑定 `issuer + stable principal` | 新绑定的 External Credential；之后可直接复用 |
-| 先手机号注册/登录，再绑定公共三方平台 | 已认证宿主登录态 + 新的外部 authorization code | 已存在且保持 ACTIVE | `POST /api/user-auth/credentials/external/bind` 验证外部身份后绑定                       | 本次不创建 LoginSession；后续外部登录使用该 External Credential |
+| 先手机号注册/登录，再绑定公共三方平台 | 已认证宿主登录态 + 新的外部 authorization code | 已存在且保持 ACTIVE | `POST /api/user-auth/credentials/bind` 验证外部身份后绑定 | 本次不创建 LoginSession；后续外部登录使用该 External Credential |
 | 已绑定公共三方平台的无状态登录/续期 | 新的一次性外部 authorization code | 必须已经存在，不创建、不替换 | 必须已经绑定且 ACTIVE，不创建、不迁移                                                    | 既有 External Credential |
 
 #### 手机验证码注册/登录
 
-`POST /api/user-auth/auth-challenges` 创建面向手机号和登录场景的 SMS OTP AuthChallenge；`POST /api/user-auth/login/mobile-otp` 校验 challengeId + code。验证码只是 AuthChallenge secret，不会保存为 Credential。
+`POST /api/user-auth/challenges` 创建面向手机号和登录场景的 SMS OTP AuthChallenge；`POST /api/user-auth/login/mobile-otp` 校验 challengeId + code。验证码只是 AuthChallenge secret，不会保存为 Credential。
 
 - 手机号尚未关联账户：创建 UserId、AuthAccount 与唯一的 ACTIVE Mobile Credential，随后通过 `UserGateway` 初始化 user，再创建 LoginSession。
 - 手机号已有账户：校验账户和 Mobile Credential 状态，直接使用该 Credential 创建新的 LoginSession。
 - 同一手机号的并发首次登录由 `MobileOtpLoginLock` 串行化；RegistrationProcess 保证跨本地注册和 user 初始化的幂等恢复。
 
-#### 合作方可信手机号授权码直接注册/登录
+#### 合作方可信手机号直连注册/登录
 
-`POST /api/user-auth/login/external/trusted-mobile` 面向受保护的合作方链路。网关负责调用方验签、时效和授权码重放校验；user-auth 仍通过 `IssuerMobileTrustPolicy` 判断是否接受该 issuer 声明的已验证手机号。
+`POST /api/user-auth/login/partner/trusted-mobile` 面向受保护的合作方链路。网关负责调用方身份、请求签名、时间戳与 nonce 防重放；user-auth 仍通过 `IssuerMobileTrustPolicy` 判断是否接受该 `partnerCode` 声明的已验证手机号。
 
-服务把外部证明和可信手机号放入 READY LoginAttempt，随后按手机号查找或创建 AuthAccount。新账户只创建 Mobile Credential；已有账户复用其 Mobile Credential。合作方 authorizationCode 是外部单号式的一次性证明，不是稳定 partner subject，因此登录使用 `ExternalCredentialBinding.DO_NOT_BIND`：不会创建合作方 External Credential，也不能靠同一授权码再次登录。
+服务把合作方断言放入短期 READY LoginAttempt，随后按手机号查找或创建 AuthAccount。新账户只创建 Mobile Credential；已有账户复用其 Mobile Credential。`partnerBizId` 是合作方长期存在且在该合作方内唯一的业务单据标识，只用于业务追踪、审计和登录请求幂等关联，不是一次性授权码，也不是稳定用户主体，因此登录使用 `ExternalCredentialBinding.DO_NOT_BIND`，不会创建合作方 External Credential。接口调用的重放防护依赖网关签名协议中的 timestamp/nonce，而不是消费 `partnerBizId`。
+
+#### 外部身份与手机号证明单步注册/登录
+
+`POST /api/user-auth/login/external/proof` 接受一个可同时证明外部身份和手机号的 proof。`ExternalIdentityVerifier` 必须产出稳定 principal、手机号及 `mobileVerified=true`，且 `IssuerMobileTrustPolicy.trustVerifiedMobile=true`；任一条件不满足均以登录拒绝结束，不返回 LoginAttempt，也不自动退化为两步流程。验证通过后，服务按手机号创建或复用 AuthAccount 和 Mobile Credential，绑定 External Credential，并签发 Access Token。
+
+微信小程序是该能力的一个适配示例：`issuer=WECHAT_MINI_PROGRAM`、`proofType=AUTHORIZATION_CODE`，`proofParameters` 同时携带 `loginCode` 与 `phoneCode`。前者换取 openId 作为稳定 principal，后者换取微信已核验手机号。该 REST 契约是平台无关的，具体 proof 字段由对应 issuer 的 verifier 定义。
 
 #### 公共三方平台两步注册/登录
 
 典型公共三方平台不能直接替代本服务的首次手机号确认：
 
-1. `POST /api/user-auth/login/external/attempts` 提交 issuer 与 authorizationCode。`ExternalIdentityVerifier` 在服务端向第三方交换并验证 code，取得稳定 principal，创建短期 LoginAttempt。
+1. `POST /api/user-auth/login/external/attempt` 提交 issuer、proofType 与 proofParameters。`ExternalIdentityVerifier` 在服务端向第三方交换并验证 proof，取得稳定 principal，创建短期 LoginAttempt。
 2. 若该 External Credential 已绑定现有 AuthAccount，LoginAttempt 直接 READY；账户本身已经满足有效 Mobile Credential 不变量，不再要求补手机号。
-3. 若尚未绑定且 issuer 的手机号不受信任，LoginAttempt 为 PENDING_MOBILE。客户端为目标手机号申请 scene=`COMPLETE_EXTERNAL_LOGIN` 的 SMS OTP AuthChallenge，再调用 `POST /api/user-auth/login/external` 提交 loginAttemptId + challengeId + code。
+3. 若尚未绑定且 issuer 的手机号不受信任，LoginAttempt 为 PENDING_MOBILE。客户端为目标手机号申请 scene=`COMPLETE_EXTERNAL_LOGIN` 的 SMS OTP AuthChallenge，再调用 `POST /api/user-auth/login/external/complete` 提交 loginAttemptId + challengeId + code。
 4. 手机号验证成功后，服务先按手机号查找 AuthAccount；不存在时创建 AuthAccount 和 Mobile Credential，存在时复用。随后才绑定公共三方 External Credential，并以该 External Credential 创建 LoginSession。
 
 因此公共三方 External Credential 的首次产生有两条合法路径：外部两步登录在手机号确认后“创建/复用 Mobile Credential，再绑定 External Credential”；或者先完成独立手机号注册/登录，再由已认证宿主显式绑定。不存在“只有公共三方 External Credential、没有 Mobile Credential”的有效 AuthAccount。
 
 #### 已认证宿主绑定与后续外部登录
 
-`POST /api/user-auth/credentials/external/bind` 必须使用 Bearer Access Token 恢复的宿主 AuthenticatedSession。服务端从 Principal 决定 User/AuthAccount，客户端只能提交 issuer 与 authorizationCode。验证得到的 ExternalIdentity 已绑定当前账户时幂等成功；已绑定其他账户时拒绝，不能静默迁移或合并账户。
+`POST /api/user-auth/credentials/bind` 必须使用 Bearer Access Token 恢复的宿主 AuthenticatedSession。服务端从 Principal 决定 User/AuthAccount，客户端只能提交 issuer 与 authorizationCode。验证得到的 ExternalIdentity 已绑定当前账户时幂等成功；已绑定其他账户时拒绝，不能静默迁移或合并账户。
 
-绑定完成后，`POST /api/user-auth/login/external/bound` 才能作为该公共三方的无状态登录/续期入口。该入口只查找既有绑定，要求 AuthAccount 和 Mobile Credential 有效；它不建账、不补手机号、不绑定 Credential，并由 ClientApp `renewalPolicy=EXTERNAL_AUTHORIZATION_CODE` 控制。
+绑定完成后，`POST /api/user-auth/login/external/bound-credential` 才能作为该公共三方的无状态登录/续期入口。该入口只查找既有绑定，要求 AuthAccount 和 Mobile Credential 有效；它不建账、不补手机号、不绑定 Credential，并由 ClientApp `renewalPolicy=EXTERNAL_AUTHORIZATION_CODE` 控制。
 
 ### 已实现的用例与 REST 接口
 
 | 接口 | 语义 | 认证要求 |
 | --- | --- | --- |
-| `POST /api/user-auth/auth-challenges` | 创建认证挑战，例如发送手机号验证码。 | 无 |
+| `POST /api/user-auth/challenges` | 创建认证挑战，例如发送手机号验证码。 | 无 |
 | `POST /api/user-auth/login/mobile-otp` | 校验手机号验证码并完成登录。 | 无 |
-| `POST /api/user-auth/login/external/attempts` | 建立外部身份登录尝试。 | 无 |
-| `POST /api/user-auth/login/external` | 确认 LoginAttempt 并完成外部身份登录。 | 无 |
-| `POST /api/user-auth/login/external/bound` | 使用已绑定外部 Credential 的授权码无状态登录或续期。 | 无 |
-| `POST /api/user-auth/login/external/trusted-mobile` | 网关已验签的合作方以外部授权码和已核验手机号完成首次登录。 | 无（仅受保护网关链路） |
-| `POST /api/user-auth/credentials/external/bind` | 将已验证的外部授权码身份绑定至当前宿主登录态所属认证账户。 | 宿主登录态（Bearer Access Token） |
+| `POST /api/user-auth/login/partner/trusted-mobile` | 网关已验签的合作方以可信手机号断言直连登录，不绑定合作方 Credential。 | 无（仅受保护网关链路） |
+| `POST /api/user-auth/login/external/proof` | 用同时验证外部身份与手机号的 proof 单步注册/登录并绑定 External Credential。 | 无 |
+| `POST /api/user-auth/login/external/attempt` | 建立外部身份 LoginAttempt。 | 无 |
+| `POST /api/user-auth/login/external/complete` | 确认 LoginAttempt 并完成外部身份登录。 | 无 |
+| `POST /api/user-auth/login/external/bound-credential` | 使用已绑定外部 Credential 的授权码无状态登录或续期。 | 无 |
+| `POST /api/user-auth/credentials/bind` | 将已验证的外部授权码身份绑定至当前宿主登录态所属认证账户。 | 宿主登录态（Bearer Access Token） |
 | `POST /api/user-auth/logout` | 登出当前宿主登录态所属的 LoginSession。请求体不携带 session id。 | 宿主登录态（Bearer Access Token） |
-| `POST /api/user-auth/web-view-handoffs` | 小程序或 App 以当前 Bearer Access Token 创建首次 WebView 一次性交接 ticket；请求显式声明 `target=BROWSER_SESSION`。 | 宿主登录态（Bearer Access Token） |
-| `POST /api/user-auth/web-view-handoffs/exchange` | H5 以一次性 ticket 和 `target=BROWSER_SESSION` 换取 `BROWSER_SESSION` Cookie。 | 一次性 ticket |
+| `POST /api/user-auth/handoffs` | 小程序或 App 以当前 Bearer Access Token 创建首次 WebView 一次性交接 ticket；请求显式声明 `target=BROWSER_SESSION`。 | 宿主登录态（Bearer Access Token） |
+| `POST /api/user-auth/handoffs/exchange` | H5 以一次性 ticket 和 `target=BROWSER_SESSION` 换取 `BROWSER_SESSION` Cookie。 | 一次性 ticket |
 
 登录成功后，应用层通过协议端口请求令牌，并返回 Token 响应。首次认证所需的 user 初始化通过 `UserGateway` 应用端口完成。
 
@@ -191,10 +199,10 @@ JWT Access Token 是明确例外：logout 会使 Redis 中的 SAS 协议授权�
 
 当前**尚未引入 SessionFamily**。策略二“外部一次性授权码无状态续期”本质上是重新认证，会创建新的 LoginSession；新旧 LoginSession 之间没有 familyId 或 lineage 关联。因此目前只完成“单个父 LoginSession 及其所有派生对象”的统一撤销，尚未完成“同一次初始登录及其所有重新认证续期代际一起撤销”。如果未来需要该能力，应新增 SessionFamilyId，把初始 LoginSession 与策略二产生的后续 LoginSession 纳入同一 family，再在 family 维度撤销；不能用 UserId 直接替代，否则会误伤该用户其他设备上的独立登录。
 
-### 合作方外部直连登录 REST 契约
+### 合作方可信手机号直连登录 REST 契约
 
 ```http
-POST /api/user-auth/login/external/trusted-mobile
+POST /api/user-auth/login/partner/trusted-mobile
 Content-Type: application/json
 X-Client-App-Id: partner-service
 X-Client-Platform: SERVICE
@@ -202,17 +210,17 @@ X-Client-Version: 1.0
 X-Channel-Code: PARTNER_A
 
 {
-  "issuer": "PARTNER_A",
-  "authorizationCode": "partner one-time authorization code",
+  "partnerCode": "PARTNER_A",
+  "partnerBizId": "partner persistent business record id",
   "mobile": "13800138000"
 }
 ```
 
-该接口只接受网关验签后的受保护流量。网关必须校验合作方身份、签名覆盖的请求体、时效和 `authorizationCode` 重放，并注入 `X-*` 上下文；`user-auth` 不重复验签。只有 `user-auth.authentication.external-identity.issuer-policies.<issuer>.trusted-mobile=true` 的 issuer 才能把外部已核验手机号作为可信登录依据，未配置或关闭时不能绕过额外手机号验证。服务按 `mobile` 查找或创建账户，成功响应与普通外部登录相同。`issuer + authorizationCode` 只代表本次 `AUTHORIZATION_CODE` 证明，不建立外部 Credential，也不能用作后续登录标识。
+该接口只接受网关验签后的受保护流量。网关必须校验合作方身份、签名覆盖的请求体、timestamp/nonce 防重放，并注入 `X-*` 上下文；`user-auth` 不重复验签。只有 `user-auth.authentication.external-identity.issuer-policies.<partnerCode>.trust-verified-mobile=true` 的合作方才可把其手机号认证结果作为登录依据。服务按 `mobile` 查找或创建账户，成功响应与普通外部登录相同。`partnerBizId` 可长期存在，供业务追踪与审计使用；它不建立 External Credential，也不承担一次性授权码或稳定用户主体的语义。
 
-`POST /api/user-auth/login/external/bound` 是通用的无状态登录/续期入口，请求体为 `issuer`、`authorizationCode` 和可选设备字段。它验证外部授权码后，只允许使用已绑定到 AuthAccount 的外部 Credential 登录；对应账户必须已有有效 LoginMobile。该接口不接受 `mobile`、不建账、不绑定 Credential，也不需要旧 Access Token。微信小程序只是 `issuer = WECHAT_MINI_PROGRAM` 的一个实现：Access Token 到期后重新执行 `wx.login` 并调用此接口。
+`POST /api/user-auth/login/external/bound-credential` 是通用的无状态登录/续期入口，请求体为 `issuer`、`authorizationCode` 和可选设备字段。它验证外部授权码后，只允许使用已绑定到 AuthAccount 的外部 Credential 登录；对应账户必须已有有效 LoginMobile。该接口不接受 `mobile`、不建账、不绑定 Credential，也不需要旧 Access Token。微信小程序只是 `issuer = WECHAT_MINI_PROGRAM` 的一个实现：Access Token 到期后重新执行 `wx.login` 并调用此接口。
 
-已登录宿主可使用 `POST /api/user-auth/credentials/external/bind` 绑定外部 Credential。JWT 或 Reference Bearer Access Token 均转换为统一的 `AuthenticatedSession` Principal，接口从中取得 `userId` 与 `authAccountId`，客户端不得指定绑定账户；请求体只提交 `issuer` 和 `authorizationCode`。同一外部 Credential 已绑定当前账户时幂等成功，已绑定其他账户时拒绝，不能自动迁移或合并账户。`BROWSER_SESSION` 只代表受限的 WebView 会话，不允许绑定或修改账户 Credential。
+已登录宿主可使用 `POST /api/user-auth/credentials/bind` 绑定外部 Credential。JWT 或 Reference Bearer Access Token 均转换为统一的 `AuthenticatedSession` Principal，接口从中取得 `userId` 与 `authAccountId`，客户端不得指定绑定账户；请求体只提交 `issuer` 和 `authorizationCode`。同一外部 Credential 已绑定当前账户时幂等成功，已绑定其他账户时拒绝，不能自动迁移或合并账户。`BROWSER_SESSION` 只代表受限的 WebView 会话，不允许绑定或修改账户 Credential。
 
 ### 宿主访问凭据的续期
 
@@ -249,7 +257,7 @@ Refresh Token 由 SAS 生成，Redis 仅保存不可逆哈希。每次刷新在 
 
 #### 策略二：外部一次性授权码无状态续期
 
-客户端只持有短期 Bearer Access Token。凭据到期或即将到期时，客户端从已接入的外部身份提供方取得一次性授权码，再调用 `POST /api/user-auth/login/external/bound`。服务仅允许 `renewalPolicy=EXTERNAL_AUTHORIZATION_CODE` 的 ClientApp 使用该入口；验证成功后返回新的 Access Token，且不向 `NONE` ClientApp 签发新的凭据。
+客户端只持有短期 Bearer Access Token。凭据到期或即将到期时，客户端从已接入的外部身份提供方取得一次性授权码，再调用 `POST /api/user-auth/login/external/bound-credential`。服务仅允许 `renewalPolicy=EXTERNAL_AUTHORIZATION_CODE` 的 ClientApp 使用该入口；验证成功后返回新的 Access Token，且不向 `NONE` ClientApp 签发新的凭据。
 
 此策略有两个不可省略的前提：
 
@@ -306,7 +314,7 @@ H5 正常请求
 
 - 认证挑战必须在有效期内、用途和目标匹配且未超过校验限制时才能消费。
 - 外部登录必须先取得有效的 LoginAttempt，再完成确认；外部身份归属应保持唯一且可追溯。LoginAttempt 是多步骤登录流程聚合，AuthChallenge 仍是短信验证码等原子认证证明。
-- 外部授权码登录仅适用于网关已经验证合作方签名、调用方绑定、时效和重放的受保护链路。请求中的 `issuer + authorizationCode` 是 `AUTHORIZATION_CODE` 型一次性证明：它只进入本次短期 LoginAttempt，绝不能绑定为长期 `Credential`；账户仅按已核验的手机号查找或创建。
+- 合作方可信手机号直连登录仅适用于网关已验证合作方身份、签名及时效的受保护链路。`partnerBizId` 是业务追踪标识，不绑定为 Credential；服务仅按受信任的已核验手机号查找或创建账户。公共三方 proof 登录则必须取得稳定 principal；单步 proof 登录只有在同一 proof 的手机号也被验证且 issuer policy 接受时，才可直接建账并绑定 External Credential。
 - 登录会话是认证成功的领域事实；协议授权记录以 `session_id` 将 Token 与该会话关联。
 - `logout` 只处理当前 Bearer Access Token 归一后的 `AuthenticatedSession.sessionId`，不会接受客户端指定任意会话，也不接受 `BROWSER_SESSION`。存在协议授权记录时会一并撤销；JWT Access Token 采用短期自然失效策略，Reference Token 在线 introspection 后即时失效。
 - Session handoff ticket 为随机一次性凭据，默认 60 秒；它绑定 `userId`、`AuthAccountId`、`LoginSession`、服务端生成的 `handoffId` 与目标会话类型。签发 TTL 不超过父 LoginSession 剩余时间，兑换时重新校验父会话；logout 通过 loginSessionId 反向索引删除未消费 ticket。通用票据服务不创建任何具体会话；WebView H5 专用用例只接受目标为 `BROWSER_SESSION` 的 ticket，不能取得宿主 Access Token。

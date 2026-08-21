@@ -10,6 +10,7 @@ import com.cloud.userauth.domain.authentication.challenge.AuthChallengeRepositor
 import com.cloud.userauth.domain.authentication.challenge.AuthChallengeScene;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallengeType;
 import com.cloud.userauth.domain.authentication.challenge.ChallengeConsumerType;
+import com.cloud.userauth.domain.authentication.credential.CredentialStatus;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import com.cloud.userauth.domain.authentication.credential.Credential;
@@ -120,7 +121,7 @@ public class ExternalLoginTransactionService {
         AuthAccount account = requiredAccount(prepared.authAccountId());
         LoginAuthenticationEffect login = authenticationDomainService.login(
                 account,
-                prepared.externalCredentialId(),
+                prepared.authenticatedCredentialId(),
                 loginSessionRepository.nextId(),
                 LoginScene.EXTERNAL_LOGIN,
                 new Device(command.deviceId(), command.deviceType(), command.deviceName()),
@@ -228,7 +229,7 @@ public class ExternalLoginTransactionService {
     private static Credential activeCredential(AuthAccount account, CredentialKey key) {
         return account.credentials().stream()
                 .filter(credential -> credential.key().equals(key)
-                        && credential.status() == com.cloud.userauth.domain.authentication.credential.CredentialStatus.ACTIVE)
+                        && credential.status() == CredentialStatus.ACTIVE)
                 .findFirst()
                 .orElseThrow(() -> new DomainException(DomainError.AUTH_ACCOUNT_CREDENTIAL_NOT_FOUND));
     }

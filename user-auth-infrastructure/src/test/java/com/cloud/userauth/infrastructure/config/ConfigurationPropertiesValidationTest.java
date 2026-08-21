@@ -75,7 +75,7 @@ class ConfigurationPropertiesValidationTest {
                 "user-auth.authentication.challenge.issue-policy.ttl", "3m",
                 "user-auth.authentication.challenge.issue-policy.reuse-window", "30s",
                 "user-auth.authentication.external-identity.login-attempt.ttl", "8m",
-                "user-auth.authentication.external-identity.issuer-policies.WECHAT_MINI_PROGRAM.trusted-mobile", true));
+                "user-auth.authentication.external-identity.issuer-policies.WECHAT_MINI_PROGRAM.trust-verified-mobile", true));
         Binder binder = new Binder(source);
 
         AuthChallengeProperties challenge = binder.bind(
@@ -88,7 +88,7 @@ class ConfigurationPropertiesValidationTest {
         assertTrue(VALIDATOR.validate(challenge).isEmpty());
         assertTrue(VALIDATOR.validate(externalIdentity).isEmpty());
         assertTrue(externalIdentity.getIssuerPolicies()
-                .get("WECHAT_MINI_PROGRAM").getTrustedMobile());
+                .get("WECHAT_MINI_PROGRAM").getTrustVerifiedMobile());
     }
 
     @Test

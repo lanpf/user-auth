@@ -2,14 +2,15 @@ package com.cloud.userauth.interfaces.mapper;
 
 import com.cloud.framework.core.AuthenticatedSessionRequest;
 import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
-import com.cloud.userauth.api.authentication.BoundCredentialLoginApiCommand;
+import com.cloud.userauth.api.authentication.BoundExternalCredentialLoginApiCommand;
+import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommand;
-import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommand;
+import com.cloud.userauth.api.authentication.ExternalProofLoginApiCommand;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommand;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommand;
-import com.cloud.userauth.api.authentication.TrustedMobileLoginApiCommand;
+import com.cloud.userauth.api.authentication.TrustedPartnerMobileLoginApiCommand;
 import com.cloud.userauth.interfaces.rest.UserAuthenticationController;
 
 public interface AuthenticationRestMapper {
@@ -17,21 +18,24 @@ public interface AuthenticationRestMapper {
 
     MobileOtpLoginApiCommand toCommand(UserAuthenticationController.MobileOtpLoginRequest request);
 
-    RefreshTokenLoginApiCommand toCommand(UserAuthenticationController.RefreshTokenLoginRequest request);
+    TrustedPartnerMobileLoginApiCommand toCommand(
+            UserAuthenticationController.TrustedPartnerMobileLoginRequest request);
 
-    TrustedMobileLoginApiCommand toCommand(
-            UserAuthenticationController.TrustedMobileLoginRequest request);
+    ExternalProofLoginApiCommand toCommand(
+            UserAuthenticationController.ExternalProofLoginRequest request);
 
-    BoundCredentialLoginApiCommand toCommand(
-            UserAuthenticationController.BoundCredentialLoginRequest request);
+    BoundExternalCredentialLoginApiCommand toCommand(
+            UserAuthenticationController.BoundExternalCredentialLoginRequest request);
 
-    ExternalLoginAttemptApiCommand toCommand(
-            UserAuthenticationController.ExternalLoginAttemptRequest request);
+    ExternalAttemptLoginApiCommand toCommand(
+            UserAuthenticationController.ExternalAttemptLoginRequest request);
 
     ExternalLoginApiCommand toCommand(UserAuthenticationController.ExternalLoginRequest request);
 
     BindExternalCredentialApiCommand toCommand(
             UserAuthenticationController.BindExternalCredentialRequest request);
+
+    RefreshTokenLoginApiCommand toCommand(UserAuthenticationController.RefreshTokenLoginRequest request);
 
     LogoutApiCommand toLogoutCommand(AuthenticatedSessionRequest request);
 }

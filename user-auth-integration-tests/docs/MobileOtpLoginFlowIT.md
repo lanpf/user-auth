@@ -4,7 +4,7 @@
 
 验证手机号首次登录在真实基础设施上的完整链路：
 
-1. 通过公开接口 `POST /api/user-auth/auth-challenges` 发布手机验证码。
+1. 通过公开接口 `POST /api/user-auth/challenges` 发布手机验证码。
 2. 通过公开接口 `POST /api/user-auth/login/mobile-otp` 提交本次验证码。
 3. 验证 `user-auth` 使用 RestClient 自调用本地 SAS `/oauth2/token`，完成认证和
    Access Token 签发。

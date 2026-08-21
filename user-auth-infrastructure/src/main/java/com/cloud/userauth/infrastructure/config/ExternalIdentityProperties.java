@@ -37,6 +37,6 @@ public class ExternalIdentityProperties {
     @Setter
     public static class IssuerPolicyProperties {
         @NotNull
-        private Boolean trustedMobile;
+        private Boolean trustVerifiedMobile;
     }
 }

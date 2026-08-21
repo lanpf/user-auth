@@ -2,12 +2,16 @@
 
 ## 测试目标
 
-验证第三方身份首次登录的两种跨模块流程：
+验证第三方身份登录的跨模块流程：
 
 1. 第三方手机号可信时，无需验证码 Challenge，直接创建手机号 Credential、外部身份
    Credential 和 `EXTERNAL_LOGIN` Session。
 2. 第三方手机号不可信时，预登录要求补充手机号验证；完成
    `COMPLETE_EXTERNAL_LOGIN` 短信 Challenge 后，再创建两个 Credential 和 Session。
+3. 外部 proof 同时验证稳定身份和手机号时，一次请求直接创建或复用 Mobile
+   Credential、绑定 External Credential 并创建 Session。
+4. 单步外部 proof 没有产生已验证手机号时拒绝登录，不退化为两步流程。
+5. issuer policy 不信任外部已验证手机号时，单步入口同样拒绝登录。
 
 ## 运行条件
 
@@ -38,8 +42,10 @@ mvn -pl user-auth-integration-tests -am verify -Dit.test=ExternalLoginFlowIT
    `mobileVerificationRequired=false`。
 4. 对不可信手机号场景，观察 `trustedMobile=false`、
    `mobileVerificationRequired=true` 以及用于完成登录的 Challenge ID。
-5. 确认两条记录均包含 UserId、AuthAccountId、SessionId，且 Credential 数量为 2。
-6. 打开观察入口中的 Failsafe 报告，确认测试执行数为 2，失败数和错误数均为 0。
+5. 查找 `single-step external proof login completed`，确认一次请求完成登录且
+   Credential 数量为 2。
+6. 确认成功记录均包含 UserId、AuthAccountId、SessionId。
+7. 打开观察入口中的 Failsafe 报告，确认所有场景通过，失败数和错误数均为 0。
 
 ## 观察入口
 
@@ -52,5 +58,6 @@ mvn -pl user-auth-integration-tests -am verify -Dit.test=ExternalLoginFlowIT
 - 可信手机号直接完成登录，不要求短信验证。
 - 不可信手机号只有在完成 `COMPLETE_EXTERNAL_LOGIN` Challenge 后才能登录。
 - 两种场景都创建一个 `MOBILE` Credential 和一个 `EXTERNAL` Credential。
+- 同时携带身份与手机号证明且 issuer policy 接受该手机号结果时，单步入口直接登录；缺少验证结果或策略不信任时拒绝。
 - 两种场景创建的 Session 均使用 `EXTERNAL_LOGIN`。
 - Failsafe 报告显示两个测试均通过，无失败或错误。

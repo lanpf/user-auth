@@ -267,7 +267,8 @@ class MobileRegistrationRetryIT {
                 "Test phone",
                 "app",
                 "IOS",
-                "1.0");
+                "1.0",
+                "DIRECT");
     }
 
     private record Services(

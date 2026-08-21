@@ -1,5 +1,6 @@
 package com.cloud.userauth.application.authorization;
 
+import com.cloud.userauth.domain.authorization.ChannelCode;
 import com.cloud.userauth.domain.user.UserId;
 
 /**
@@ -7,5 +8,5 @@ import com.cloud.userauth.domain.user.UserId;
  */
 @FunctionalInterface
 public interface UserChannelAuthorizationSynchronizer {
-    void synchronize(UserId userId, String channelCode);
+    void synchronize(UserId userId, ChannelCode channelCode);
 }

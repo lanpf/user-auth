@@ -122,7 +122,7 @@ user-auth:
         ttl: ${USER_AUTH_EXTERNAL_LOGIN_ATTEMPT_TTL:10m}
       issuer-policies:
         WECHAT_MINI_PROGRAM:
-          trusted-mobile: ${USER_AUTH_EXTERNAL_WECHAT_MINI_PROGRAM_TRUSTED_MOBILE:true}
+          trust-verified-mobile: ${USER_AUTH_EXTERNAL_WECHAT_MINI_PROGRAM_TRUST_VERIFIED_MOBILE:true}
       wechat-mini-program:
         enabled: ${USER_AUTH_WECHAT_MINI_PROGRAM_ENABLED:false}
         app-id: ${USER_AUTH_WECHAT_MINI_PROGRAM_APP_ID:}

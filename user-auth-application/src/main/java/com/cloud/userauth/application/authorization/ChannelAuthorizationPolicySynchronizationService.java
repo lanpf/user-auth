@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 /**
  * 根据渠道授权策略同步用户授权，并以已提交的用户版本游标恢复批处理重放。
@@ -43,11 +42,7 @@ public class ChannelAuthorizationPolicySynchronizationService
 
     @Transactional
     @Override
-    public void synchronize(UserId userId, String rawChannelCode) {
-        if (!StringUtils.hasText(rawChannelCode)) {
-            return;
-        }
-        ChannelCode channelCode = new ChannelCode(rawChannelCode);
+    public void synchronize(UserId userId, ChannelCode channelCode) {
         ChannelAuthorizationPolicy policy = policyRepository.findByChannelCode(channelCode)
                 .orElse(null);
         if (policy == null) {

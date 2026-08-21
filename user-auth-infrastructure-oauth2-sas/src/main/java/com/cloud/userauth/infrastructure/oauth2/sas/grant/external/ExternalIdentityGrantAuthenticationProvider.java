@@ -29,6 +29,7 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
 import org.springframework.security.oauth2.server.authorization.token.DefaultOAuth2TokenContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.util.StringUtils;
 
@@ -49,36 +50,33 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
 
     @Override
     public Authentication authenticate(Authentication authentication) {
-        ExternalIdentityGrantAuthenticationToken grant =
+        ExternalIdentityGrantAuthenticationToken grantAuthentication =
                 (ExternalIdentityGrantAuthenticationToken) authentication;
-        OAuth2ClientAuthenticationToken clientPrincipal = authenticatedClient(grant);
+        OAuth2ClientAuthenticationToken clientPrincipal = authenticatedClient(grantAuthentication);
         RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
         if (registeredClient == null
-                || !registeredClient.getAuthorizationGrantTypes()
-                .contains(ExternalIdentityGrantTypes.EXTERNAL_IDENTITY)) {
-            throw oauth2(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
+                || !registeredClient.getAuthorizationGrantTypes().contains(ExternalIdentityGrantTypes.EXTERNAL_IDENTITY)) {
+            throw oauth2Exception(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
-        Set<String> scopes = authorizedScopes(grant, registeredClient);
-        ExternalAuthenticationOutput login = authenticateExternal(grant);
+
+        Set<String> authorizedScopes = authorizedScopes(grantAuthentication, registeredClient);
+        ExternalAuthenticationOutput login = authenticateExternal(grantAuthentication);
         Authentication userPrincipal = UsernamePasswordAuthenticationToken.authenticated(
                 String.valueOf(login.userId()), null, List.of());
-        OAuth2Authorization.Builder authorization = authorization(
-                registeredClient, userPrincipal, login, scopes, grant.request().clientAppId());
-        DefaultOAuth2TokenContext.Builder tokenContext = tokenContext(
-                registeredClient, userPrincipal, grant, scopes, authorization.build());
+        OAuth2Authorization.Builder authorizationBuilder = authorization(
+                registeredClient, userPrincipal, login, authorizedScopes, grantAuthentication.request().clientAppId());
+        DefaultOAuth2TokenContext.Builder tokenContextBuilder = tokenContext(
+                registeredClient, userPrincipal, grantAuthentication, authorizedScopes, authorizationBuilder.build());
+
+        OAuth2TokenContext accessTokenContext = tokenContextBuilder.tokenType(OAuth2TokenType.ACCESS_TOKEN).build();
         OAuth2AccessToken accessToken = accessToken(
-                authorization,
-                tokenGenerator.generate(tokenContext.tokenType(OAuth2TokenType.ACCESS_TOKEN).build()),
-                scopes);
+                authorizationBuilder, tokenGenerator.generate(accessTokenContext), authorizedScopes);
         OAuth2RefreshToken refreshToken = refreshToken(
-                authorization, tokenContext, grant.request().clientAppId());
-        authorizationService.save(authorization.build());
+                authorizationBuilder, tokenContextBuilder, grantAuthentication.request().clientAppId());
+        authorizationService.save(authorizationBuilder.build());
+
         return new OAuth2AccessTokenAuthenticationToken(
-                registeredClient,
-                clientPrincipal,
-                accessToken,
-                refreshToken,
-                responseParameters(login));
+                registeredClient, clientPrincipal, accessToken, refreshToken, buildResponseParameters(login));
     }
 
     @Override
@@ -87,17 +85,17 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
     }
 
     private ExternalAuthenticationOutput authenticateExternal(
-            ExternalIdentityGrantAuthenticationToken grant
+            ExternalIdentityGrantAuthenticationToken grantAuthentication
     ) {
         try {
             return authenticationProcess.authenticate(
-                    requestMapper.toAuthenticationCommand(grant.request()));
+                    requestMapper.toAuthenticationCommand(grantAuthentication.request()));
         } catch (DomainException exception) {
-            throw oauth2(OAuth2ErrorCodes.INVALID_GRANT);
+            throw oauth2Exception(OAuth2ErrorCodes.INVALID_GRANT);
         } catch (ApplicationException exception) {
-            throw oauth2(OAuth2ErrorCodes.TEMPORARILY_UNAVAILABLE);
+            throw oauth2Exception(OAuth2ErrorCodes.TEMPORARILY_UNAVAILABLE);
         } catch (RuntimeException exception) {
-            throw oauth2(OAuth2ErrorCodes.SERVER_ERROR);
+            throw oauth2Exception(OAuth2ErrorCodes.SERVER_ERROR);
         }
     }
 
@@ -105,14 +103,14 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
             RegisteredClient client,
             Authentication userPrincipal,
             ExternalAuthenticationOutput login,
-            Set<String> scopes,
+            Set<String> authorizedScopes,
             String clientAppId
     ) {
         return OAuth2Authorization.withRegisteredClient(client)
                 .id(login.sessionId())
                 .principalName(String.valueOf(login.userId()))
                 .authorizationGrantType(ExternalIdentityGrantTypes.EXTERNAL_IDENTITY)
-                .authorizedScopes(scopes)
+                .authorizedScopes(authorizedScopes)
                 .attribute(Principal.class.getName(), userPrincipal)
                 .attribute(SasAuthorizationAttributes.USER_ID, login.userId())
                 .attribute(SasAuthorizationAttributes.AUTH_ACCOUNT_ID, login.authAccountId())
@@ -123,8 +121,8 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
     private DefaultOAuth2TokenContext.Builder tokenContext(
             RegisteredClient client,
             Authentication userPrincipal,
-            ExternalIdentityGrantAuthenticationToken grant,
-            Set<String> scopes,
+            ExternalIdentityGrantAuthenticationToken grantAuthentication,
+            Set<String> authorizedScopes,
             OAuth2Authorization authorization
     ) {
         return DefaultOAuth2TokenContext.builder()
@@ -132,89 +130,93 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
                 .principal(userPrincipal)
                 .authorizationServerContext(AuthorizationServerContextHolder.getContext())
                 .authorization(authorization)
-                .authorizedScopes(scopes)
+                .authorizedScopes(authorizedScopes)
                 .authorizationGrantType(ExternalIdentityGrantTypes.EXTERNAL_IDENTITY)
-                .authorizationGrant(grant);
+                .authorizationGrant(grantAuthentication);
     }
 
     private OAuth2AccessToken accessToken(
-            OAuth2Authorization.Builder authorization,
-            OAuth2Token generated,
-            Set<String> scopes
+            OAuth2Authorization.Builder authorizationBuilder,
+            OAuth2Token generatedToken,
+            Set<String> authorizedScopes
     ) {
-        if (generated == null) {
-            throw oauth2(OAuth2ErrorCodes.SERVER_ERROR);
+        if (generatedToken == null) {
+            throw oauth2Exception(OAuth2ErrorCodes.SERVER_ERROR);
         }
         OAuth2AccessToken accessToken = new OAuth2AccessToken(
                 OAuth2AccessToken.TokenType.BEARER,
-                generated.getTokenValue(),
-                generated.getIssuedAt(),
-                generated.getExpiresAt(),
-                scopes);
-        authorization.token(accessToken, metadata -> {
-            if (generated instanceof ClaimAccessor accessor) {
-                metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME, accessor.getClaims());
+                generatedToken.getTokenValue(),
+                generatedToken.getIssuedAt(),
+                generatedToken.getExpiresAt(),
+                authorizedScopes);
+        authorizationBuilder.token(accessToken, metadata -> {
+            if (generatedToken instanceof ClaimAccessor claimAccessor) {
+                metadata.put(
+                        OAuth2Authorization.Token.CLAIMS_METADATA_NAME,
+                        claimAccessor.getClaims());
             }
         });
         return accessToken;
     }
 
     private OAuth2RefreshToken refreshToken(
-            OAuth2Authorization.Builder authorization,
-            DefaultOAuth2TokenContext.Builder tokenContext,
+            OAuth2Authorization.Builder authorizationBuilder,
+            DefaultOAuth2TokenContext.Builder tokenContextBuilder,
             String clientAppId
     ) {
         if (renewalPolicyResolver.resolve(clientAppId) != ClientRenewalPolicy.REFRESH_TOKEN_ROTATION) {
             return null;
         }
         OAuth2Token generated = tokenGenerator.generate(
-                tokenContext.tokenType(OAuth2TokenType.REFRESH_TOKEN).build());
+                tokenContextBuilder.tokenType(OAuth2TokenType.REFRESH_TOKEN).build());
         if (!(generated instanceof OAuth2RefreshToken refreshToken)) {
-            throw oauth2(OAuth2ErrorCodes.SERVER_ERROR);
+            throw oauth2Exception(OAuth2ErrorCodes.SERVER_ERROR);
         }
-        authorization.refreshToken(refreshToken);
+        authorizationBuilder.refreshToken(refreshToken);
         return refreshToken;
     }
 
-    private Set<String> authorizedScopes(
-            ExternalIdentityGrantAuthenticationToken grant,
-            RegisteredClient client
-    ) {
-        Set<String> configured;
-        try {
-            configured = clientScopeResolver.resolve(grant.request().clientAppId());
-        } catch (ApplicationException exception) {
-            throw oauth2(OAuth2ErrorCodes.INVALID_SCOPE);
-        }
-        if (!client.getScopes().containsAll(configured)) {
-            throw oauth2(OAuth2ErrorCodes.SERVER_ERROR);
-        }
-        if (!StringUtils.hasText(grant.request().scope())) {
-            return configured;
-        }
-        Set<String> requested;
-        try {
-            requested = Set.of(StringUtils.tokenizeToStringArray(grant.request().scope(), " "));
-        } catch (IllegalArgumentException exception) {
-            throw oauth2(OAuth2ErrorCodes.INVALID_SCOPE);
-        }
-        if (!configured.equals(requested)) {
-            throw oauth2(OAuth2ErrorCodes.INVALID_SCOPE);
-        }
-        return configured;
-    }
-
     private static OAuth2ClientAuthenticationToken authenticatedClient(
-            ExternalIdentityGrantAuthenticationToken grant
+            ExternalIdentityGrantAuthenticationToken grantAuthentication
     ) {
-        if (grant.getPrincipal() instanceof OAuth2ClientAuthenticationToken client
-                && client.isAuthenticated()) {
+        Object principal = grantAuthentication.getPrincipal();
+        if (principal instanceof OAuth2ClientAuthenticationToken client && client.isAuthenticated()) {
             return client;
         }
-        throw oauth2(OAuth2ErrorCodes.INVALID_CLIENT);
+        throw oauth2Exception(OAuth2ErrorCodes.INVALID_CLIENT);
     }
 
-    private static Map<String, Object> responseParameters(
+    private Set<String> authorizedScopes(
+            ExternalIdentityGrantAuthenticationToken grantAuthentication,
+            RegisteredClient client
+    ) {
+        Set<String> configuredScopes;
+        try {
+            configuredScopes = clientScopeResolver.resolve(
+                    grantAuthentication.request().clientAppId());
+        } catch (ApplicationException exception) {
+            throw oauth2Exception(OAuth2ErrorCodes.INVALID_SCOPE);
+        }
+        if (!client.getScopes().containsAll(configuredScopes)) {
+            throw oauth2Exception(OAuth2ErrorCodes.SERVER_ERROR);
+        }
+        String scope = grantAuthentication.request().scope();
+        if (!StringUtils.hasText(scope)) {
+            return configuredScopes;
+        }
+        Set<String> scopes;
+        try {
+            scopes = Set.of(StringUtils.tokenizeToStringArray(scope, " "));
+        } catch (IllegalArgumentException exception) {
+            throw oauth2Exception(OAuth2ErrorCodes.INVALID_SCOPE);
+        }
+        if (!configuredScopes.equals(scopes)) {
+            throw oauth2Exception(OAuth2ErrorCodes.INVALID_SCOPE);
+        }
+        return configuredScopes;
+    }
+
+    private static Map<String, Object> buildResponseParameters(
             ExternalAuthenticationOutput login
     ) {
         Map<String, Object> parameters = new LinkedHashMap<>();
@@ -223,10 +225,11 @@ public final class ExternalIdentityGrantAuthenticationProvider implements Authen
         parameters.put(SasTokenResponseParameters.SESSION_ID, login.sessionId());
         parameters.put(SasTokenResponseParameters.FROM_REGISTRATION_FLOW, false);
         parameters.put(SasTokenResponseParameters.REPLAYED, login.replayed());
+
         return parameters;
     }
 
-    private static OAuth2AuthenticationException oauth2(String errorCode) {
+    private static OAuth2AuthenticationException oauth2Exception(String errorCode) {
         return new OAuth2AuthenticationException(new OAuth2Error(errorCode));
     }
 }

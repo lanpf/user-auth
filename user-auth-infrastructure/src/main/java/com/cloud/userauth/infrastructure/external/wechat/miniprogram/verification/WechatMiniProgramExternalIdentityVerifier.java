@@ -42,8 +42,7 @@ public final class WechatMiniProgramExternalIdentityVerifier
             throw rejected();
         }
         WechatMiniProgramProof proof =
-                WechatMiniProgramProofMapper.toProof(
-                        proofParameters);
+                WechatMiniProgramProofMapper.toProof(proofParameters);
         if (proof == null || !validator.validate(proof).isEmpty()) {
             throw rejected();
         }
@@ -59,8 +58,7 @@ public final class WechatMiniProgramExternalIdentityVerifier
                 ISSUER,
                 new Principal(openId),
                 mobile,
-                mobileVerified,
-                null);
+                mobileVerified);
     }
 
     private static ApplicationException rejected() {

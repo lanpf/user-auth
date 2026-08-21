@@ -70,8 +70,8 @@ class ChannelAuthorizationPolicySynchronizationServiceTest {
                 policies, applications, roleGrants, permissionGrants,
                 domainService, ignored -> { }, Clock.fixed(NOW, ZoneOffset.UTC));
 
-        synchronizationService.synchronize(userId, "PARTNER_A");
-        synchronizationService.synchronize(userId, "PARTNER_A");
+        synchronizationService.synchronize(userId, new ChannelCode("PARTNER_A"));
+        synchronizationService.synchronize(userId, new ChannelCode("PARTNER_A"));
 
         assertEquals(2, roleGrants.findActiveByUserId(userId).size());
         assertEquals(1, permissionGrants.findActiveByUserId(userId).size());

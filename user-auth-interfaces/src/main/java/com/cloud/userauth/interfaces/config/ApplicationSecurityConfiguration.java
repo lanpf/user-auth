@@ -25,38 +25,40 @@ public class ApplicationSecurityConfiguration {
     ) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
-                                UserAuthRestPaths.API_AUTH_CHALLENGES,
+                                UserAuthRestPaths.API_CHALLENGES,
                                 UserAuthRestPaths.API_LOGIN_MOBILE_OTP,
                                 UserAuthRestPaths.API_LOGIN_REFRESH,
-                                UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPTS,
-                                UserAuthRestPaths.API_LOGIN_EXTERNAL,
-                                UserAuthRestPaths.API_LOGIN_EXTERNAL_TRUSTED_MOBILE,
+                                UserAuthRestPaths.API_LOGIN_PARTNER_TRUSTED_MOBILE,
+                                UserAuthRestPaths.API_LOGIN_EXTERNAL_PROOF,
                                 UserAuthRestPaths.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL,
-                                UserAuthRestPaths.API_WEB_VIEW_HANDOFFS_EXCHANGE,
+                                UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPT,
+                                UserAuthRestPaths.API_LOGIN_EXTERNAL_COMPLETE,
+                                UserAuthRestPaths.API_HANDOFFS_EXCHANGE,
                                 "/actuator/health",
                                 "/actuator/info")
                         .permitAll()
                         .requestMatchers(
                                 UserAuthRestPaths.API_LOGOUT,
-                                UserAuthRestPaths.API_CREDENTIALS_EXTERNAL_BIND,
-                                UserAuthRestPaths.API_WEB_VIEW_HANDOFFS)
+                                UserAuthRestPaths.API_CREDENTIALS_BIND,
+                                UserAuthRestPaths.API_HANDOFFS)
                         .hasAuthority(SessionAuthenticationAuthorities.HOST_SESSION)
                         .requestMatchers(UserAuthRestPaths.ADMIN_AUTHORIZATION + "/**")
                         .hasAuthority(SessionAuthenticationAuthorities.HOST_SESSION)
                         .anyRequest()
                         .denyAll())
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
-                        UserAuthRestPaths.API_AUTH_CHALLENGES,
+                        UserAuthRestPaths.API_CHALLENGES,
                         UserAuthRestPaths.API_LOGIN_MOBILE_OTP,
                         UserAuthRestPaths.API_LOGIN_REFRESH,
-                        UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPTS,
-                        UserAuthRestPaths.API_LOGIN_EXTERNAL,
-                        UserAuthRestPaths.API_LOGIN_EXTERNAL_TRUSTED_MOBILE,
+                        UserAuthRestPaths.API_LOGIN_PARTNER_TRUSTED_MOBILE,
+                        UserAuthRestPaths.API_LOGIN_EXTERNAL_PROOF,
                         UserAuthRestPaths.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL,
-                        UserAuthRestPaths.API_WEB_VIEW_HANDOFFS,
-                        UserAuthRestPaths.API_WEB_VIEW_HANDOFFS_EXCHANGE,
+                        UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPT,
+                        UserAuthRestPaths.API_LOGIN_EXTERNAL_COMPLETE,
+                        UserAuthRestPaths.API_HANDOFFS,
+                        UserAuthRestPaths.API_HANDOFFS_EXCHANGE,
                         UserAuthRestPaths.API_LOGOUT,
-                        UserAuthRestPaths.API_CREDENTIALS_EXTERNAL_BIND,
+                        UserAuthRestPaths.API_CREDENTIALS_BIND,
                         UserAuthRestPaths.ADMIN_AUTHORIZATION + "/**"));
         http.addFilterBefore(forwardedAuthenticatedSessionFilter, AnonymousAuthenticationFilter.class);
         browserSessionAuthenticationFilter.ifAvailable(filter -> http.addFilterAfter(filter, ForwardedAuthenticatedSessionFilter.class));

@@ -4,6 +4,7 @@ import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.application.common.ApplicationException;
 import com.cloud.userauth.application.authorization.UserChannelAuthorizationSynchronizer;
 import com.cloud.userauth.application.port.UserGateway;
+import com.cloud.userauth.domain.authorization.ChannelCode;
 import com.cloud.userauth.domain.user.UserId;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +26,7 @@ public class ExternalAuthenticationProcess {
         ExternalAuthenticationOutput authenticated =
                 transactionService.completeLogin(command, prepared);
         userChannelAuthorizationSynchronizer.synchronize(
-                new UserId(authenticated.userId()), command.channelCode());
+                new UserId(authenticated.userId()), new ChannelCode(command.channelCode()));
         return authenticated;
     }
 }

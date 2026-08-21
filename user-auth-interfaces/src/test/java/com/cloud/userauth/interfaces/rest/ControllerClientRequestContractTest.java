@@ -24,7 +24,7 @@ class ControllerClientRequestContractTest {
         List<Class<?>> controllers = List.of(
                 UserAuthenticationController.class,
                 UserAuthorizationController.class,
-                WebViewHandoffController.class);
+                HandoffController.class);
 
         controllers.stream()
                 .flatMap(controller -> List.of(controller.getDeclaredMethods()).stream())
@@ -124,7 +124,7 @@ class ControllerClientRequestContractTest {
         return List.of(
                 UserAuthenticationController.class,
                 UserAuthorizationController.class,
-                WebViewHandoffController.class);
+                HandoffController.class);
     }
 
     private record RequestBodyParameter(Method method, Parameter parameter) {

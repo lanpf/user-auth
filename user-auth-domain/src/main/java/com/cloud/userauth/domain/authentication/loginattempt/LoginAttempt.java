@@ -16,7 +16,6 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
     private final LoginAttemptId id;
     private final CredentialIssuer issuer;
     private final Principal principal;
-    private final String displayName;
     private LoginMobile mobile;
     private boolean mobileVerified;
     private LoginAttemptStatus status;
@@ -29,7 +28,6 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
             LoginAttemptId id,
             CredentialIssuer issuer,
             Principal principal,
-            String displayName,
             LoginMobile mobile,
             boolean mobileVerified,
             LoginAttemptStatus status,
@@ -41,7 +39,6 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
         this.id = id;
         this.issuer = issuer;
         this.principal = principal;
-        this.displayName = displayName;
         this.mobile = mobile;
         this.mobileVerified = mobileVerified;
         this.status = status;
@@ -87,7 +84,6 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
                 id,
                 identity.issuer(),
                 identity.principal(),
-                identity.displayName(),
                 mobile,
                 mobileVerified,
                 status,
@@ -102,7 +98,6 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
             LoginAttemptId id,
             CredentialIssuer issuer,
             Principal principal,
-            String displayName,
             LoginMobile mobile,
             boolean mobileVerified,
             LoginAttemptStatus status,
@@ -112,7 +107,7 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
             Instant updatedAt
     ) {
         return new LoginAttempt(
-                id, issuer, principal, displayName, mobile, mobileVerified,
+                id, issuer, principal, mobile, mobileVerified,
                 status, sessionId, expiresAt, createdAt, updatedAt);
     }
 
@@ -124,19 +119,6 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
             expire(now);
             throw new DomainException(DomainError.LOGIN_ATTEMPT_EXPIRED);
         }
-    }
-
-    @Override
-    public LoginAttemptId id() {
-        return id;
-    }
-
-    public CredentialIssuer issuer() {
-        return issuer;
-    }
-
-    public Principal principal() {
-        return principal;
     }
 
     public boolean requiresMobileVerification() {

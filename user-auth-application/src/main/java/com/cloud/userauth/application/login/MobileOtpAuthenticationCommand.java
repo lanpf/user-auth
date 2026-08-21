@@ -21,19 +21,7 @@ public record MobileOtpAuthenticationCommand(
         String clientAppId,
         String clientPlatform,
         String clientVersion,
+        @NotBlank
         String channelCode
 ) {
-    public MobileOtpAuthenticationCommand(
-            Long challengeId,
-            String code,
-            String deviceId,
-            String deviceType,
-            String deviceName,
-            String clientAppId,
-            String clientPlatform,
-            String clientVersion
-    ) {
-        this(challengeId, code, deviceId, deviceType, deviceName,
-                clientAppId, clientPlatform, clientVersion, null);
-    }
 }

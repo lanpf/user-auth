@@ -15,6 +15,7 @@ import com.cloud.userauth.domain.authentication.challenge.AuthChallengeId;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallengeRepository;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallengeStatus;
 import com.cloud.userauth.domain.authentication.challenge.ChallengeConsumerType;
+import com.cloud.userauth.domain.authorization.ChannelCode;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import com.cloud.userauth.domain.authentication.credential.CredentialKey;
@@ -41,13 +42,13 @@ public class MobileOtpAuthenticationProcess {
     private final UserGateway userGateway;
 
     public MobileOtpAuthenticationOutput authenticate(@Valid MobileOtpAuthenticationCommand command) {
-        AuthChallenge initialChallenge = challengeRepository.findById(new AuthChallengeId(command.challengeId()))
+        AuthChallenge authChallenge = challengeRepository.findById(new AuthChallengeId(command.challengeId()))
                 .orElseThrow(() -> new DomainException(DomainError.AUTH_CHALLENGE_NOT_FOUND));
-        LoginMobile mobile = new LoginMobile(initialChallenge.getTarget().value());
+        LoginMobile mobile = new LoginMobile(authChallenge.getTarget().value());
         MobileOtpAuthenticationOutput authenticated =
                 mobileOtpLoginLock.execute(mobile, () -> authenticateLocked(command));
         userChannelAuthorizationSynchronizer.synchronize(
-                new UserId(authenticated.userId()), command.channelCode());
+                new UserId(authenticated.userId()), new ChannelCode(command.channelCode()));
         return authenticated;
     }
 

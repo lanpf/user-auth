@@ -194,7 +194,6 @@ public interface UserAuthPersistenceMapStructMapper extends UserAuthPersistenceM
                         source.getIssuer(),
                         CredentialIssuerType.valueOf(source.getIssuerType())),
                 new Principal(source.getPrincipal()),
-                source.getDisplayName(),
                 loginMobile(source.getMobile()),
                 source.isMobileVerified(),
                 LoginAttemptStatus.valueOf(source.getStatus()),

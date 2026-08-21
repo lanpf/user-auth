@@ -41,7 +41,7 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 public final class MobileOtpGrantAuthenticationProvider implements AuthenticationProvider {
-    private final MobileOtpAuthenticationProcess mobileOtpAuthenticationProcess;
+    private final MobileOtpAuthenticationProcess authenticationProcess;
     private final OAuth2AuthorizationService authorizationService;
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
     private final SasClientScopeResolver clientScopeResolver;
@@ -54,7 +54,8 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
                 (MobileOtpGrantAuthenticationToken) authentication;
         OAuth2ClientAuthenticationToken clientPrincipal = authenticatedClient(grantAuthentication);
         RegisteredClient registeredClient = clientPrincipal.getRegisteredClient();
-        if (registeredClient == null || !registeredClient.getAuthorizationGrantTypes().contains(MobileOtpGrantTypes.MOBILE_OTP)) {
+        if (registeredClient == null
+                || !registeredClient.getAuthorizationGrantTypes().contains(MobileOtpGrantTypes.MOBILE_OTP)) {
             throw oauth2Exception(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
 
@@ -74,9 +75,8 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
                 authorizationBuilder, tokenContextBuilder, grantAuthentication.request().clientAppId());
         authorizationService.save(authorizationBuilder.build());
 
-        Map<String, Object> responseParameters = buildResponseParameters(login);
         return new OAuth2AccessTokenAuthenticationToken(
-                registeredClient, clientPrincipal, accessToken, refreshToken, responseParameters);
+                registeredClient, clientPrincipal, accessToken, refreshToken, buildResponseParameters(login));
     }
 
     @Override
@@ -84,11 +84,12 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
         return MobileOtpGrantAuthenticationToken.class.isAssignableFrom(authentication);
     }
 
-    private MobileOtpAuthenticationOutput authenticateMobile(MobileOtpGrantAuthenticationToken grantAuthentication) {
+    private MobileOtpAuthenticationOutput authenticateMobile(
+            MobileOtpGrantAuthenticationToken grantAuthentication
+    ) {
         try {
-            return mobileOtpAuthenticationProcess.authenticate(
-                    requestMapper.toAuthenticationCommand(
-                            grantAuthentication.request()));
+            return authenticationProcess.authenticate(
+                    requestMapper.toAuthenticationCommand(grantAuthentication.request()));
         } catch (DomainException exception) {
             throw oauth2Exception(OAuth2ErrorCodes.INVALID_GRANT);
         } catch (ApplicationException exception) {
@@ -102,14 +103,14 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
             RegisteredClient client,
             Authentication userPrincipal,
             MobileOtpAuthenticationOutput login,
-            Set<String> scopes,
+            Set<String> authorizedScopes,
             String clientAppId
     ) {
         return OAuth2Authorization.withRegisteredClient(client)
                 .id(login.sessionId())
                 .principalName(String.valueOf(login.userId()))
                 .authorizationGrantType(MobileOtpGrantTypes.MOBILE_OTP)
-                .authorizedScopes(scopes)
+                .authorizedScopes(authorizedScopes)
                 .attribute(Principal.class.getName(), userPrincipal)
                 .attribute(SasAuthorizationAttributes.USER_ID, login.userId())
                 .attribute(SasAuthorizationAttributes.AUTH_ACCOUNT_ID, login.authAccountId())
@@ -121,7 +122,7 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
             RegisteredClient client,
             Authentication userPrincipal,
             MobileOtpGrantAuthenticationToken grantAuthentication,
-            Set<String> scopes,
+            Set<String> authorizedScopes,
             OAuth2Authorization authorization
     ) {
         return DefaultOAuth2TokenContext.builder()
@@ -129,7 +130,7 @@ public final class MobileOtpGrantAuthenticationProvider implements Authenticatio
                 .principal(userPrincipal)
                 .authorizationServerContext(AuthorizationServerContextHolder.getContext())
                 .authorization(authorization)
-                .authorizedScopes(scopes)
+                .authorizedScopes(authorizedScopes)
                 .authorizationGrantType(MobileOtpGrantTypes.MOBILE_OTP)
                 .authorizationGrant(grantAuthentication);
     }

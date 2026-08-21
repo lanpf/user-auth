@@ -45,7 +45,9 @@ SAS endpoint  -> custom grant provider -> application authentication process
 
 两个自定义登录 grant 都会在内部请求中携带经网关注入并由 REST 层消费的 `channel_code`。认证流程在 Token 生成前调用渠道授权应用端口；只有 ACTIVE 渠道策略会新增授权，策略不存在时保持兼容并不授予任何内容。`channel_code` 是授权来源标识，不会改变 Role、Permission 或 OAuth2 scope 的定义。
 
-`POST /api/user-auth/login/external/trusted-mobile` 同样复用 `external_identity` grant，但仅由服务端外部授权码登录用例在内部增加 `bind_external_identity=false` 参数。该参数不得向外部 OAuth2 client 开放；它使一次性合作方授权码证明不被写为长期外部 Credential。
+`POST /api/user-auth/login/partner/trusted-mobile` 同样复用 `external_identity` grant，但仅由服务端合作方可信手机号用例在内部增加 `bind_external_identity=false` 参数。该参数不得向外部 OAuth2 client 开放；它使临时 LoginAttempt 中的合作方业务追踪标识不被写为长期外部 Credential。
+
+`POST /api/user-auth/login/external/proof` 先通过 issuer 对应的 `ExternalIdentityVerifier` 同时验证稳定外部身份与手机号，再复用 `external_identity` grant，并保持 `bind_external_identity=true`。该入口只接受已被 issuer policy 信任的验证手机号；不满足时在进入 Token endpoint 前拒绝，不退化为两步流程。
 
 `scope` 是 OAuth2 客户端获得的协议 scope，按注册客户端配置解析。当前业务登录的 `clientAppId` 通过 `user-auth.authentication.client-apps.<clientAppId>.oauth2-scopes` 选择服务端允许的 scope；SAS 的 `scopes` 则登记全局允许集合，ClientApp 配置必须是其非空子集。这只是 access-token 登录交付的调用方策略，不是 OAuth2 `RegisteredClient` 的替代物。它不是 PermissionCode，也不等价于角色或业务数据范围。新增协议 scope 不会自动授予任何 `order:*` 功能权限。
 
@@ -88,9 +90,9 @@ SAS 与 OAuth2 Authorization Redis Store 是宿主访问令牌的必需基础设
 
 Redis 适配器只持久化并原子消费通用的 Session handoff ticket；票据包含目标会话类型绑定。`SessionHandoffCommandFacade` 的创建和兑换命令由外部显式传入目标类型，应用层 `SessionHandoffService` 不依赖具体目标会话，并在兑换时校验声明目标与 ticket 绑定一致；当前会话创建实现仅开放 `BROWSER_SESSION`。新增其他目标会话时复用通用 Facade 与 ticket 服务，并增加对应的目标会话创建及协议交付实现，不复用 Browser Session Store 或 Cookie 交付逻辑。
 
-- `EXTERNAL_AUTHORIZATION_CODE` ClientApp 的 Access Token 到期后，已绑定微信 Credential 的小程序重新执行 `wx.login → code → POST /api/user-auth/login/external/bound`，请求体提交 `issuer=WECHAT_MINI_PROGRAM`、`authorizationCode` 和可选设备字段；user-auth 校验新的外部一次性 code 后签发新 Token。
+- `EXTERNAL_AUTHORIZATION_CODE` ClientApp 的 Access Token 到期后，已绑定微信 Credential 的小程序重新执行 `wx.login → code → POST /api/user-auth/login/external/bound-credential`，请求体提交 `issuer=WECHAT_MINI_PROGRAM`、`authorizationCode` 和可选设备字段；user-auth 校验新的外部一次性 code 后签发新 Token。
 - 通用外部授权码登录只允许使用已绑定到 AuthAccount、且对应账户已有有效 LoginMobile 的 Credential；它不接受手机号、不建账，也不在登录中绑定 Credential。首次建立账户和绑定微信 Credential 分别走已有的手机号登录及认证后的 Credential 绑定接口。网关注入 `X-Client-App-Id`、`X-Client-Platform`、`X-Client-Version`、`X-Channel-Code`；Token 响应是否含 `PARENT` 完全由对应 ClientApp 的 renewal policy 决定。
-- `POST /api/user-auth/logout`、`POST /api/user-auth/credentials/external/bind` 与 `POST /api/user-auth/web-view-handoffs` 要求宿主登录态。gateway 校验 JWT 或 Reference Token 后，从 `sub` 与 `session_id` 写入 `X-Subject-Type=HOST_SESSION`、`X-User-Id`、`X-Session-Id`；user-auth 使用该组合回查 LoginSession，并从领域会话恢复 AuthAccount。客户端不能指定其他用户、账户或会话。Browser Session 由 gateway 写入 `X-Subject-Type=BROWSER_SESSION`，只获得受限 H5 authority，不能调用上述宿主级命令。
+- `POST /api/user-auth/logout`、`POST /api/user-auth/credentials/bind` 与 `POST /api/user-auth/handoffs` 要求宿主登录态。gateway 校验 JWT 或 Reference Token 后，从 `sub` 与 `session_id` 写入 `X-Subject-Type=HOST_SESSION`、`X-User-Id`、`X-Session-Id`；user-auth 使用该组合回查 LoginSession，并从领域会话恢复 AuthAccount。客户端不能指定其他用户、账户或会话。Browser Session 由 gateway 写入 `X-Subject-Type=BROWSER_SESSION`，只获得受限 H5 authority，不能调用上述宿主级命令。
 - `SasLoginSessionRevoker` 根据 session id 查找 SAS 的 `OAuth2Authorization` 并使关联 Access/Refresh Token 在协议状态中失效。
 - `SELF_CONTAINED` JWT 的撤销策略仍是短期自然失效：已签发 JWT 在过期前不会由离线资源服务器逐请求查询 SAS。`REFERENCE` Token 必须每次 introspect，logout 后可即时失效，但其可用性和延迟依赖授权存储与 introspection endpoint。
 

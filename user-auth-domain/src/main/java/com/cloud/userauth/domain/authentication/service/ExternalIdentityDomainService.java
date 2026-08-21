@@ -72,8 +72,8 @@ public class ExternalIdentityDomainService {
                         domainEventIdGenerator.nextId(),
                         acceptedAt,
                         loginAttempt.id(),
-                        loginAttempt.issuer(),
-                        loginAttempt.principal()
+                        loginAttempt.getIssuer(),
+                        loginAttempt.getPrincipal()
                 )));
     }
 }

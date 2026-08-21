@@ -22,7 +22,7 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @RequiredArgsConstructor
-public class ExternalLoginAttemptCommandService {
+public class ExternalAttemptLoginCommandService {
     private final ExternalIdentityVerifierRegistry verifierRegistry;
     private final IssuerMobileTrustPolicyProvider trustPolicyProvider;
     private final AuthAccountRepository authAccountRepository;
@@ -33,24 +33,24 @@ public class ExternalLoginAttemptCommandService {
     private final Duration loginAttemptTtl;
 
     @Transactional
-    public ExternalLoginAttemptOutput execute(@Valid ExternalLoginAttemptCommand command) {
+    public ExternalAttemptLoginOutput execute(@Valid ExternalAttemptLoginCommand command) {
         ExternalIdentity identity = verifierRegistry.verify(
                 command.issuer(), command.proofType(), command.proofParameters());
         return accept(identity, trustPolicyProvider.policyFor(identity.issuer()));
     }
 
-    /** 仅供已完成入口验签与证明校验的受保护调用链使用。 */
     @Transactional
-    public ExternalLoginAttemptOutput acceptTrustedIdentity(ExternalIdentity identity) {
-        return accept(identity, new IssuerMobileTrustPolicy(identity.issuer(), true));
+    public ExternalAttemptLoginOutput acceptIdentity(ExternalIdentity identity) {
+        return accept(identity, trustPolicyProvider.policyFor(identity.issuer()));
     }
 
-    private ExternalLoginAttemptOutput accept(
+    private ExternalAttemptLoginOutput accept(
             ExternalIdentity identity,
             IssuerMobileTrustPolicy trustPolicy
     ) {
         Instant now = clock.instant();
         Instant expiresAt = now.plus(loginAttemptTtl);
+        boolean verifiedMobileAccepted = trustPolicy != null && trustPolicy.canTrustMobile(identity);
         AuthAccount boundAccount = authAccountRepository
                 .findByCredential(CredentialKey.external(identity.issuer(), identity.principal()))
                 .orElse(null);
@@ -73,8 +73,9 @@ public class ExternalLoginAttemptCommandService {
         LoginAttempt loginAttempt = acceptanceEffect.loginAttempt();
         loginAttemptRepository.save(loginAttempt);
         domainEventStore.appendAll(acceptanceEffect.events());
-        return new ExternalLoginAttemptOutput(
+        return new ExternalAttemptLoginOutput(
                 loginAttempt.id().value(),
+                verifiedMobileAccepted ? identity.mobile().value() : null,
                 loginAttempt.requiresMobileVerification(),
                 loginAttempt.getExpiresAt());
     }

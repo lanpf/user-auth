@@ -10,8 +10,7 @@ public record ExternalIdentity(
         CredentialIssuer issuer,
         Principal principal,
         LoginMobile mobile,
-        boolean mobileVerified,
-        String displayName
+        boolean mobileVerified
 ) {
     public ExternalIdentity {
         if (issuer == null || principal == null) {

@@ -2,16 +2,27 @@ package com.cloud.userauth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cloud.framework.domain.DomainEventId;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginOutput;
+import com.cloud.userauth.application.login.external.ExternalCredentialBinding;
+import com.cloud.userauth.application.login.external.ExternalLoginCommand;
+import com.cloud.userauth.application.login.external.ExternalLoginOutput;
+import com.cloud.userauth.application.login.external.ExternalProofLoginCommand;
+import com.cloud.userauth.application.login.external.ExternalProofLoginCommandService;
 import com.cloud.userauth.application.login.external.ExternalAuthenticationCommand;
 import com.cloud.userauth.application.login.external.ExternalAuthenticationOutput;
 import com.cloud.userauth.application.login.external.ExternalAuthenticationProcess;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginTransactionService;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommand;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandService;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginCommand;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginCommandService;
+import com.cloud.userauth.application.login.MobileOtpLoginCommand;
+import com.cloud.userauth.application.login.MobileOtpLoginOutput;
+import com.cloud.userauth.application.common.ApplicationError;
+import com.cloud.userauth.application.common.ApplicationException;
+import com.cloud.userauth.application.port.LoginTokenIssuer;
 import com.cloud.userauth.domain.authentication.account.AuthAccount;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallenge;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallengeScene;
@@ -53,7 +64,7 @@ class ExternalLoginFlowIT {
     @Test
     void shouldCreateMobileAndExternalCredentialsForTrustedMobile() {
         Fixture fixture = fixture(true);
-        ExternalLoginAttemptOutput preLogin = fixture.preLogin();
+        ExternalAttemptLoginOutput preLogin = fixture.preLogin();
 
         assertFalse(preLogin.mobileVerificationRequired());
         ExternalAuthenticationOutput login = fixture.login(preLogin, null, null);
@@ -82,7 +93,7 @@ class ExternalLoginFlowIT {
     @Test
     void shouldRequireChallengeForUntrustedMobileAndThenCreateBothCredentials() {
         Fixture fixture = fixture(false);
-        ExternalLoginAttemptOutput preLogin = fixture.preLogin();
+        ExternalAttemptLoginOutput preLogin = fixture.preLogin();
         assertTrue(preLogin.mobileVerificationRequired());
 
         long challengeId = 9001L;
@@ -118,8 +129,8 @@ class ExternalLoginFlowIT {
 
     @Test
     void shouldNotBindExternalOrderProofForDirectLogin() {
-        Fixture fixture = fixture(false);
-        ExternalLoginAttemptOutput preLogin = fixture.directPreLogin();
+        Fixture fixture = fixture(true);
+        ExternalAttemptLoginOutput preLogin = fixture.directPreLogin();
 
         assertFalse(preLogin.mobileVerificationRequired());
         ExternalAuthenticationOutput login = fixture.directLogin(preLogin);
@@ -131,7 +142,54 @@ class ExternalLoginFlowIT {
                 .allMatch(credential -> credential.getCredentialType() == CredentialType.MOBILE));
     }
 
+    @Test
+    void shouldCompleteExternalIdentityAndMobileProofInOneLoginRequest() {
+        Fixture fixture = fixture(true);
+
+        ExternalLoginOutput login = fixture.loginWithExternalProof();
+
+        AuthAccount account = fixture.accounts.findById(
+                new com.cloud.userauth.domain.authentication.account.AuthAccountId(
+                        login.authAccountId())).orElseThrow();
+        assertEquals(2, account.credentials().size());
+        assertTrue(account.credentials().stream()
+                .anyMatch(credential -> credential.getCredentialType() == CredentialType.MOBILE));
+        assertTrue(account.credentials().stream()
+                .anyMatch(credential -> credential.getCredentialType() == CredentialType.EXTERNAL));
+        System.out.printf(
+                "single-step external proof login completed: userId=%d, authAccountId=%d, "
+                        + "sessionId=%s, credentialCount=%d%n",
+                login.userId(), login.authAccountId(), login.sessionId(),
+                account.credentials().size());
+    }
+
+    @Test
+    void shouldRejectSingleStepExternalProofWithoutVerifiedMobile() {
+        Fixture fixture = fixture(true, false);
+
+        ApplicationException exception = assertThrows(
+                ApplicationException.class,
+                fixture::loginWithExternalProof);
+
+        assertEquals(ApplicationError.APP_LOGIN_REJECTED.errorCode(), exception.getErrorCode());
+    }
+
+    @Test
+    void shouldRejectSingleStepExternalProofWhenIssuerMobileIsNotTrusted() {
+        Fixture fixture = fixture(false, true);
+
+        ApplicationException exception = assertThrows(
+                ApplicationException.class,
+                fixture::loginWithExternalProof);
+
+        assertEquals(ApplicationError.APP_LOGIN_REJECTED.errorCode(), exception.getErrorCode());
+    }
+
     private static Fixture fixture(boolean trustMobile) {
+        return fixture(trustMobile, true);
+    }
+
+    private static Fixture fixture(boolean trustMobile, boolean verifiedMobile) {
         Clock clock = Clock.fixed(Instant.now(), ZoneOffset.UTC);
         Accounts accounts = new Accounts();
         Challenges challenges = new Challenges();
@@ -146,10 +204,11 @@ class ExternalLoginFlowIT {
                 new ExternalIdentityDomainService(eventIds);
         var verifier = (com.cloud.userauth.application.port.ExternalIdentityVerifierRegistry)
                 (issuer, proofType, payload) -> new ExternalIdentity(
-                        WECHAT, new Principal("openid-1"), MOBILE, true, "tester");
+                        WECHAT, new Principal("openid-1"),
+                        verifiedMobile ? MOBILE : null, verifiedMobile);
         var trustPolicies = (com.cloud.userauth.application.port.IssuerMobileTrustPolicyProvider)
                 issuer -> new IssuerMobileTrustPolicy(issuer, trustMobile);
-        ExternalLoginAttemptCommandService preLoginService = new ExternalLoginAttemptCommandService(
+        ExternalAttemptLoginCommandService preLoginService = new ExternalAttemptLoginCommandService(
                 verifier,
                 trustPolicies,
                 accounts,
@@ -193,24 +252,24 @@ class ExternalLoginFlowIT {
             Challenges challenges,
             Sessions sessions,
             HmacSha256ChallengeSecretHasher hasher,
-            ExternalLoginAttemptCommandService preLoginService,
+            ExternalAttemptLoginCommandService preLoginService,
             ExternalAuthenticationProcess authenticationProcess
     ) {
-        ExternalLoginAttemptOutput preLogin() {
-            return preLoginService.execute(new ExternalLoginAttemptCommand(
+        ExternalAttemptLoginOutput preLogin() {
+            return preLoginService.execute(new ExternalAttemptLoginCommand(
                     WECHAT.code(),
                     ProofType.AUTHORIZATION_CODE,
                     Map.of("loginCode", "one-time-code")));
         }
 
-        ExternalLoginAttemptOutput directPreLogin() {
-            return preLoginService.acceptTrustedIdentity(new ExternalIdentity(
+        ExternalAttemptLoginOutput directPreLogin() {
+            return preLoginService.acceptIdentity(new ExternalIdentity(
                     new CredentialIssuer("PARTNER_A", CredentialIssuerType.TRUSTED_PARTNER),
-                    new Principal("order-1"), MOBILE, true, null));
+                    new Principal("order-1"), MOBILE, true));
         }
 
         ExternalAuthenticationOutput login(
-                ExternalLoginAttemptOutput preLogin,
+                ExternalAttemptLoginOutput preLogin,
                 Long challengeId,
                 String code
         ) {
@@ -223,13 +282,62 @@ class ExternalLoginFlowIT {
                     "phone",
                     "app",
                     "IOS",
-                    "1.0"));
+                    "1.0",
+                    "DIRECT",
+                    true));
         }
 
-        ExternalAuthenticationOutput directLogin(ExternalLoginAttemptOutput preLogin) {
+        ExternalAuthenticationOutput directLogin(ExternalAttemptLoginOutput preLogin) {
             return authenticationProcess.authenticate(new ExternalAuthenticationCommand(
                     preLogin.loginAttemptId(), null, null, "device-1", "SERVICE", "partner",
-                    "partner-service", "SERVICE", "1.0", false));
+                    "partner-service", "SERVICE", "1.0", "PARTNER_A", false));
+        }
+
+        ExternalLoginOutput loginWithExternalProof() {
+            LoginTokenIssuer tokenIssuer = new LoginTokenIssuer() {
+                @Override
+                public MobileOtpLoginOutput issueMobileOtpLogin(MobileOtpLoginCommand command) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public ExternalLoginOutput issueExternalLogin(
+                        ExternalLoginCommand command,
+                        ExternalCredentialBinding credentialBinding
+                ) {
+                    assertEquals(ExternalCredentialBinding.BIND, credentialBinding);
+                    ExternalAuthenticationOutput authenticated = authenticationProcess.authenticate(
+                            new ExternalAuthenticationCommand(
+                                    command.loginAttemptId(),
+                                    command.challengeId(),
+                                    command.code(),
+                                    command.deviceId(),
+                                    command.deviceType(),
+                                    command.deviceName(),
+                                    command.clientAppId(),
+                                    command.clientPlatform(),
+                                    command.clientVersion(),
+                                    command.channelCode(),
+                                    true));
+                    return new ExternalLoginOutput(
+                            "Bearer", "access-token", null, 900L, "app",
+                            authenticated.userId(), authenticated.authAccountId(),
+                            authenticated.sessionId());
+                }
+            };
+            ExternalProofLoginCommandService service = new ExternalProofLoginCommandService(
+                    preLoginService, tokenIssuer);
+            return service.execute(new ExternalProofLoginCommand(
+                    WECHAT.code(),
+                    ProofType.AUTHORIZATION_CODE,
+                    Map.of("loginCode", "login-code", "phoneCode", "phone-code"),
+                    "device-1",
+                    "PHONE",
+                    "phone",
+                    "mini-program",
+                    "WECHAT_MINI_PROGRAM",
+                    "1.0",
+                    "DIRECT"));
         }
     }
 }

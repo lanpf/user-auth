@@ -1,6 +1,7 @@
 package com.cloud.userauth.domain.authentication.account;
 
 import com.cloud.framework.domain.AggregateRoot;
+import com.cloud.userauth.domain.authentication.credential.CredentialStatus;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import com.cloud.userauth.domain.authentication.credential.Credential;
@@ -111,7 +112,7 @@ public class AuthAccount implements AggregateRoot<AuthAccountId> {
     public boolean hasActiveCredential(CredentialKey key) {
         return credentials.stream()
                 .anyMatch(credential -> credential.key().equals(key)
-                        && credential.status() == com.cloud.userauth.domain.authentication.credential.CredentialStatus.ACTIVE);
+                        && credential.status() == CredentialStatus.ACTIVE);
     }
 
     public Credential bindExternalCredential(
@@ -154,9 +155,6 @@ public class AuthAccount implements AggregateRoot<AuthAccountId> {
                 .filter(item -> item.key().equals(key))
                 .findFirst()
                 .orElseThrow(() -> new DomainException(DomainError.AUTH_ACCOUNT_CREDENTIAL_NOT_FOUND));
-        if (credential.getCredentialType() == com.cloud.userauth.domain.authentication.credential.CredentialType.MOBILE) {
-            throw new DomainException(DomainError.AUTH_ACCOUNT_MOBILE_CREDENTIAL_REQUIRED);
-        }
         credential.disable(disabledAt);
         updatedAt = disabledAt;
     }

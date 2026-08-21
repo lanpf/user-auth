@@ -17,10 +17,11 @@ import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandServ
 import com.cloud.userauth.application.logout.LogoutCommandService;
 import com.cloud.userauth.application.login.external.ExternalAuthenticationProcess;
 import com.cloud.userauth.application.login.external.ExternalLoginCommandService;
-import com.cloud.userauth.application.login.external.TrustedMobileLoginCommandService;
-import com.cloud.userauth.application.login.external.BoundCredentialLoginCommandService;
+import com.cloud.userauth.application.login.external.ExternalProofLoginCommandService;
+import com.cloud.userauth.application.login.external.TrustedPartnerMobileLoginCommandService;
+import com.cloud.userauth.application.login.external.BoundExternalCredentialLoginCommandService;
 import com.cloud.userauth.application.login.external.ExternalLoginTransactionService;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandService;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginCommandService;
 import com.cloud.userauth.application.credential.BindExternalCredentialCommandService;
 import com.cloud.userauth.application.port.AuthChallengeDispatcher;
 import com.cloud.userauth.application.port.AuthChallengeIssueLock;
@@ -57,7 +58,7 @@ import com.cloud.userauth.domain.authorization.service.AuthorizationDomainServic
 import com.cloud.userauth.domain.user.UserIdGenerator;
 import com.cloud.userauth.infrastructure.challenge.PropertiesAuthChallengePolicyProvider;
 import com.cloud.userauth.infrastructure.external.DefaultExternalIdentityVerifierRegistry;
-import com.cloud.userauth.infrastructure.external.PropertiesIssuerMobileTrustPolicyProvider;
+import com.cloud.userauth.infrastructure.external.DefaultIssuerMobileTrustPolicyProvider;
 import com.cloud.userauth.infrastructure.id.CredentialIdGeneratorAdapter;
 import com.cloud.userauth.infrastructure.id.DomainEventIdGeneratorAdapter;
 import com.cloud.userauth.infrastructure.id.UserIdGeneratorAdapter;
@@ -405,12 +406,12 @@ public class UserAuthConfiguration {
     public IssuerMobileTrustPolicyProvider issuerMobileTrustPolicyProvider(
             ExternalIdentityProperties properties
     ) {
-        return new PropertiesIssuerMobileTrustPolicyProvider(properties);
+        return new DefaultIssuerMobileTrustPolicyProvider(properties);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ExternalLoginAttemptCommandService externalLoginAttemptCommandService(
+    public ExternalAttemptLoginCommandService externalLoginAttemptCommandService(
             ExternalIdentityVerifierRegistry verifierRegistry,
             IssuerMobileTrustPolicyProvider trustPolicyProvider,
             AuthAccountRepository authAccountRepository,
@@ -420,7 +421,7 @@ public class UserAuthConfiguration {
             Clock clock,
             ExternalIdentityProperties properties
     ) {
-        return new ExternalLoginAttemptCommandService(
+        return new ExternalAttemptLoginCommandService(
                 verifierRegistry, trustPolicyProvider, authAccountRepository,
                 loginAttemptRepository, externalIdentityDomainService,
                 domainEventStore, clock, properties.getLoginAttempt().getTtl());
@@ -472,22 +473,32 @@ public class UserAuthConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public TrustedMobileLoginCommandService trustedMobileLoginCommandService(
-            ExternalLoginAttemptCommandService externalLoginAttemptCommandService,
+    public TrustedPartnerMobileLoginCommandService trustedPartnerMobileLoginCommandService(
+            ExternalAttemptLoginCommandService externalAttemptLoginCommandService,
             LoginTokenIssuer loginTokenIssuer
     ) {
-        return new TrustedMobileLoginCommandService(externalLoginAttemptCommandService, loginTokenIssuer);
+        return new TrustedPartnerMobileLoginCommandService(externalAttemptLoginCommandService, loginTokenIssuer);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public BoundCredentialLoginCommandService boundCredentialLoginCommandService(
-            ExternalLoginAttemptCommandService externalLoginAttemptCommandService,
+    public ExternalProofLoginCommandService externalProofLoginCommandService(
+            ExternalAttemptLoginCommandService externalAttemptLoginCommandService,
+            LoginTokenIssuer loginTokenIssuer
+    ) {
+        return new ExternalProofLoginCommandService(
+                externalAttemptLoginCommandService, loginTokenIssuer);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public BoundExternalCredentialLoginCommandService boundExternalCredentialLoginCommandService(
+            ExternalAttemptLoginCommandService externalAttemptLoginCommandService,
             ExternalLoginCommandService externalLoginCommandService,
             ClientRenewalPolicyResolver renewalPolicyResolver
     ) {
-        return new BoundCredentialLoginCommandService(
-                externalLoginAttemptCommandService, externalLoginCommandService,
+        return new BoundExternalCredentialLoginCommandService(
+                externalAttemptLoginCommandService, externalLoginCommandService,
                 renewalPolicyResolver);
     }
 

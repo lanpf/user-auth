@@ -4,7 +4,7 @@ import com.cloud.framework.core.Request;
 import jakarta.validation.constraints.NotBlank;
 
 /** 已绑定外部 Credential 的无状态授权码登录或续期请求。 */
-public record BoundCredentialLoginApiCommand(
+public record BoundExternalCredentialLoginApiCommand(
         @NotBlank String issuer,
         @NotBlank String authorizationCode,
         @NotBlank String clientAppId,

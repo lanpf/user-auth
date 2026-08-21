@@ -167,7 +167,7 @@ class MobileOtpLoginFlowIT {
         assertThat(introspect(restClient, login.accessToken()).get("active")).isEqualTo(true);
 
         Result<CreateSessionHandoffApiCommandOutput> handoff = restClient.post()
-                .uri("/api/user-auth/web-view-handoffs")
+                .uri("/api/user-auth/handoffs")
                 .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
                 .header(RequestHeader.USER_ID, login.userId().toString())
                 .header(RequestHeader.SESSION_ID, login.sessionId())
@@ -279,7 +279,7 @@ class MobileOtpLoginFlowIT {
 
     private static IssueAuthChallengeApiCommandOutput issueChallenge(RestClient restClient) {
         Result<IssueAuthChallengeApiCommandOutput> result = restClient.post()
-                .uri("/api/user-auth/auth-challenges")
+                .uri("/api/user-auth/challenges")
                 .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
                 .header(RequestHeader.CLIENT_PLATFORM, "IOS")
                 .header(RequestHeader.CLIENT_VERSION, "1.0.0")

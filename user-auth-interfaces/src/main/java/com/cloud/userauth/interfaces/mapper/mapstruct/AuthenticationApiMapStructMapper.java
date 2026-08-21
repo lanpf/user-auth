@@ -1,30 +1,32 @@
 package com.cloud.userauth.interfaces.mapper.mapstruct;
 
 import com.cloud.framework.core.mapper.MapStructConfig;
-import com.cloud.userauth.api.authentication.BoundCredentialLoginApiCommand;
+import com.cloud.userauth.api.authentication.BoundExternalCredentialLoginApiCommand;
+import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommand;
+import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommandOutput;
+import com.cloud.userauth.api.authentication.ExternalProofLoginApiCommand;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommand;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommandOutput;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommand;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommandOutput;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommand;
-import com.cloud.userauth.api.authentication.TrustedMobileLoginApiCommand;
+import com.cloud.userauth.api.authentication.TrustedPartnerMobileLoginApiCommand;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeCommand;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeOutput;
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
 import com.cloud.userauth.application.login.MobileOtpLoginOutput;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommandOutput;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptOutput;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginCommand;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginOutput;
+import com.cloud.userauth.application.login.external.ExternalProofLoginCommand;
 import com.cloud.userauth.application.login.external.ExternalLoginOutput;
+import com.cloud.userauth.application.login.external.TrustedPartnerMobileLoginCommand;
 import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommand;
 import com.cloud.userauth.application.login.refresh.RefreshTokenLoginOutput;
-import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommand;
-import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommandOutput;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommandOutput;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommand;
 import com.cloud.userauth.application.login.external.ExternalLoginCommand;
-import com.cloud.userauth.application.login.external.TrustedMobileLoginCommand;
-import com.cloud.userauth.application.login.external.BoundCredentialLoginCommand;
+import com.cloud.userauth.application.login.external.BoundExternalCredentialLoginCommand;
 import com.cloud.userauth.interfaces.mapper.AuthenticationApiMapper;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
@@ -55,10 +57,13 @@ public interface AuthenticationApiMapStructMapper extends AuthenticationApiMappe
     RefreshTokenLoginApiCommandOutput toOutput(RefreshTokenLoginOutput output);
 
     @Override
-    ExternalLoginAttemptCommand toCommand(ExternalLoginAttemptApiCommand request);
+    ExternalAttemptLoginCommand toCommand(ExternalAttemptLoginApiCommand request);
 
     @Override
-    ExternalLoginAttemptApiCommandOutput toOutput(ExternalLoginAttemptOutput output);
+    ExternalAttemptLoginApiCommandOutput toOutput(ExternalAttemptLoginOutput output);
+
+    @Override
+    ExternalProofLoginCommand toCommand(ExternalProofLoginApiCommand request);
 
     @Override
     ExternalLoginCommand toCommand(ExternalLoginApiCommand request);
@@ -67,10 +72,10 @@ public interface AuthenticationApiMapStructMapper extends AuthenticationApiMappe
     ExternalLoginApiCommandOutput toOutput(ExternalLoginOutput output);
 
     @Override
-    TrustedMobileLoginCommand toCommand(TrustedMobileLoginApiCommand request);
+    TrustedPartnerMobileLoginCommand toCommand(TrustedPartnerMobileLoginApiCommand request);
 
     @Override
-    BoundCredentialLoginCommand toCommand(BoundCredentialLoginApiCommand request);
+    BoundExternalCredentialLoginCommand toCommand(BoundExternalCredentialLoginApiCommand request);
 
     @Override
     BindExternalCredentialCommand toCommand(

@@ -5,7 +5,7 @@ import com.cloud.framework.core.ClientChannelRequest;
 import com.cloud.framework.core.ClientRequest;
 import com.cloud.framework.core.Result;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommandOutput;
-import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommandOutput;
+import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommandOutput;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommandOutput;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommandOutput;
@@ -38,7 +38,7 @@ public class UserAuthenticationController {
     private final UserAuthenticationCommandFacade facade;
     private final AuthenticationRestMapper mapper;
 
-    @PostMapping(UserAuthRestPaths.API_AUTH_CHALLENGES)
+    @PostMapping(UserAuthRestPaths.API_CHALLENGES)
     public Result<IssueAuthChallengeApiCommandOutput> issueAuthChallenge(
             @Valid @RequestBody IssueAuthChallengeRequest request
     ) {
@@ -46,41 +46,48 @@ public class UserAuthenticationController {
     }
 
     @PostMapping(UserAuthRestPaths.API_LOGIN_MOBILE_OTP)
-    public Result<MobileOtpLoginApiCommandOutput> loginWithMobileOtp(
+    public Result<MobileOtpLoginApiCommandOutput> completeMobileOtpLogin(
             @Valid @RequestBody MobileOtpLoginRequest request
     ) {
-        return facade.loginWithMobileOtp(mapper.toCommand(request));
+        return facade.completeMobileOtpLogin(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPTS)
-    public Result<ExternalLoginAttemptApiCommandOutput> createExternalLoginAttempt(
-            @Valid @RequestBody ExternalLoginAttemptRequest request
+    @PostMapping(UserAuthRestPaths.API_LOGIN_PARTNER_TRUSTED_MOBILE)
+    public Result<ExternalLoginApiCommandOutput> loginWithTrustedPartnerMobile(
+            @Valid @RequestBody UserAuthenticationController.TrustedPartnerMobileLoginRequest request
     ) {
-        return facade.createExternalLoginAttempt(mapper.toCommand(request));
+        return facade.loginWithTrustedPartnerMobile(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL)
+    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_PROOF)
+    public Result<ExternalLoginApiCommandOutput> loginWithExternalProof(
+            @Valid @RequestBody UserAuthenticationController.ExternalProofLoginRequest request
+    ) {
+        return facade.loginWithExternalProof(mapper.toCommand(request));
+    }
+
+    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL)
+    public Result<ExternalLoginApiCommandOutput> loginWithBoundExternalCredential(
+            @Valid @RequestBody UserAuthenticationController.BoundExternalCredentialLoginRequest request
+    ) {
+        return facade.loginWithBoundExternalCredential(mapper.toCommand(request));
+    }
+
+    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPT)
+    public Result<ExternalAttemptLoginApiCommandOutput> attemptExternalLogin(
+            @Valid @RequestBody UserAuthenticationController.ExternalAttemptLoginRequest request
+    ) {
+        return facade.attemptExternalLogin(mapper.toCommand(request));
+    }
+
+    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_COMPLETE)
     public Result<ExternalLoginApiCommandOutput> completeExternalLogin(
             @Valid @RequestBody ExternalLoginRequest request
     ) {
         return facade.completeExternalLogin(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_TRUSTED_MOBILE)
-    public Result<ExternalLoginApiCommandOutput> loginWithTrustedMobile(
-            @Valid @RequestBody UserAuthenticationController.TrustedMobileLoginRequest request
-    ) {
-        return facade.loginWithTrustedMobile(mapper.toCommand(request));
-    }
-
-    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL)
-    public Result<ExternalLoginApiCommandOutput> loginWithBoundCredential(
-            @Valid @RequestBody UserAuthenticationController.BoundCredentialLoginRequest request
-    ) {
-        return facade.loginWithBoundCredential(mapper.toCommand(request));
-    }
-
-    @PostMapping(UserAuthRestPaths.API_CREDENTIALS_EXTERNAL_BIND)
+    @PostMapping(UserAuthRestPaths.API_CREDENTIALS_BIND)
     public Result<Void> bindExternalCredential(
             @Valid @RequestBody BindExternalCredentialRequest request
     ) {
@@ -158,11 +165,11 @@ public class UserAuthenticationController {
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class TrustedMobileLoginRequest extends LoginRequest {
+    public static class TrustedPartnerMobileLoginRequest extends LoginRequest {
         @NotBlank
-        private String issuer;
+        private String partnerCode;
         @NotBlank
-        private String authorizationCode;
+        private String partnerBizId;
         @NotBlank
         private String mobile;
     }
@@ -170,7 +177,7 @@ public class UserAuthenticationController {
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class BoundCredentialLoginRequest extends LoginRequest {
+    public static class BoundExternalCredentialLoginRequest extends LoginRequest {
         @NotBlank
         private String issuer;
         @NotBlank
@@ -180,14 +187,27 @@ public class UserAuthenticationController {
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class ExternalLoginAttemptRequest extends ClientChannelRequest {
+    public static class ExternalAttemptLoginRequest extends ClientChannelRequest {
         @NotBlank
         private String issuer;
         @NotNull
         private ExternalProofTypeApiEnum proofType;
         @NotEmpty
-        private Map<@NotBlank String, String> proofParameters;
+        private Map<@NotBlank String, @NotBlank String> proofParameters;
     }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class ExternalProofLoginRequest extends LoginRequest {
+        @NotBlank
+        private String issuer;
+        @NotNull
+        private ExternalProofTypeApiEnum proofType;
+        @NotEmpty
+        private Map<@NotBlank String, @NotBlank String> proofParameters;
+    }
+
 
     @Getter
     @Setter

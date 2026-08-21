@@ -27,18 +27,18 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-public class WebViewHandoffController {
+public class HandoffController {
     private final SessionHandoffCommandFacade facade;
     private final SessionHandoffRestMapper mapper;
 
-    @PostMapping(UserAuthRestPaths.API_WEB_VIEW_HANDOFFS)
+    @PostMapping(UserAuthRestPaths.API_HANDOFFS)
     public Result<CreateSessionHandoffApiCommandOutput> create(
             @Valid @RequestBody CreateRequest request
     ) {
         return facade.create(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_WEB_VIEW_HANDOFFS_EXCHANGE)
+    @PostMapping(UserAuthRestPaths.API_HANDOFFS_EXCHANGE)
     public Result<ExchangeRepresentation> exchange(
             @Valid @RequestBody ExchangeRequest request,
             HttpServletResponse response

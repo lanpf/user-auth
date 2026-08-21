@@ -36,7 +36,6 @@ ClientApp 是受管理的接入主体，建议至少包含：
 appId                 稳定业务标识，唯一
 platform              接入形态
 status                ENABLED / DISABLED
-displayName           运维展示名称
 ```
 
 `appId + platform` 必须在管理系统中登记；以全局唯一的 `appId` 为标识，一个 appId 唯一绑定一个不可原地迁移的 platform。平台变化应登记新的 appId。这样一次登录请求只需带 `appId` 与可选版本，服务端从 ClientApp 解析 `platform`，而非相信调用方提交的 platform。

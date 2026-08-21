@@ -11,20 +11,20 @@ import org.springframework.validation.annotation.Validated;
 /** 已绑定外部 Credential 的无状态授权码登录/续期。 */
 @Validated
 @RequiredArgsConstructor
-public class BoundCredentialLoginCommandService {
-    private final ExternalLoginAttemptCommandService externalLoginAttemptCommandService;
+public class BoundExternalCredentialLoginCommandService {
+    private final ExternalAttemptLoginCommandService externalAttemptLoginCommandService;
     private final ExternalLoginCommandService externalLoginCommandService;
     private final ClientRenewalPolicyResolver renewalPolicyResolver;
 
     public ExternalLoginOutput execute(
-            @Valid BoundCredentialLoginCommand command
+            @Valid BoundExternalCredentialLoginCommand command
     ) {
         if (renewalPolicyResolver.resolve(command.clientAppId())
                 != ClientRenewalPolicy.EXTERNAL_AUTHORIZATION_CODE) {
             throw new ApplicationException(ApplicationError.APP_LOGIN_CLIENT_NOT_ALLOWED);
         }
-        ExternalLoginAttemptOutput attempt = externalLoginAttemptCommandService.execute(
-                ExternalLoginAttemptCommand.withAuthorizationCode(command.issuer(), command.authorizationCode())
+        ExternalAttemptLoginOutput attempt = externalAttemptLoginCommandService.execute(
+                ExternalAttemptLoginCommand.withAuthorizationCode(command.issuer(), command.authorizationCode())
         );
         if (attempt.mobileVerificationRequired()) {
             throw new ApplicationException(ApplicationError.APP_LOGIN_REJECTED);

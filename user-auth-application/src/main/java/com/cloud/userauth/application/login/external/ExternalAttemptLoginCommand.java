@@ -7,17 +7,17 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.Map;
 
-public record ExternalLoginAttemptCommand(
+public record ExternalAttemptLoginCommand(
         @NotBlank String issuer,
         @NotNull ProofType proofType,
         @NotEmpty Map<@NotBlank String, @NotBlank String> proofParameters
 ) {
-    public ExternalLoginAttemptCommand {
+    public ExternalAttemptLoginCommand {
         proofParameters = proofParameters == null ? null : Map.copyOf(proofParameters);
     }
 
-    public static ExternalLoginAttemptCommand withAuthorizationCode(String issuer, String authorizationCode) {
-        return new ExternalLoginAttemptCommand(issuer, ProofType.AUTHORIZATION_CODE,
+    public static ExternalAttemptLoginCommand withAuthorizationCode(String issuer, String authorizationCode) {
+        return new ExternalAttemptLoginCommand(issuer, ProofType.AUTHORIZATION_CODE,
                 Map.of(ProofParameters.AUTHORIZATION_CODE, authorizationCode));
     }
 }

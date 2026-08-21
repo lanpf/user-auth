@@ -1,26 +1,28 @@
 package com.cloud.userauth.interfaces.facade;
 
 import com.cloud.framework.core.Result;
-import com.cloud.userauth.api.authentication.BoundCredentialLoginApiCommand;
+import com.cloud.userauth.api.authentication.BoundExternalCredentialLoginApiCommand;
+import com.cloud.userauth.api.authentication.ExternalProofLoginApiCommand;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommand;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommandOutput;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommand;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommandOutput;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommand;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommandOutput;
-import com.cloud.userauth.api.authentication.TrustedMobileLoginApiCommand;
+import com.cloud.userauth.api.authentication.TrustedPartnerMobileLoginApiCommand;
 import com.cloud.userauth.api.facade.UserAuthenticationCommandFacade;
 import com.cloud.userauth.application.challenge.AuthChallengeIssueCommandService;
 import com.cloud.userauth.application.login.MobileOtpLoginCommandService;
+import com.cloud.userauth.application.login.external.ExternalProofLoginCommandService;
 import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommandService;
-import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommand;
-import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommandOutput;
+import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommand;
+import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommandOutput;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommandOutput;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommandService;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginCommandService;
 import com.cloud.userauth.application.login.external.ExternalLoginCommandService;
-import com.cloud.userauth.application.login.external.TrustedMobileLoginCommandService;
-import com.cloud.userauth.application.login.external.BoundCredentialLoginCommandService;
+import com.cloud.userauth.application.login.external.TrustedPartnerMobileLoginCommandService;
+import com.cloud.userauth.application.login.external.BoundExternalCredentialLoginCommandService;
 import com.cloud.userauth.interfaces.mapper.AuthenticationApiMapper;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
@@ -37,13 +39,14 @@ import org.springframework.validation.annotation.Validated;
 public class DefaultUserAuthenticationCommandFacade implements UserAuthenticationCommandFacade {
     private final AuthChallengeIssueCommandService authChallengeIssueCommandService;
     private final MobileOtpLoginCommandService mobileOtpLoginCommandService;
-    private final RefreshTokenLoginCommandService refreshTokenLoginCommandService;
-    private final ExternalLoginAttemptCommandService externalLoginAttemptCommandService;
+    private final TrustedPartnerMobileLoginCommandService trustedPartnerMobileLoginCommandService;
+    private final ExternalProofLoginCommandService externalProofLoginCommandService;
+    private final BoundExternalCredentialLoginCommandService boundExternalCredentialLoginCommandService;
+    private final ExternalAttemptLoginCommandService externalAttemptLoginCommandService;
     private final ExternalLoginCommandService externalLoginCommandService;
-    private final TrustedMobileLoginCommandService trustedMobileLoginCommandService;
-    private final BoundCredentialLoginCommandService boundCredentialLoginCommandService;
-    private final LogoutCommandService logoutCommandService;
     private final BindExternalCredentialCommandService bindExternalCredentialCommandService;
+    private final LogoutCommandService logoutCommandService;
+    private final RefreshTokenLoginCommandService refreshTokenLoginCommandService;
     private final AuthenticationApiMapper mapper;
 
     @Override
@@ -52,17 +55,40 @@ public class DefaultUserAuthenticationCommandFacade implements UserAuthenticatio
     }
 
     @Override
-    public Result<MobileOtpLoginApiCommandOutput> loginWithMobileOtp(MobileOtpLoginApiCommand command) {
+    public Result<MobileOtpLoginApiCommandOutput> completeMobileOtpLogin(MobileOtpLoginApiCommand command) {
         return Result.success(mapper.toOutput(
                 mobileOtpLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
-    public Result<ExternalLoginAttemptApiCommandOutput> createExternalLoginAttempt(
-            ExternalLoginAttemptApiCommand command
+    public Result<ExternalLoginApiCommandOutput> loginWithTrustedPartnerMobile(
+            TrustedPartnerMobileLoginApiCommand command
     ) {
         return Result.success(mapper.toOutput(
-                externalLoginAttemptCommandService.execute(mapper.toCommand(command))));
+                trustedPartnerMobileLoginCommandService.execute(mapper.toCommand(command))));
+    }
+
+    @Override
+    public Result<ExternalLoginApiCommandOutput> loginWithExternalProof(
+            ExternalProofLoginApiCommand command) {
+        return Result.success(mapper.toOutput(
+                externalProofLoginCommandService.execute(mapper.toCommand(command))));
+    }
+
+    @Override
+    public Result<ExternalLoginApiCommandOutput> loginWithBoundExternalCredential(
+            BoundExternalCredentialLoginApiCommand command
+    ) {
+        return Result.success(mapper.toOutput(
+                boundExternalCredentialLoginCommandService.execute(mapper.toCommand(command))));
+    }
+
+    @Override
+    public Result<ExternalAttemptLoginApiCommandOutput> attemptExternalLogin(
+            ExternalAttemptLoginApiCommand command
+    ) {
+        return Result.success(mapper.toOutput(
+                externalAttemptLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override
@@ -71,22 +97,6 @@ public class DefaultUserAuthenticationCommandFacade implements UserAuthenticatio
     ) {
         return Result.success(mapper.toOutput(
                 externalLoginCommandService.execute(mapper.toCommand(command))));
-    }
-
-    @Override
-    public Result<ExternalLoginApiCommandOutput> loginWithTrustedMobile(
-            TrustedMobileLoginApiCommand command
-    ) {
-        return Result.success(mapper.toOutput(
-                trustedMobileLoginCommandService.execute(mapper.toCommand(command))));
-    }
-
-    @Override
-    public Result<ExternalLoginApiCommandOutput> loginWithBoundCredential(
-            BoundCredentialLoginApiCommand command
-    ) {
-        return Result.success(mapper.toOutput(
-                boundCredentialLoginCommandService.execute(mapper.toCommand(command))));
     }
 
     @Override

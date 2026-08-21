@@ -1,7 +1,9 @@
 package com.cloud.userauth.interfaces.mapper;
 
-import com.cloud.userauth.api.authentication.BoundCredentialLoginApiCommand;
-import com.cloud.userauth.api.authentication.TrustedMobileLoginApiCommand;
+import com.cloud.userauth.api.authentication.BoundExternalCredentialLoginApiCommand;
+import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommandOutput;
+import com.cloud.userauth.api.authentication.ExternalProofLoginApiCommand;
+import com.cloud.userauth.api.authentication.TrustedPartnerMobileLoginApiCommand;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommand;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommandOutput;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommand;
@@ -12,18 +14,18 @@ import com.cloud.userauth.application.challenge.IssueAuthChallengeCommand;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeOutput;
 import com.cloud.userauth.application.login.MobileOtpLoginCommand;
 import com.cloud.userauth.application.login.MobileOtpLoginOutput;
-import com.cloud.userauth.application.login.external.TrustedMobileLoginCommand;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginCommand;
+import com.cloud.userauth.application.login.external.ExternalAttemptLoginOutput;
+import com.cloud.userauth.application.login.external.ExternalProofLoginCommand;
+import com.cloud.userauth.application.login.external.TrustedPartnerMobileLoginCommand;
 import com.cloud.userauth.application.login.refresh.RefreshTokenLoginCommand;
 import com.cloud.userauth.application.login.refresh.RefreshTokenLoginOutput;
-import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommand;
-import com.cloud.userauth.api.authentication.ExternalLoginAttemptApiCommandOutput;
+import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommand;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommandOutput;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptCommand;
-import com.cloud.userauth.application.login.external.ExternalLoginAttemptOutput;
 import com.cloud.userauth.application.login.external.ExternalLoginCommand;
 import com.cloud.userauth.application.login.external.ExternalLoginOutput;
-import com.cloud.userauth.application.login.external.BoundCredentialLoginCommand;
+import com.cloud.userauth.application.login.external.BoundExternalCredentialLoginCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommandOutput;
 import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
@@ -44,17 +46,19 @@ public interface AuthenticationApiMapper {
 
     RefreshTokenLoginApiCommandOutput toOutput(RefreshTokenLoginOutput output);
 
-    ExternalLoginAttemptCommand toCommand(ExternalLoginAttemptApiCommand command);
+    ExternalAttemptLoginCommand toCommand(ExternalAttemptLoginApiCommand command);
 
-    ExternalLoginAttemptApiCommandOutput toOutput(ExternalLoginAttemptOutput output);
+    ExternalAttemptLoginApiCommandOutput toOutput(ExternalAttemptLoginOutput output);
+
+    ExternalProofLoginCommand toCommand(ExternalProofLoginApiCommand command);
 
     ExternalLoginCommand toCommand(ExternalLoginApiCommand command);
 
     ExternalLoginApiCommandOutput toOutput(ExternalLoginOutput output);
 
-    TrustedMobileLoginCommand toCommand(TrustedMobileLoginApiCommand command);
+    TrustedPartnerMobileLoginCommand toCommand(TrustedPartnerMobileLoginApiCommand command);
 
-    BoundCredentialLoginCommand toCommand(BoundCredentialLoginApiCommand command);
+    BoundExternalCredentialLoginCommand toCommand(BoundExternalCredentialLoginApiCommand command);
 
     BindExternalCredentialCommand toCommand(
             BindExternalCredentialApiCommand command);

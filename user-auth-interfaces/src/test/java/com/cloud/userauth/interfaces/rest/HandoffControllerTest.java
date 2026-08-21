@@ -25,13 +25,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-class WebViewHandoffControllerTest {
+class HandoffControllerTest {
     @Test
     void shouldCreateBrowserSessionHandoffFromAuthenticatedSession() throws Exception {
         AtomicReference<CreateSessionHandoffApiCommand> captured = new AtomicReference<>();
         SessionHandoffCommandFacade facade = new StubSessionHandoffCommandFacade(captured);
         MockMvc mockMvc = authenticatedMockMvc(facade);
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_WEB_VIEW_HANDOFFS)
+        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_HANDOFFS)
                 .header(RequestHeader.CLIENT_APP_ID, "mini-program")
                 .header(RequestHeader.USER_ID, "1001")
                 .header(RequestHeader.SESSION_ID, "session-1")
@@ -49,12 +49,12 @@ class WebViewHandoffControllerTest {
     @Test
     void shouldDeliverExchangedBrowserSessionOnlyThroughSecureCookie() throws Exception {
         SessionHandoffCommandFacade facade = new StubSessionHandoffCommandFacade(new AtomicReference<>());
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new WebViewHandoffController(
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new HandoffController(
                         facade, Mappers.getMapper(SessionHandoffRestMapStructMapper.class)))
                 .setControllerAdvice(new ClientRequestBodyAdvice())
                 .build();
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_WEB_VIEW_HANDOFFS_EXCHANGE)
+        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_HANDOFFS_EXCHANGE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "h5-app")
                         .content("{\"ticket\":\"ticket-1\",\"target\":\"BROWSER_SESSION\"}"))
@@ -70,7 +70,7 @@ class WebViewHandoffControllerTest {
     }
 
     private static MockMvc authenticatedMockMvc(SessionHandoffCommandFacade facade) {
-        return MockMvcBuilders.standaloneSetup(new WebViewHandoffController(
+        return MockMvcBuilders.standaloneSetup(new HandoffController(
                         facade, Mappers.getMapper(SessionHandoffRestMapStructMapper.class)))
                 .setCustomArgumentResolvers(new ClientRequestArgumentResolver())
                 .setControllerAdvice(new ClientRequestBodyAdvice())
