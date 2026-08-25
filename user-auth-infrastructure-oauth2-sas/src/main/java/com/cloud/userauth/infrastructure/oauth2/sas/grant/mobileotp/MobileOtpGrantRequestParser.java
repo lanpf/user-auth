@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /** 从 OAuth2 Token Endpoint 的 Servlet 请求中解析并校验 mobile_otp Grant。 */
@@ -57,7 +58,7 @@ public final class MobileOtpGrantRequestParser {
     private void validate(MobileOtpGrantRequest request) {
         Set<ConstraintViolation<MobileOtpGrantRequest>> violations =
                 validator.validate(request);
-        if (!violations.isEmpty()) {
+        if (!CollectionUtils.isEmpty(violations)) {
             ConstraintViolation<MobileOtpGrantRequest> violation =
                     violations.iterator().next();
             throw oauth2Exception(

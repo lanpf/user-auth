@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
@@ -30,7 +31,7 @@ public final class ExternalIdentityGrantRequestParser {
                 single(request, ExternalIdentityGrantParameterNames.CHANNEL_CODE),
                 booleanValue(single(request, ExternalIdentityGrantParameterNames.BIND_EXTERNAL_IDENTITY)));
         Set<ConstraintViolation<ExternalIdentityGrantRequest>> violations = validator.validate(parsed);
-        if (!violations.isEmpty()) {
+        if (!CollectionUtils.isEmpty(violations)) {
             throw oauth2("OAuth2 parameter is invalid: "
                     + violations.iterator().next().getPropertyPath());
         }

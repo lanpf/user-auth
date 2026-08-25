@@ -1,6 +1,6 @@
 package com.cloud.userauth.interfaces.mapper;
 
-import com.cloud.framework.core.AuthenticatedSessionRequest;
+import com.cloud.framework.core.AuthenticatedSessionClientRequest;
 import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
 import com.cloud.userauth.api.authentication.BoundExternalCredentialLoginApiCommand;
 import com.cloud.userauth.api.authentication.ExternalAttemptLoginApiCommand;
@@ -37,5 +37,5 @@ public interface AuthenticationRestMapper {
 
     RefreshTokenLoginApiCommand toCommand(UserAuthenticationController.RefreshTokenLoginRequest request);
 
-    LogoutApiCommand toLogoutCommand(AuthenticatedSessionRequest request);
+    LogoutApiCommand toLogoutCommand(AuthenticatedSessionClientRequest request);
 }

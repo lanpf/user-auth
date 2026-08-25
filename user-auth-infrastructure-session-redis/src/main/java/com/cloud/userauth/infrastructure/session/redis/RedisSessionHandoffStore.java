@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
 public final class RedisSessionHandoffStore implements SessionHandoffStore {
@@ -39,7 +41,7 @@ public final class RedisSessionHandoffStore implements SessionHandoffStore {
 
     @Override
     public Optional<ConsumedTicket> consume(String ticket) {
-        if (ticket == null || ticket.isBlank()) {
+        if (!StringUtils.hasText(ticket)) {
             return Optional.empty();
         }
         Optional<ConsumedTicket> consumed = parse(
@@ -53,7 +55,7 @@ public final class RedisSessionHandoffStore implements SessionHandoffStore {
     public void revoke(SessionId loginSessionId) {
         String loginSessionKey = keyResolver.loginSession(loginSessionId.value());
         Set<String> tickets = redisTemplate.opsForSet().members(loginSessionKey);
-        if (tickets != null && !tickets.isEmpty()) {
+        if (!CollectionUtils.isEmpty(tickets)) {
             redisTemplate.delete(tickets.stream()
                     .map(keyResolver::ticket)
                     .toList());

@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
+import org.springframework.util.StringUtils;
 
 /** 浏览器 Cookie 的读取与安全属性写入策略。 */
 public final class BrowserSessionCookie {
@@ -23,7 +24,7 @@ public final class BrowserSessionCookie {
         return Arrays.stream(cookies)
                 .filter(cookie -> COOKIE_NAME.equals(cookie.getName()))
                 .map(Cookie::getValue)
-                .filter(value -> value != null && !value.isBlank())
+                .filter(StringUtils::hasText)
                 .findFirst();
     }
 

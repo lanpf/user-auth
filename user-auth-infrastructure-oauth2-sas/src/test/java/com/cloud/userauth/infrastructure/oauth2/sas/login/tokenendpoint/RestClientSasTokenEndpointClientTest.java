@@ -14,7 +14,9 @@ import jakarta.validation.ValidatorFactory;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -122,8 +124,8 @@ class RestClientSasTokenEndpointClientTest {
                 .run(context -> {
                     SasTokenEndpointClient client =
                             context.getBean(SasTokenEndpointClient.class);
-                    var executor = Executors.newSingleThreadExecutor();
-                    var firstRequest = executor.submit(
+                    ExecutorService executor = Executors.newSingleThreadExecutor();
+                    Future<SasTokenEndpointPayload> firstRequest = executor.submit(
                             () -> client.requestToken(grantRequest()));
                     try {
                         assertTrue(requestEntered.await(2, TimeUnit.SECONDS));

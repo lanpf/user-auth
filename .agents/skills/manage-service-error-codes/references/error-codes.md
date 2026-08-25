@@ -30,3 +30,4 @@
 
 - **ERROR-APPEND-001** — Append new errors in local-code order within the owning range.
 - **ERROR-STABILITY-002** — Published error codes are immutable and must not be modified, reused, or assigned to a different meaning.
+- **ERROR-MESSAGE-TEMPLATE-001** — Bind each error code to one stable message template; exception call sites must not replace it, concatenate ad hoc text, or supply an arbitrary message. Dynamic context may fill only parameters declared by the template and must not change the error meaning.

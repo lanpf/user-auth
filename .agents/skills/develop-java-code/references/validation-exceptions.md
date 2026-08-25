@@ -3,7 +3,7 @@
 ## Validation
 
 - **JAVA-VALIDATION-001** — Use Jakarta Bean Validation for constraints on bindable Bean properties and method parameters.
-- **JAVA-VALIDATION-002** — Use explicit checks such as `Assert` only when framework validation cannot express the constraint or an internal API requires fast failure.
+- **JAVA-VALIDATION-002** — Use explicit checks only when framework validation cannot express a constraint or an internal API outside the framework binding path, such as a domain constructor or factory, requires fast failure; when Spring Framework is already present, use `org.springframework.util.Assert`, but do not add Spring only for this purpose.
 
 ## Exceptions and logging
 

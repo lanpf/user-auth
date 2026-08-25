@@ -1,7 +1,7 @@
 package com.cloud.userauth.interfaces.rest;
 
-import com.cloud.framework.core.AuthenticatedSessionRequest;
-import com.cloud.framework.core.ClientChannelRequest;
+import com.cloud.framework.core.AuthenticatedSessionClientRequest;
+import com.cloud.framework.core.ChannelClientRequest;
 import com.cloud.framework.core.ClientRequest;
 import com.cloud.framework.core.Result;
 import com.cloud.userauth.api.authentication.ExternalLoginApiCommandOutput;
@@ -103,7 +103,7 @@ public class UserAuthenticationController {
 
     @PostMapping(UserAuthRestPaths.API_LOGOUT)
     public Result<LogoutApiCommandOutput> logout(
-            @Valid AuthenticatedSessionRequest request,
+            @Valid AuthenticatedSessionClientRequest request,
             HttpServletResponse response
     ) {
         Result<LogoutApiCommandOutput> result = facade.logout(
@@ -115,7 +115,7 @@ public class UserAuthenticationController {
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class BindExternalCredentialRequest extends AuthenticatedSessionRequest {
+    public static class BindExternalCredentialRequest extends AuthenticatedSessionClientRequest {
         @NotBlank
         private String issuer;
         @NotBlank
@@ -125,7 +125,7 @@ public class UserAuthenticationController {
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class IssueAuthChallengeRequest extends ClientChannelRequest {
+    public static class IssueAuthChallengeRequest extends ChannelClientRequest {
         @NotNull
         private AuthChallengeTypeApiEnum challengeType;
         @NotBlank
@@ -137,7 +137,7 @@ public class UserAuthenticationController {
     @Getter
     @Setter
     @NoArgsConstructor
-    public abstract static class LoginRequest extends ClientChannelRequest {
+    public abstract static class LoginRequest extends ChannelClientRequest {
         private String deviceId;
         private String deviceType;
         private String deviceName;
@@ -187,7 +187,7 @@ public class UserAuthenticationController {
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class ExternalAttemptLoginRequest extends ClientChannelRequest {
+    public static class ExternalAttemptLoginRequest extends ChannelClientRequest {
         @NotBlank
         private String issuer;
         @NotNull

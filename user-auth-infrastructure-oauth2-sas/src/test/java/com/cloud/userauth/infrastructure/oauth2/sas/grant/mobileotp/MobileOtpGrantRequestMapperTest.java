@@ -12,6 +12,8 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.util.MultiValueMap;
 
+import java.util.Map;
+
 class MobileOtpGrantRequestMapperTest {
     private final MobileOtpGrantRequestMapper mapper =
             Mappers.getMapper(MobileOtpGrantRequestMapStructMapper.class);
@@ -44,7 +46,7 @@ class MobileOtpGrantRequestMapperTest {
 
         MultiValueMap<String, String> form =
                 MobileOtpGrantParameterConverter.toTokenRequestForm(request);
-        var additionalParameters =
+        Map<String, Object> additionalParameters =
                 MobileOtpGrantParameterConverter.toAdditionalParameters(request);
 
         assertEquals(

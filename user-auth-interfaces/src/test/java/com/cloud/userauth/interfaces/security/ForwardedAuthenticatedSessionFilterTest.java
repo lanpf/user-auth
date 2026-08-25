@@ -10,6 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 class ForwardedAuthenticatedSessionFilterTest {
@@ -29,7 +30,7 @@ class ForwardedAuthenticatedSessionFilterTest {
         new ForwardedAuthenticatedSessionFilter().doFilter(
                 request, new MockHttpServletResponse(), chain);
 
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         assertTrue(authentication.isAuthenticated());
         assertEquals(
                 new ForwardedAuthenticatedSessionFilter.ForwardedAuthenticatedSession(

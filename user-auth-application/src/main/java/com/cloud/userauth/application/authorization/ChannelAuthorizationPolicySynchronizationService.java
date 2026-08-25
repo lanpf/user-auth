@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 /**
  * 根据渠道授权策略同步用户授权，并以已提交的用户版本游标恢复批处理重放。
@@ -74,8 +75,9 @@ public class ChannelAuthorizationPolicySynchronizationService
         applications.forEach(application ->
                 synchronize(application.getUserId(), policy, application, now));
         boolean hasPendingUsers = applications.size() == command.batchSize()
-                && !applicationRepository.findPendingByChannelCodeAndPolicyVersion(
-                        channelCode, policy.getVersion(), 1).isEmpty();
+                && !CollectionUtils.isEmpty(
+                        applicationRepository.findPendingByChannelCodeAndPolicyVersion(
+                                channelCode, policy.getVersion(), 1));
         return new ReconcileChannelAuthorizationPolicyOutput(
                 applications.size(), policy.getVersion(), hasPendingUsers);
     }

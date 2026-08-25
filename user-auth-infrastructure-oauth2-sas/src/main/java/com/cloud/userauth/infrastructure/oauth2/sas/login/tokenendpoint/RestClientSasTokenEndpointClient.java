@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.util.MultiValueMap;
@@ -68,7 +69,7 @@ public class RestClientSasTokenEndpointClient
         } catch (ApplicationException | RestClientException exception) {
             throw new ApplicationException(ApplicationError.APP_REFRESH_TOKEN_FAILED, exception);
         }
-        if (response == null || !validator.validate(response).isEmpty()) {
+        if (response == null || !CollectionUtils.isEmpty(validator.validate(response))) {
             throw new ApplicationException(ApplicationError.APP_REFRESH_TOKEN_FAILED);
         }
         return response;
@@ -94,7 +95,7 @@ public class RestClientSasTokenEndpointClient
                     ApplicationError.APP_TOKEN_ISSUE_FAILED,
                     exception);
         }
-        if (response == null || !validator.validate(response).isEmpty()) {
+        if (response == null || !CollectionUtils.isEmpty(validator.validate(response))) {
             throw new ApplicationException(
                     ApplicationError.APP_TOKEN_ISSUE_FAILED);
         }

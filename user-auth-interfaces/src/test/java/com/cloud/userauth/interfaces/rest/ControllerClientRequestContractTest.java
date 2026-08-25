@@ -1,21 +1,23 @@
 package com.cloud.userauth.interfaces.rest;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.cloud.framework.core.AuthenticatedSessionRequestContext;
-import com.cloud.framework.core.ClientChannelRequest;
+import com.cloud.framework.core.AuthenticatedSessionClientRequest;
+import com.cloud.framework.core.AuthenticatedSessionContext;
+import com.cloud.framework.core.ChannelContext;
 import com.cloud.framework.core.ClientRequest;
 import com.cloud.framework.core.PageResult;
 import jakarta.validation.Valid;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.Arrays;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ControllerClientRequestContractTest {
 
@@ -85,11 +87,23 @@ class ControllerClientRequestContractTest {
                 .flatMap(method -> Arrays.stream(method.getParameterTypes()))
                 .filter(ClientRequest.class::isAssignableFrom)
                 .forEach(requestType -> {
-                    assertFalse(ClientChannelRequest.class.isAssignableFrom(requestType),
+                    assertFalse(ChannelContext.class.isAssignableFrom(requestType),
                             "admin target channel must not use X-Channel-Code context");
-                    assertFalse(AuthenticatedSessionRequestContext.class.isAssignableFrom(requestType),
+                    assertFalse(AuthenticatedSessionContext.class.isAssignableFrom(requestType),
                             "admin target user must not use X-User-Id context");
                 });
+    }
+
+    @Test
+    void shouldComposeOnlyRequiredTrustedContexts() {
+        assertContexts(UserAuthenticationController.IssueAuthChallengeRequest.class, true, false);
+        assertContexts(UserAuthenticationController.LoginRequest.class, true, false);
+        assertContexts(UserAuthenticationController.ExternalAttemptLoginRequest.class, true, false);
+        assertContexts(UserAuthenticationController.BindExternalCredentialRequest.class, false, true);
+        assertContexts(AuthenticatedSessionClientRequest.class, false, true);
+        assertContexts(HandoffController.CreateRequest.class, false, true);
+        assertContexts(UserAuthenticationController.RefreshTokenLoginRequest.class, false, false);
+        assertContexts(HandoffController.ExchangeRequest.class, false, false);
     }
 
     @Test
@@ -125,6 +139,19 @@ class ControllerClientRequestContractTest {
                 UserAuthenticationController.class,
                 UserAuthorizationController.class,
                 HandoffController.class);
+    }
+
+    private static void assertContexts(
+            Class<? extends ClientRequest> requestType,
+            boolean channelContext,
+            boolean authenticatedSessionContext
+    ) {
+        assertTrue(ChannelContext.class.isAssignableFrom(requestType) == channelContext,
+                () -> requestType.getSimpleName() + " channel context mismatch");
+        assertTrue(
+                AuthenticatedSessionContext.class.isAssignableFrom(requestType)
+                        == authenticatedSessionContext,
+                () -> requestType.getSimpleName() + " authenticated session context mismatch");
     }
 
     private record RequestBodyParameter(Method method, Parameter parameter) {

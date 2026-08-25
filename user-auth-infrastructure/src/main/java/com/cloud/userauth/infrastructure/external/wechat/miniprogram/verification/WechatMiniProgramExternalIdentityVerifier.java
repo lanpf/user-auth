@@ -14,6 +14,7 @@ import com.cloud.userauth.domain.authentication.external.ProofType;
 import jakarta.validation.Validator;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
@@ -43,7 +44,7 @@ public final class WechatMiniProgramExternalIdentityVerifier
         }
         WechatMiniProgramProof proof =
                 WechatMiniProgramProofMapper.toProof(proofParameters);
-        if (proof == null || !validator.validate(proof).isEmpty()) {
+        if (proof == null || !CollectionUtils.isEmpty(validator.validate(proof))) {
             throw rejected();
         }
         String openId = client.exchangeLoginCode(proof.loginCode());

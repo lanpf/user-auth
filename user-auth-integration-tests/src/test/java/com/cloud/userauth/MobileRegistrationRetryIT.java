@@ -13,6 +13,7 @@ import com.cloud.userauth.application.login.MobileOtpLoginTransactionService;
 import com.cloud.userauth.application.port.AuthChallengeIssueLock;
 import com.cloud.userauth.application.port.MobileOtpLoginLock;
 import com.cloud.userauth.application.port.UserGateway;
+import com.cloud.userauth.application.registration.RegistrationProcess;
 import com.cloud.userauth.application.registration.RegistrationProcessStatus;
 import com.cloud.userauth.domain.authentication.account.AuthAccountId;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallenge;
@@ -136,7 +137,9 @@ class MobileRegistrationRetryIT {
         assertEquals(
                 ApplicationError.APP_USER_INITIALIZATION_FAILED.errorCode(),
                 failure.getErrorCode());
-        var process = registrations.findByChallengeId(new AuthChallengeId(firstIssue.challengeId())).orElseThrow();
+        RegistrationProcess process = registrations
+                .findByChallengeId(new AuthChallengeId(firstIssue.challengeId()))
+                .orElseThrow();
         assertEquals(RegistrationProcessStatus.AUTH_ACCOUNT_CREATED, process.getStatus());
         assertEquals(1, process.getRetryCount());
         assertNotNull(process.getLastFailedAt());

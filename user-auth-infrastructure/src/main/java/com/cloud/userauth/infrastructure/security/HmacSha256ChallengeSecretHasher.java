@@ -11,7 +11,7 @@ public class HmacSha256ChallengeSecretHasher implements ChallengeSecretHasher {
     private final String pepper;
 
     public HmacSha256ChallengeSecretHasher(String pepper) {
-        Assert.hasText(pepper, "pepper must not be blank");
+        Assert.hasText(pepper, "pepper must not be empty");
         this.pepper = pepper;
     }
 

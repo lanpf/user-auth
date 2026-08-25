@@ -1,6 +1,6 @@
 package com.cloud.userauth.interfaces.mapper.mapstruct;
 
-import com.cloud.framework.core.AuthenticatedSessionRequest;
+import com.cloud.framework.core.AuthenticatedSessionClientRequest;
 import com.cloud.framework.core.mapper.MapStructConfig;
 import com.cloud.userauth.api.authentication.BindExternalCredentialApiCommand;
 import com.cloud.userauth.api.authentication.LogoutApiCommand;
@@ -19,5 +19,5 @@ public interface AuthenticationRestMapStructMapper extends AuthenticationRestMap
 
     @Override
     @Mapping(target = "authenticatedUserId", source = "userId")
-    LogoutApiCommand toLogoutCommand(AuthenticatedSessionRequest request);
+    LogoutApiCommand toLogoutCommand(AuthenticatedSessionClientRequest request);
 }

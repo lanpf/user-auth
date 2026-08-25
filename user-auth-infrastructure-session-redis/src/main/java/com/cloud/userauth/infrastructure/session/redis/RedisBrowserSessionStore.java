@@ -16,6 +16,8 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
 public final class RedisBrowserSessionStore implements BrowserSessionStore {
@@ -56,7 +58,7 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
 
     @Override
     public Optional<ResolvedSession> find(String credential) {
-        if (credential == null || credential.isBlank()) {
+        if (!StringUtils.hasText(credential)) {
             return Optional.empty();
         }
         String key = keyResolver.key(credential);
@@ -71,7 +73,7 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
     public void revoke(SessionId loginSessionId) {
         String parentKey = keyResolver.parent(loginSessionId.value());
         Set<String> credentials = redisTemplate.opsForSet().members(parentKey);
-        if (credentials != null && !credentials.isEmpty()) {
+        if (!CollectionUtils.isEmpty(credentials)) {
             redisTemplate.delete(credentials.stream()
                     .map(keyResolver::key)
                     .toList());
