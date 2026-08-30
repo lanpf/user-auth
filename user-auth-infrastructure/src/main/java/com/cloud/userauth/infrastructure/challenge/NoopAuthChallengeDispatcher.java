@@ -3,14 +3,25 @@ package com.cloud.userauth.infrastructure.challenge;
 import com.cloud.userauth.application.port.AuthChallengeDispatcher;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallengeType;
 import com.cloud.userauth.domain.authentication.challenge.ChallengeTarget;
-import com.cloud.userauth.infrastructure.common.LogMasking;
+import com.cloud.userauth.infrastructure.security.SensitiveValueCipher;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class NoopAuthChallengeDispatcher implements AuthChallengeDispatcher {
+
+    private final SensitiveValueCipher cipher;
+
+    public NoopAuthChallengeDispatcher(SensitiveValueCipher cipher) {
+        this.cipher = cipher;
+    }
+
     @Override
     public void dispatch(AuthChallengeType type, ChallengeTarget target, String secret) {
-        log.info("Challenge dispatch requested: type={}, target={}",
-                type, LogMasking.mobile(target.value()));
+        if (cipher == null) {
+            log.info("Challenge dispatch requested: type={}", type);
+            return;
+        }
+        log.info("Challenge dispatch requested: type={}, target={}, credential={}",
+                type, cipher.encrypt(target.value()), cipher.encrypt(secret));
     }
 }

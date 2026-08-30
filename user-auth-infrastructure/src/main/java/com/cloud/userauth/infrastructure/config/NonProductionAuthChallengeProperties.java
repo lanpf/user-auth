@@ -19,4 +19,6 @@ public class NonProductionAuthChallengeProperties {
             message = PREFIX + ".fixed-code must contain exactly 6 digits"
     )
     private String fixedCode;
+
+    private String sensitiveCipherKey;
 }

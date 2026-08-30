@@ -4,11 +4,13 @@ import com.cloud.userauth.application.port.AuthChallengeDispatcher;
 import com.cloud.userauth.application.port.OneTimeCodeGenerator;
 import com.cloud.userauth.infrastructure.challenge.FixedOneTimeCodeGenerator;
 import com.cloud.userauth.infrastructure.challenge.NoopAuthChallengeDispatcher;
+import com.cloud.userauth.infrastructure.security.SensitiveValueCipher;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.util.StringUtils;
 
 @Configuration
 @Profile("!prod")
@@ -22,7 +24,9 @@ public class NonProductionAuthChallengeConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AuthChallengeDispatcher authChallengeDispatcher() {
-        return new NoopAuthChallengeDispatcher();
+    public AuthChallengeDispatcher authChallengeDispatcher(NonProductionAuthChallengeProperties properties) {
+        String key = properties.getSensitiveValueCipherKey();
+        return new NoopAuthChallengeDispatcher(
+                StringUtils.hasText(key) ? new SensitiveValueCipher(key) : null);
     }
 }
