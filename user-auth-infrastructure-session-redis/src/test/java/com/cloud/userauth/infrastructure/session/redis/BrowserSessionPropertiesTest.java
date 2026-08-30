@@ -47,6 +47,7 @@ class BrowserSessionPropertiesTest {
     void shouldRejectRenewalThresholdLongerThanIdleTtl() {
         BrowserSessionProperties properties = new BrowserSessionProperties();
         properties.setIdleTtl(Duration.ofMinutes(5));
+        properties.setAbsoluteTtl(Duration.ofHours(8));
         properties.setRenewalThreshold(Duration.ofMinutes(6));
 
         assertFalse(VALIDATOR.validate(properties).isEmpty());
@@ -57,6 +58,7 @@ class BrowserSessionPropertiesTest {
         BrowserSessionProperties properties = new BrowserSessionProperties();
         properties.setIdleTtl(Duration.ofHours(9));
         properties.setAbsoluteTtl(Duration.ofHours(8));
+        properties.setRenewalThreshold(Duration.ofMinutes(5));
 
         assertFalse(VALIDATOR.validate(properties).isEmpty());
     }

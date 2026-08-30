@@ -3,9 +3,12 @@ package com.cloud.userauth.domain.authorization;
 import com.cloud.framework.domain.AggregateRoot;
 import com.cloud.userauth.domain.user.UserId;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserRoleGrant implements AggregateRoot<GrantId> {
     private final GrantId id;
     private final UserId userId;
@@ -16,28 +19,6 @@ public class UserRoleGrant implements AggregateRoot<GrantId> {
     private final Instant grantedAt;
     private final Instant expiresAt;
     private Instant updatedAt;
-
-    private UserRoleGrant(
-            GrantId id,
-            UserId userId,
-            RoleCode roleCode,
-            GrantSource source,
-            GrantStatus status,
-            UserId grantedBy,
-            Instant grantedAt,
-            Instant expiresAt,
-            Instant updatedAt
-    ) {
-        this.id = id;
-        this.userId = userId;
-        this.roleCode = roleCode;
-        this.source = source;
-        this.status = status;
-        this.grantedBy = grantedBy;
-        this.grantedAt = grantedAt;
-        this.expiresAt = expiresAt;
-        this.updatedAt = updatedAt;
-    }
 
     public static UserRoleGrant grant(
             GrantId id,
@@ -74,11 +55,6 @@ public class UserRoleGrant implements AggregateRoot<GrantId> {
             return false;
         }
         return expiresAt == null || currentTime.isBefore(expiresAt);
-    }
-
-    @Override
-    public GrantId id() {
-        return id;
     }
 
     public UserId userId() {

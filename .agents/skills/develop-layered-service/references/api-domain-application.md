@@ -17,6 +17,7 @@
 ## Domain
 
 - **DOMAIN-MODEL-001** — Use aggregate roots as consistency boundaries and define entities, value objects, domain services, repository contracts, and domain events around the domain model.
+- **DOMAIN-ENTITY-ID-001** — A domain entity identifier extends `EntityId`. Each project provides type-specific bases such as `StringEntityId` and `LongEntityId`, centralizes value-type validation by overriding `validate()`, and overrides it again in a concrete identifier only for additional constraints.
 - **DOMAIN-BEHAVIOR-001** — Aggregate roots and entities change state only through domain behavior; value objects are immutable; domain services contain only cross-aggregate rules or rules that do not belong to one aggregate.
 - **NAME-DOMAIN-EFFECT-001** — Domain-service `*Effect` result types implement `DomainEffect` and return the domain events produced by that behavior through `events()`; return an empty collection rather than null when no event is produced.
 - **DOMAIN-CLOCK-001** — Domain objects and services must not call system time directly; application services inject `Clock`, obtain business time once per use case, and pass the same value to related state changes and events.

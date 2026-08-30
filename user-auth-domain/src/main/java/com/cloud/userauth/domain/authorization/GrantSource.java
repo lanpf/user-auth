@@ -1,8 +1,7 @@
 package com.cloud.userauth.domain.authorization;
 
-import com.cloud.userauth.domain.common.DomainError;
+import com.cloud.framework.core.validation.Require;
 import com.cloud.userauth.domain.common.DomainException;
-import java.util.Objects;
 
 /**
  * 授予角色或直接权限的可追溯来源。
@@ -10,10 +9,7 @@ import java.util.Objects;
  */
 public record GrantSource(GrantSourceType sourceType, String sourceId) {
     public GrantSource {
-        Objects.requireNonNull(sourceType, "sourceType");
-        if (sourceId == null || sourceId.trim().isEmpty()) {
-            throw new DomainException(DomainError.DOMAIN_FIELD_REQUIRED);
-        }
-        sourceId = sourceId.trim();
+        Require.notNull(sourceType, DomainException::missingField);
+        sourceId = Require.notBlank(sourceId, DomainException::missingField).trim();
     }
 }

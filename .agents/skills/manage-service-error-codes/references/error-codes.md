@@ -21,8 +21,9 @@
 
 ## Domain allocation
 
-- **ERROR-DOMAIN-COMMON-001** — Prefix shared domain errors with `DOMAIN_`; the first two are `DOMAIN_ENTITY_ID_INVALID` and `DOMAIN_EVENT_ID_REQUIRED`.
+- **ERROR-DOMAIN-COMMON-001** — Prefix shared domain errors with `DOMAIN_`; the first five are `DOMAIN_ENTITY_ID_INVALID`, `DOMAIN_EVENT_ID_REQUIRED`, `DOMAIN_OBJECT_FIELD_REQUIRED`, `DOMAIN_OBJECT_FIELD_INVALID`, and `DOMAIN_OBJECT_STATE_INVALID`.
 - **ERROR-AGGREGATE-001** — Prefix aggregate errors with the aggregate name; the first two are `{AGGREGATE}_NOT_FOUND` and `{AGGREGATE}_ALREADY_EXISTS`.
+- **ERROR-UNIQUENESS-001** — A complete error code is globally unique within one deployment system; a local code need only be unique within its service prefix.
 - **ERROR-RANGE-001** — Unallocated complete aggregate ranges remain available, but unused codes inside an assigned aggregate range remain owned by that aggregate and must not be reassigned.
 - **ERROR-DOCUMENTATION-002** — Document the service prefix, shared-domain range, and every aggregate range in the authoritative domain document declared by the project documentation entry.
 

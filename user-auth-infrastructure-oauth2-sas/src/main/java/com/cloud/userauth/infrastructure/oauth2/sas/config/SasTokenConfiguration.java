@@ -1,6 +1,7 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.config;
 
 import com.cloud.userauth.api.constants.AccessTokenClaimApiConstants;
+import com.cloud.userauth.infrastructure.config.AccessTokenProperties;
 import com.cloud.userauth.infrastructure.oauth2.sas.protocol.SasAuthorizationAttributes;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.Assert;
 import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -51,6 +53,7 @@ import java.util.UUID;
         SasTokenConfiguration.ProductionJwkConfiguration.class
 })
 public class SasTokenConfiguration {
+    private static final String RSA_KEY_PAIR_REQUIRED = "OAuth2 signing key must be an RSA key pair";
     @Bean
     public AuthorizationServerSettings authorizationServerSettings(
             SasAuthorizationServerProperties properties
@@ -79,7 +82,7 @@ public class SasTokenConfiguration {
 
     @Bean
     @ConditionalOnProperty(
-            prefix = "user-auth.authentication.oauth2.access-token",
+            prefix = AccessTokenProperties.PREFIX,
             name = "format",
             havingValue = "SELF_CONTAINED",
             matchIfMissing = true)
@@ -171,11 +174,11 @@ public class SasTokenConfiguration {
             PrivateKey privateKey =
                     (PrivateKey) keyStore.getKey(properties.getKeyAlias(), keyPassword);
             Certificate certificate = keyStore.getCertificate(properties.getKeyAlias());
-            if (certificate == null
-                    || !(privateKey instanceof RSAPrivateKey rsaPrivateKey)
-                    || !(certificate.getPublicKey() instanceof RSAPublicKey rsaPublicKey)) {
-                throw new IllegalStateException("OAuth2 signing key must be an RSA key pair");
-            }
+            Assert.state(certificate != null, RSA_KEY_PAIR_REQUIRED);
+            Assert.state(privateKey instanceof RSAPrivateKey, RSA_KEY_PAIR_REQUIRED);
+            Assert.state(certificate.getPublicKey() instanceof RSAPublicKey, RSA_KEY_PAIR_REQUIRED);
+            RSAPrivateKey rsaPrivateKey = (RSAPrivateKey) privateKey;
+            RSAPublicKey rsaPublicKey = (RSAPublicKey) certificate.getPublicKey();
             RSAKey rsaKey = new RSAKey.Builder(rsaPublicKey)
                     .privateKey(rsaPrivateKey)
                     .keyID(properties.getKeyId())

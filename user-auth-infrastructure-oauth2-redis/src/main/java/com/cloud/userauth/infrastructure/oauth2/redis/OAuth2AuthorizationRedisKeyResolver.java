@@ -5,10 +5,10 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class OAuth2AuthorizationRedisKeyResolver {
+    private static final String SCENE = "oauth2";
     private static final String AUTHORIZATION_STATE_HASH_TAG = "{authorization-state}";
 
     private final ResourceNameResolver resourceNameResolver;
-    private final String scene;
 
     String authorization(String authorizationId) {
         return resolve("authorization", authorizationId);
@@ -28,7 +28,7 @@ public class OAuth2AuthorizationRedisKeyResolver {
 
     private String resolve(String type, String key) {
         return resourceNameResolver.resolve(
-                scene + ":" + AUTHORIZATION_STATE_HASH_TAG + ":" + type + ":" + key);
+                SCENE + ":" + AUTHORIZATION_STATE_HASH_TAG + ":" + type + ":" + key);
     }
 
     private static String nullableKeyPart(String value) {

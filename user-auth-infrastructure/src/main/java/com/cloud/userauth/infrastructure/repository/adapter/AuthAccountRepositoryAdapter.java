@@ -6,7 +6,7 @@ import com.cloud.userauth.domain.authentication.account.AuthAccountId;
 import com.cloud.userauth.domain.authentication.account.AuthAccountRepository;
 import com.cloud.userauth.domain.authentication.credential.CredentialKey;
 import com.cloud.userauth.domain.user.UserId;
-import com.cloud.userauth.infrastructure.id.IdGeneratorNames;
+import com.cloud.userauth.infrastructure.id.IdGeneratorScene;
 import com.cloud.userauth.infrastructure.persistence.repository.AuthAccountPersistenceRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ public class AuthAccountRepositoryAdapter implements AuthAccountRepository {
     private final LongIdGenerator idGenerator;
     private final AuthAccountPersistenceRepository persistenceRepository;
 
-    @Override public AuthAccountId nextId() { return new AuthAccountId(idGenerator.nextId(IdGeneratorNames.AUTH_ACCOUNT)); }
+    @Override public AuthAccountId nextId() { return new AuthAccountId(idGenerator.nextId(IdGeneratorScene.AUTH_ACCOUNT.getValue())); }
     @Override public void save(AuthAccount aggregate) { persistenceRepository.save(aggregate); }
     @Override public Optional<AuthAccount> findById(AuthAccountId id) { return persistenceRepository.findById(id); }
     @Override public Optional<AuthAccount> findByUserId(UserId id) { return persistenceRepository.findByUserId(id); }

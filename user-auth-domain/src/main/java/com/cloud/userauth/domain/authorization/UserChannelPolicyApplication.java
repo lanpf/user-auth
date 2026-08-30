@@ -2,29 +2,18 @@ package com.cloud.userauth.domain.authorization;
 
 import com.cloud.userauth.domain.user.UserId;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserChannelPolicyApplication {
     private final UserId userId;
     private final ChannelCode channelCode;
     private Long appliedVersion;
     private final Instant firstAppliedAt;
     private Instant lastAppliedAt;
-
-    private UserChannelPolicyApplication(
-            UserId userId,
-            ChannelCode channelCode,
-            Long appliedVersion,
-            Instant firstAppliedAt,
-            Instant lastAppliedAt
-    ) {
-        this.userId = userId;
-        this.channelCode = channelCode;
-        this.appliedVersion = appliedVersion;
-        this.firstAppliedAt = firstAppliedAt;
-        this.lastAppliedAt = lastAppliedAt;
-    }
 
     public static UserChannelPolicyApplication firstApplied(
             UserId userId,

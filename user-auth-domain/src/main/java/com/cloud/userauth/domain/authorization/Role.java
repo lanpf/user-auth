@@ -1,7 +1,7 @@
 package com.cloud.userauth.domain.authorization;
 
+import com.cloud.framework.core.validation.Require;
 import com.cloud.framework.domain.AggregateRoot;
-import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class Role implements AggregateRoot<RoleCode> {
             Instant updatedAt
     ) {
         this.roleCode = roleCode;
-        this.roleName = requireText(roleName);
+        this.roleName = Require.notBlank(roleName, DomainException::missingField).trim();
         this.status = status;
         this.permissionCodes = new ArrayList<>(permissionCodes.stream().distinct().toList());
         this.createdAt = createdAt;
@@ -71,7 +71,7 @@ public class Role implements AggregateRoot<RoleCode> {
     }
 
     public void rename(String newRoleName, Instant renamedAt) {
-        this.roleName = requireText(newRoleName);
+        this.roleName = Require.notBlank(newRoleName, DomainException::missingField).trim();
         this.updatedAt = renamedAt;
     }
 
@@ -89,12 +89,5 @@ public class Role implements AggregateRoot<RoleCode> {
     public void activate(Instant activatedAt) {
         this.status = RoleStatus.ACTIVE;
         this.updatedAt = activatedAt;
-    }
-
-    private static String requireText(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            throw new DomainException(DomainError.DOMAIN_FIELD_REQUIRED);
-        }
-        return value.trim();
     }
 }

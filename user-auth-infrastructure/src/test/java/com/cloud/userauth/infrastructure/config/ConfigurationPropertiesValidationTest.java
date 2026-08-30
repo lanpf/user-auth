@@ -26,10 +26,12 @@ class ConfigurationPropertiesValidationTest {
                     .getValidator();
 
     @Test
-    void shouldAcceptDefaultDurations() {
+    void shouldAcceptExplicitDurations() {
         AuthChallengeProperties challengeProperties = validChallengeProperties();
         LoginSessionProperties sessionProperties = new LoginSessionProperties();
+        sessionProperties.setTtl(Duration.ofDays(30));
         ExternalIdentityProperties externalIdentityProperties = new ExternalIdentityProperties();
+        externalIdentityProperties.getLoginAttempt().setTtl(Duration.ofMinutes(10));
 
         assertTrue(VALIDATOR.validate(challengeProperties).isEmpty());
         assertTrue(VALIDATOR.validate(sessionProperties).isEmpty());
@@ -122,6 +124,8 @@ class ConfigurationPropertiesValidationTest {
     private static AuthChallengeProperties validChallengeProperties() {
         AuthChallengeProperties properties = new AuthChallengeProperties();
         properties.setPepper("test-pepper");
+        properties.getIssuePolicy().setTtl(Duration.ofMinutes(5));
+        properties.getIssuePolicy().setReuseWindow(Duration.ofMinutes(1));
         return properties;
     }
 }

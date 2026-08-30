@@ -10,7 +10,9 @@ import lombok.Getter;
 public enum DomainError implements BaseError {
     DOMAIN_ENTITY_ID_INVALID(0, "领域实体ID非法"),
     DOMAIN_EVENT_ID_REQUIRED(1, "领域事件ID不能为空"),
-    DOMAIN_FIELD_REQUIRED(2, "领域字段不能为空"),
+    DOMAIN_OBJECT_FIELD_REQUIRED(2, "领域对象字段不能为空"),
+    DOMAIN_OBJECT_FIELD_INVALID(3, "领域对象字段非法"),
+    DOMAIN_OBJECT_STATE_INVALID(4, "领域对象状态异常"),
 
     AUTH_ACCOUNT_NOT_FOUND(100, "认证账号不存在"),
     AUTH_ACCOUNT_ALREADY_EXISTS(101, "认证账号已存在"),

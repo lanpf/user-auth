@@ -7,7 +7,7 @@ import com.cloud.userauth.domain.authorization.RoleCode;
 import com.cloud.userauth.domain.authorization.UserRoleGrant;
 import com.cloud.userauth.domain.authorization.UserRoleGrantRepository;
 import com.cloud.userauth.domain.user.UserId;
-import com.cloud.userauth.infrastructure.id.IdGeneratorNames;
+import com.cloud.userauth.infrastructure.id.IdGeneratorScene;
 import com.cloud.userauth.infrastructure.persistence.repository.UserRoleGrantPersistenceRepository;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +18,7 @@ public class UserRoleGrantRepositoryAdapter implements UserRoleGrantRepository {
     private final LongIdGenerator idGenerator;
     private final UserRoleGrantPersistenceRepository persistenceRepository;
 
-    @Override public GrantId nextId() { return new GrantId(idGenerator.nextId(IdGeneratorNames.USER_ROLE_GRANT)); }
+    @Override public GrantId nextId() { return new GrantId(idGenerator.nextId(IdGeneratorScene.USER_ROLE_GRANT.getValue())); }
     @Override public void save(UserRoleGrant value) { persistenceRepository.save(value); }
     @Override public Optional<UserRoleGrant> findById(GrantId id) { return persistenceRepository.findRoleGrantById(id); }
     @Override public List<UserRoleGrant> findActiveByUserId(UserId id) { return persistenceRepository.findActiveRoleGrantsByUserId(id); }

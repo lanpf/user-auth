@@ -28,6 +28,7 @@ import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasToken
 import com.cloud.userauth.infrastructure.oauth2.sas.scope.PropertiesSasClientScopeResolver;
 import com.cloud.userauth.infrastructure.oauth2.sas.scope.SasClientScopeResolver;
 import com.cloud.userauth.infrastructure.oauth2.sas.config.validation.SasClientScopeConfigurationValidator;
+import com.cloud.userauth.infrastructure.oauth2.sas.config.validation.LoopbackTokenEndpointValidator;
 import com.cloud.userauth.infrastructure.config.ClientAppRegistryProperties;
 import com.cloud.userauth.domain.authentication.session.LoginSessionRepository;
 import java.time.Clock;
@@ -58,6 +59,9 @@ import java.net.URI;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(SasAuthorizationServerProperties.class)
 public class SasAuthorizationServerConfiguration {
+    private static final String SERVER_PORT_PROPERTY = "${server.port}";
+    private static final String HTTP_LOOPBACK_PREFIX = "http://127.0.0.1:";
+
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(
@@ -147,7 +151,7 @@ public class SasAuthorizationServerConfiguration {
             SasTokenEndpointResponseErrorHandler errorHandler,
             SasTokenEndpointJsonMapper jsonMapper,
             Validator validator,
-            @Value("${server.port:8081}") int serverPort
+            @Value(SERVER_PORT_PROPERTY) int serverPort
     ) {
         SimpleClientHttpRequestFactory requestFactory =
                 new SimpleClientHttpRequestFactory();
@@ -259,6 +263,6 @@ public class SasAuthorizationServerConfiguration {
         String configured = properties.getInternalTokenClient().getTokenEndpoint();
         return URI.create(StringUtils.hasText(configured)
                 ? configured
-                : "http://127.0.0.1:" + serverPort + "/oauth2/token");
+                : HTTP_LOOPBACK_PREFIX + serverPort + LoopbackTokenEndpointValidator.TOKEN_ENDPOINT_PATH);
     }
 }

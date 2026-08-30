@@ -15,11 +15,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 public class RedisSessionHandoffConfiguration {
     @Bean
     RedisSessionHandoffKeyResolver sessionHandoffKeyResolver(
-            SessionHandoffProperties handoffProperties,
+            SessionHandoffProperties properties,
             NamespaceResolver namespaceResolver
     ) {
         return new RedisSessionHandoffKeyResolver(
-                new NamespacedResourceNameResolver(namespaceResolver, handoffProperties));
+                new NamespacedResourceNameResolver(namespaceResolver, properties));
     }
 
     @Bean

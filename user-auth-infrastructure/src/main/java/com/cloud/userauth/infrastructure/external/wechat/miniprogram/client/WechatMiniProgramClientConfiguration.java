@@ -10,18 +10,17 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestClient;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(
-        prefix = "user-auth.authentication.external-identity.wechat-mini-program",
+        prefix = WechatMiniProgramProperties.PREFIX,
         name = "enabled",
         havingValue = "true")
 public class WechatMiniProgramClientConfiguration {
-    private static final String WECHAT_API_BASE_URL = "https://api.weixin.qq.com";
-
     @Bean
     @ConditionalOnMissingBean
     WechatMiniProgramJsonMapper wechatMiniProgramJsonMapper(ObjectMapper objectMapper) {
@@ -48,8 +47,8 @@ public class WechatMiniProgramClientConfiguration {
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(properties.getRestClient().getReadTimeout());
         return builder.clone()
-                .baseUrl(WECHAT_API_BASE_URL)
-                .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
+                .baseUrl(properties.getBaseUrl())
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .requestFactory(requestFactory)
                 .messageConverters(converters -> {
                     converters.removeIf(MappingJackson2HttpMessageConverter.class::isInstance);

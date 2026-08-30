@@ -1,7 +1,6 @@
 package com.cloud.userauth.infrastructure.persistence.jpa.config;
 
-import com.cloud.framework.starter.domain.eventstore.persistence.DomainEventDO;
-import com.cloud.framework.starter.domain.eventstore.persistence.DomainEventPersistenceRepository;
+import com.cloud.userauth.infrastructure.persistence.jpa.mapper.DomainEventPersistenceMapper;
 import com.cloud.userauth.infrastructure.persistence.jpa.repository.AuthAccountJpaPersistenceRepository;
 import com.cloud.userauth.infrastructure.persistence.jpa.repository.AuthAccountJpaRepository;
 import com.cloud.userauth.infrastructure.persistence.jpa.repository.AuthChallengeJpaPersistenceRepository;
@@ -48,7 +47,7 @@ public class JpaPersistenceConfiguration {
     @Bean @ConditionalOnMissingBean
     LoginAttemptPersistenceRepository loginAttemptPersistenceRepository(LoginAttemptJpaRepository r, UserAuthPersistenceMapper m) { return new LoginAttemptJpaPersistenceRepository(r, m); }
     @Bean @ConditionalOnMissingBean
-    DomainEventPersistenceRepository domainEventPersistenceRepository(DomainEventJpaRepository r) { return new DomainEventJpaPersistenceRepository(r); }
+    DomainEventJpaPersistenceRepository storedDomainEventPersistenceRepository(DomainEventJpaRepository r, DomainEventPersistenceMapper m) { return new DomainEventJpaPersistenceRepository(r, m); }
 
     @Bean
     @ConditionalOnMissingBean

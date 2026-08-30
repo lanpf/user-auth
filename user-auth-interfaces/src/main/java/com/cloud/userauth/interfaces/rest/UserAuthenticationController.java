@@ -1,5 +1,6 @@
 package com.cloud.userauth.interfaces.rest;
 
+import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import com.cloud.framework.core.AuthenticatedSessionClientRequest;
 import com.cloud.framework.core.ChannelClientRequest;
 import com.cloud.framework.core.ClientRequest;
@@ -38,70 +39,70 @@ public class UserAuthenticationController {
     private final UserAuthenticationCommandFacade facade;
     private final AuthenticationRestMapper mapper;
 
-    @PostMapping(UserAuthRestPaths.API_CHALLENGES)
+    @PostMapping(UserAuthPathApiConstants.API_CHALLENGES)
     public Result<IssueAuthChallengeApiCommandOutput> issueAuthChallenge(
             @Valid @RequestBody IssueAuthChallengeRequest request
     ) {
         return facade.issueAuthChallenge(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_MOBILE_OTP)
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_MOBILE_OTP)
     public Result<MobileOtpLoginApiCommandOutput> completeMobileOtpLogin(
             @Valid @RequestBody MobileOtpLoginRequest request
     ) {
         return facade.completeMobileOtpLogin(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_PARTNER_TRUSTED_MOBILE)
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_PARTNER_TRUSTED_MOBILE)
     public Result<ExternalLoginApiCommandOutput> loginWithTrustedPartnerMobile(
             @Valid @RequestBody UserAuthenticationController.TrustedPartnerMobileLoginRequest request
     ) {
         return facade.loginWithTrustedPartnerMobile(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_PROOF)
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_PROOF)
     public Result<ExternalLoginApiCommandOutput> loginWithExternalProof(
             @Valid @RequestBody UserAuthenticationController.ExternalProofLoginRequest request
     ) {
         return facade.loginWithExternalProof(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL)
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL)
     public Result<ExternalLoginApiCommandOutput> loginWithBoundExternalCredential(
             @Valid @RequestBody UserAuthenticationController.BoundExternalCredentialLoginRequest request
     ) {
         return facade.loginWithBoundExternalCredential(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPT)
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_ATTEMPT)
     public Result<ExternalAttemptLoginApiCommandOutput> attemptExternalLogin(
             @Valid @RequestBody UserAuthenticationController.ExternalAttemptLoginRequest request
     ) {
         return facade.attemptExternalLogin(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_EXTERNAL_COMPLETE)
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_COMPLETE)
     public Result<ExternalLoginApiCommandOutput> completeExternalLogin(
             @Valid @RequestBody ExternalLoginRequest request
     ) {
         return facade.completeExternalLogin(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_CREDENTIALS_BIND)
+    @PostMapping(UserAuthPathApiConstants.API_CREDENTIALS_BIND)
     public Result<Void> bindExternalCredential(
             @Valid @RequestBody BindExternalCredentialRequest request
     ) {
         return facade.bindExternalCredential(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGIN_REFRESH)
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_REFRESH)
     public Result<RefreshTokenLoginApiCommandOutput> refreshTokenLogin(
             @Valid @RequestBody UserAuthenticationController.RefreshTokenLoginRequest request
     ) {
         return facade.refreshTokenLogin(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_LOGOUT)
+    @PostMapping(UserAuthPathApiConstants.API_LOGOUT)
     public Result<LogoutApiCommandOutput> logout(
             @Valid AuthenticatedSessionClientRequest request,
             HttpServletResponse response

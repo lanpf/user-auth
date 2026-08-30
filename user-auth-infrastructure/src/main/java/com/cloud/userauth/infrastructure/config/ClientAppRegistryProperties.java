@@ -17,8 +17,9 @@ import org.springframework.validation.annotation.Validated;
 
 @Getter
 @Validated
-@ConfigurationProperties("user-auth.authentication")
+@ConfigurationProperties(ClientAppRegistryProperties.PREFIX)
 public class ClientAppRegistryProperties {
+    public static final String PREFIX = "user-auth.authentication";
     @NotEmpty
     private final Map<@NotBlank String, @NotNull @Valid ClientAppProperties> clientApps =
             new LinkedHashMap<>();

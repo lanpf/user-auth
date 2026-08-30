@@ -17,23 +17,23 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 public class RedisBrowserSessionConfiguration {
     @Bean
     RedisBrowserSessionKeyResolver browserSessionKeyResolver(
-            BrowserSessionProperties sessionProperties,
+            BrowserSessionProperties properties,
             NamespaceResolver namespaceResolver
     ) {
         return new RedisBrowserSessionKeyResolver(
-                new NamespacedResourceNameResolver(namespaceResolver, sessionProperties));
+                new NamespacedResourceNameResolver(namespaceResolver, properties));
     }
 
     @Bean
     BrowserSessionStore browserSessionStore(
-            BrowserSessionProperties sessionProperties,
+            BrowserSessionProperties properties,
             StringRedisTemplate redisTemplate,
             RedisBrowserSessionKeyResolver keyResolver,
             LoginSessionRepository loginSessionRepository,
             Clock clock
     ) {
         return new RedisBrowserSessionStore(
-                sessionProperties,
+                properties,
                 redisTemplate,
                 keyResolver,
                 loginSessionRepository,

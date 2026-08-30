@@ -38,7 +38,7 @@ class BrowserSessionAuthenticationFilterTest {
                 AuthenticatedSession.class,
                 SecurityContextHolder.getContext().getAuthentication().getPrincipal());
         assertTrue(SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                .anyMatch(authority -> SessionAuthenticationAuthorities.BROWSER_SESSION.equals(
+                .anyMatch(authority -> SessionAuthenticationAuthority.BROWSER_SESSION.getValue().equals(
                         authority.getAuthority())));
         String setCookie = response.getHeader("Set-Cookie");
         assertTrue(setCookie != null && setCookie.contains("BROWSER_SESSION=browser-token"));

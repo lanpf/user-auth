@@ -13,6 +13,8 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -52,8 +54,8 @@ public class RestClientSasTokenEndpointClient
     @Bulkhead(name = BULKHEAD_NAME, fallbackMethod = "refreshBulkheadFull")
     public SasRefreshTokenEndpointPayload requestRefreshToken(String refreshToken) {
         LinkedMultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("grant_type", "refresh_token");
-        form.add("refresh_token", refreshToken);
+        form.add(OAuth2ParameterNames.GRANT_TYPE, AuthorizationGrantType.REFRESH_TOKEN.getValue());
+        form.add(OAuth2ParameterNames.REFRESH_TOKEN, refreshToken);
         SasRefreshTokenEndpointPayload response;
         try {
             response = restClient.post()

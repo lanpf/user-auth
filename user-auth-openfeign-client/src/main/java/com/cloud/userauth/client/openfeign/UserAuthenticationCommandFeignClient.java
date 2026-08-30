@@ -17,69 +17,70 @@ import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommandOutput;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommand;
 import com.cloud.userauth.api.authentication.RefreshTokenLoginApiCommandOutput;
 import com.cloud.userauth.api.authentication.TrustedPartnerMobileLoginApiCommand;
+import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import com.cloud.userauth.api.facade.UserAuthenticationCommandFacade;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "user-auth", contextId = "userAuthenticationCommandFeignClient", path = "/api/user-auth")
+@FeignClient(name = UserAuthPathApiConstants.SERVICE_NAME, contextId = "userAuthenticationCommandFeignClient")
 public interface UserAuthenticationCommandFeignClient extends UserAuthenticationCommandFacade {
     @Override
-    @PostMapping("/challenges")
+    @PostMapping(UserAuthPathApiConstants.API_CHALLENGES)
     Result<IssueAuthChallengeApiCommandOutput> issueAuthChallenge(
             @RequestBody IssueAuthChallengeApiCommand request
     );
 
     @Override
-    @PostMapping("/login/mobile-otp")
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_MOBILE_OTP)
     Result<MobileOtpLoginApiCommandOutput> completeMobileOtpLogin(
             @RequestBody MobileOtpLoginApiCommand request
     );
 
     @Override
-    @PostMapping("/login/partner/trusted-mobile")
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_PARTNER_TRUSTED_MOBILE)
     Result<ExternalLoginApiCommandOutput> loginWithTrustedPartnerMobile(
             @RequestBody TrustedPartnerMobileLoginApiCommand request
     );
 
     @Override
-    @PostMapping("/login/external/proof")
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_PROOF)
     Result<ExternalLoginApiCommandOutput> loginWithExternalProof(
             @RequestBody ExternalProofLoginApiCommand request
     );
 
     @Override
-    @PostMapping("/login/external/bound-credential")
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL)
     Result<ExternalLoginApiCommandOutput> loginWithBoundExternalCredential(
             @RequestBody BoundExternalCredentialLoginApiCommand request
     );
 
     @Override
-    @PostMapping("/login/external/attempt")
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_ATTEMPT)
     Result<ExternalAttemptLoginApiCommandOutput> attemptExternalLogin(
             @RequestBody ExternalAttemptLoginApiCommand request
     );
 
     @Override
-    @PostMapping("/login/external/complete")
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_COMPLETE)
     Result<ExternalLoginApiCommandOutput> completeExternalLogin(
             @RequestBody ExternalLoginApiCommand request
     );
 
     @Override
-    @PostMapping("/credentials/bind")
+    @PostMapping(UserAuthPathApiConstants.API_CREDENTIALS_BIND)
     Result<Void> bindExternalCredential(
             @RequestBody BindExternalCredentialApiCommand request
     );
 
     @Override
-    @PostMapping("/login/refresh")
+    @PostMapping(UserAuthPathApiConstants.API_LOGIN_REFRESH)
     Result<RefreshTokenLoginApiCommandOutput> refreshTokenLogin(
             @RequestBody RefreshTokenLoginApiCommand request
     );
 
     @Override
-    @PostMapping("/logout")
+    @PostMapping(UserAuthPathApiConstants.API_LOGOUT)
     Result<LogoutApiCommandOutput> logout(
             @RequestBody LogoutApiCommand request
     );

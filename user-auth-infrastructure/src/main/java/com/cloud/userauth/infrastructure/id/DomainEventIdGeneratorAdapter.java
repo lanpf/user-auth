@@ -11,6 +11,6 @@ public class DomainEventIdGeneratorAdapter implements DomainEventIdGenerator {
 
     @Override
     public DomainEventId nextId() {
-        return new DomainEventId(idGenerator.nextId(IdGeneratorNames.DOMAIN_EVENT));
+        return new DomainEventId(idGenerator.nextId(IdGeneratorScene.DOMAIN_EVENT.getValue()));
     }
 }

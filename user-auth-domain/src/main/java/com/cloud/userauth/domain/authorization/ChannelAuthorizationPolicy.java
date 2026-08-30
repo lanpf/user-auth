@@ -1,11 +1,14 @@
 package com.cloud.userauth.domain.authorization;
 
+import com.cloud.framework.core.validation.Require;
 import com.cloud.framework.domain.AggregateRoot;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import lombok.Getter;
 
 @Getter
@@ -109,15 +112,12 @@ public class ChannelAuthorizationPolicy implements AggregateRoot<ChannelCode> {
     }
 
     private void assertVersion(Long expectedVersion) {
-        if (expectedVersion == null || !version.equals(expectedVersion)) {
+        if (!version.equals(expectedVersion)) {
             throw new DomainException(DomainError.CHANNEL_AUTHORIZATION_POLICY_VERSION_CONFLICT);
         }
     }
 
     private static <T> List<T> distinct(List<T> values) {
-        if (values == null) {
-            throw new DomainException(DomainError.DOMAIN_FIELD_REQUIRED);
-        }
-        return List.copyOf(new LinkedHashSet<>(values));
+        return Require.notNull(values, DomainException::missingField).stream().distinct().toList();
     }
 }

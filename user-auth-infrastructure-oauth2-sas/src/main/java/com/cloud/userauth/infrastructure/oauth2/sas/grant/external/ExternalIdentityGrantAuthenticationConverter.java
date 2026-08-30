@@ -1,5 +1,6 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.grant.external;
 
+import com.cloud.userauth.infrastructure.oauth2.sas.protocol.SasOAuth2RequestMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.InvalidMediaTypeException;
@@ -24,17 +25,17 @@ public final class ExternalIdentityGrantAuthenticationConverter implements Authe
             return null;
         }
         if (StringUtils.hasText(request.getQueryString())) {
-            throw oauth2("OAuth2 Token request must not contain query parameters");
+            throw oauth2(SasOAuth2RequestMessages.QUERY_PARAMETERS_NOT_ALLOWED);
         }
         try {
             String contentType = request.getContentType();
             if (!StringUtils.hasText(contentType)
                     || !MediaType.APPLICATION_FORM_URLENCODED.isCompatibleWith(
                             MediaType.parseMediaType(contentType))) {
-                throw oauth2("OAuth2 Token request must use application/x-www-form-urlencoded");
+                throw oauth2(SasOAuth2RequestMessages.FORM_URLENCODED_REQUIRED);
             }
         } catch (InvalidMediaTypeException exception) {
-            throw oauth2("OAuth2 Token request contains an invalid Content-Type");
+            throw oauth2(SasOAuth2RequestMessages.INVALID_CONTENT_TYPE);
         }
         return new ExternalIdentityGrantAuthenticationToken(
                 SecurityContextHolder.getContext().getAuthentication(),

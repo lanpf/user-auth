@@ -10,6 +10,9 @@ import org.springframework.util.StringUtils;
 
 public final class LoopbackTokenEndpointValidator
         implements ConstraintValidator<LoopbackTokenEndpoint, String> {
+    public static final String TOKEN_ENDPOINT_PATH = "/oauth2/token";
+    private static final String HTTP_SCHEME = "http";
+    private static final String HTTPS_SCHEME = "https";
 
     @Override
     public boolean isValid(
@@ -21,9 +24,9 @@ public final class LoopbackTokenEndpointValidator
         }
         try {
             URI endpoint = URI.create(value);
-            return ("http".equalsIgnoreCase(endpoint.getScheme())
-                    || "https".equalsIgnoreCase(endpoint.getScheme()))
-                    && "/oauth2/token".equals(endpoint.getPath())
+            return (HTTP_SCHEME.equalsIgnoreCase(endpoint.getScheme())
+                    || HTTPS_SCHEME.equalsIgnoreCase(endpoint.getScheme()))
+                    && TOKEN_ENDPOINT_PATH.equals(endpoint.getPath())
                     && endpoint.getHost() != null
                     && endpoint.getUserInfo() == null
                     && endpoint.getQuery() == null

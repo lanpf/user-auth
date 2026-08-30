@@ -10,12 +10,13 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties(prefix = "user-auth.authentication.challenge.non-production")
+@ConfigurationProperties(prefix = NonProductionAuthChallengeProperties.PREFIX)
 public class NonProductionAuthChallengeProperties {
+    public static final String PREFIX = AuthChallengeProperties.PREFIX + ".non-production";
     @NotBlank
     @Pattern(
             regexp = "\\d{6}",
-            message = "user-auth.authentication.challenge.non-production.fixed-code must contain exactly 6 digits"
+            message = PREFIX + ".fixed-code must contain exactly 6 digits"
     )
     private String fixedCode;
 }

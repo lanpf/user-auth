@@ -7,7 +7,7 @@ import com.cloud.userauth.domain.authorization.PermissionCode;
 import com.cloud.userauth.domain.authorization.UserPermissionGrant;
 import com.cloud.userauth.domain.authorization.UserPermissionGrantRepository;
 import com.cloud.userauth.domain.user.UserId;
-import com.cloud.userauth.infrastructure.id.IdGeneratorNames;
+import com.cloud.userauth.infrastructure.id.IdGeneratorScene;
 import com.cloud.userauth.infrastructure.persistence.repository.UserPermissionGrantPersistenceRepository;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +18,7 @@ public class UserPermissionGrantRepositoryAdapter implements UserPermissionGrant
     private final LongIdGenerator idGenerator;
     private final UserPermissionGrantPersistenceRepository persistenceRepository;
 
-    @Override public GrantId nextId() { return new GrantId(idGenerator.nextId(IdGeneratorNames.USER_PERMISSION_GRANT)); }
+    @Override public GrantId nextId() { return new GrantId(idGenerator.nextId(IdGeneratorScene.USER_PERMISSION_GRANT.getValue())); }
     @Override public void save(UserPermissionGrant value) { persistenceRepository.save(value); }
     @Override public Optional<UserPermissionGrant> findById(GrantId id) { return persistenceRepository.findPermissionGrantById(id); }
     @Override public List<UserPermissionGrant> findActiveByUserId(UserId id) { return persistenceRepository.findActivePermissionGrantsByUserId(id); }

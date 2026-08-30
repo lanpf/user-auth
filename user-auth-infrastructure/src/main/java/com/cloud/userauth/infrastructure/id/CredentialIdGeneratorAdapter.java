@@ -8,5 +8,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CredentialIdGeneratorAdapter implements CredentialIdGenerator {
     private final LongIdGenerator idGenerator;
-    @Override public CredentialId nextId() { return new CredentialId(idGenerator.nextId(IdGeneratorNames.CREDENTIAL)); }
+    @Override public CredentialId nextId() { return new CredentialId(idGenerator.nextId(IdGeneratorScene.CREDENTIAL.getValue())); }
 }

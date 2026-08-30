@@ -5,6 +5,7 @@ import com.cloud.framework.core.ClientRequest;
 import com.cloud.framework.core.Result;
 import com.cloud.userauth.api.authentication.CreateSessionHandoffApiCommandOutput;
 import com.cloud.userauth.api.authentication.ExchangeSessionHandoffApiCommandOutput;
+import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import com.cloud.userauth.api.enums.SessionHandoffTargetApiEnum;
 import com.cloud.userauth.api.facade.SessionHandoffCommandFacade;
 import com.cloud.userauth.interfaces.mapper.SessionHandoffRestMapper;
@@ -32,14 +33,14 @@ public class HandoffController {
     private final SessionHandoffCommandFacade facade;
     private final SessionHandoffRestMapper mapper;
 
-    @PostMapping(UserAuthRestPaths.API_HANDOFFS)
+    @PostMapping(UserAuthPathApiConstants.API_HANDOFFS)
     public Result<CreateSessionHandoffApiCommandOutput> create(
             @Valid @RequestBody CreateRequest request
     ) {
         return facade.create(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.API_HANDOFFS_EXCHANGE)
+    @PostMapping(UserAuthPathApiConstants.API_HANDOFFS_EXCHANGE)
     public Result<ExchangeRepresentation> exchange(
             @Valid @RequestBody ExchangeRequest request,
             HttpServletResponse response

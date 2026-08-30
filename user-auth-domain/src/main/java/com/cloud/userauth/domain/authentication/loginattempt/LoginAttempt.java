@@ -1,5 +1,6 @@
 package com.cloud.userauth.domain.authentication.loginattempt;
 
+import com.cloud.framework.core.validation.Require;
 import com.cloud.framework.domain.AggregateRoot;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
@@ -9,9 +10,12 @@ import com.cloud.userauth.domain.authentication.credential.Principal;
 import com.cloud.userauth.domain.authentication.external.ExternalIdentity;
 import com.cloud.userauth.domain.authentication.session.SessionId;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
     private final LoginAttemptId id;
     private final CredentialIssuer issuer;
@@ -23,30 +27,6 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
     private final Instant expiresAt;
     private final Instant createdAt;
     private Instant updatedAt;
-
-    private LoginAttempt(
-            LoginAttemptId id,
-            CredentialIssuer issuer,
-            Principal principal,
-            LoginMobile mobile,
-            boolean mobileVerified,
-            LoginAttemptStatus status,
-            SessionId sessionId,
-            Instant expiresAt,
-            Instant createdAt,
-            Instant updatedAt
-    ) {
-        this.id = id;
-        this.issuer = issuer;
-        this.principal = principal;
-        this.mobile = mobile;
-        this.mobileVerified = mobileVerified;
-        this.status = status;
-        this.sessionId = sessionId;
-        this.expiresAt = expiresAt;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
 
     public static LoginAttempt createPending(
             LoginAttemptId id,
@@ -76,8 +56,19 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
             Instant createdAt,
             Instant expiresAt
     ) {
-        if (id == null || identity == null || createdAt == null || expiresAt == null
-                || !expiresAt.isAfter(createdAt)) {
+        Require.notNull(
+                id,
+                () -> new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID));
+        Require.notNull(
+                identity,
+                () -> new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID));
+        Require.notNull(
+                createdAt,
+                () -> new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID));
+        Require.notNull(
+                expiresAt,
+                () -> new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID));
+        if (!expiresAt.isAfter(createdAt)) {
             throw new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID);
         }
         return new LoginAttempt(
@@ -127,7 +118,10 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
 
     public void verifyMobile(LoginMobile verifiedMobile, Instant verifiedAt) {
         ensureUsable(verifiedAt);
-        if (status != LoginAttemptStatus.PENDING || verifiedMobile == null) {
+        Require.notNull(
+                verifiedMobile,
+                () -> new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID));
+        if (status != LoginAttemptStatus.PENDING) {
             throw new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID);
         }
         this.mobile = verifiedMobile;
@@ -145,11 +139,8 @@ public class LoginAttempt implements AggregateRoot<LoginAttemptId> {
 
     public void complete(SessionId completedSessionId, Instant completedAt) {
         ensureReady(completedAt);
-        if (completedSessionId == null) {
-            throw new DomainException(DomainError.DOMAIN_FIELD_REQUIRED);
-        }
         this.status = LoginAttemptStatus.COMPLETED;
-        this.sessionId = completedSessionId;
+        this.sessionId = Require.notNull(completedSessionId, DomainException::missingField);
         this.updatedAt = completedAt;
     }
 

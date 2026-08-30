@@ -36,7 +36,7 @@ class ForwardedAuthenticatedSessionFilterTest {
                 new ForwardedAuthenticatedSessionFilter.ForwardedAuthenticatedSession(
                         "1001", "session-1"),
                 authentication.getPrincipal());
-        assertEquals(SessionAuthenticationAuthorities.HOST_SESSION,
+        assertEquals(SessionAuthenticationAuthority.HOST_SESSION.getValue(),
                 authentication.getAuthorities().iterator().next().getAuthority());
     }
 

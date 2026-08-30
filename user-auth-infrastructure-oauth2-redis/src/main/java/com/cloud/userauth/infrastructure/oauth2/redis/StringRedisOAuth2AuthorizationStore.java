@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.util.Assert;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -150,10 +151,8 @@ public class StringRedisOAuth2AuthorizationStore implements OAuth2AuthorizationR
         } else {
             expiresAt = refreshTokenExpiresAt;
         }
-        if (expiresAt == null) {
-            throw new IllegalArgumentException(
-                    "OAuth2 authorization must contain an access token or refresh token");
-        }
+        Assert.state(expiresAt != null,
+                "OAuth2 authorization must contain an access token or refresh token");
         return Math.max(1L, tokenTtl(expiresAt, now));
     }
 

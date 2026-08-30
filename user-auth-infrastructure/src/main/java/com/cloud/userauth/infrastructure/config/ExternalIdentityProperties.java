@@ -15,8 +15,9 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties(prefix = "user-auth.authentication.external-identity")
+@ConfigurationProperties(prefix = ExternalIdentityProperties.PREFIX)
 public class ExternalIdentityProperties {
+    public static final String PREFIX = "user-auth.authentication.external-identity";
     @Valid
     private final LoginAttemptProperties loginAttempt = new LoginAttemptProperties();
 
@@ -29,7 +30,7 @@ public class ExternalIdentityProperties {
         @NotNull
         @DurationMin(
                 seconds = 1,
-                message = "user-auth.authentication.external-identity.login-attempt.ttl must be at least 1 second")
+                message = PREFIX + ".login-attempt.ttl must be at least 1 second")
         private Duration ttl = Duration.ofMinutes(10);
     }
 

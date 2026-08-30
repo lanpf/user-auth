@@ -1,8 +1,8 @@
 package com.cloud.userauth.application.registration;
 
-import com.cloud.framework.domain.EntityId;
+import com.cloud.userauth.domain.common.LongEntityId;
 
-public final class RegistrationProcessId extends EntityId<Long> {
+public final class RegistrationProcessId extends LongEntityId {
     public RegistrationProcessId(Long value) {
         super(value);
     }

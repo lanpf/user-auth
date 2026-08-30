@@ -6,6 +6,7 @@ import jakarta.persistence.IdClass;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,14 +27,10 @@ public class UserChannelPolicyApplicationDO {
     @Getter
     @Setter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class Key implements Serializable {
         private Long userId;
         private String channelCode;
-
-        public Key(Long userId, String channelCode) {
-            this.userId = userId;
-            this.channelCode = channelCode;
-        }
 
         @Override
         public boolean equals(Object other) {

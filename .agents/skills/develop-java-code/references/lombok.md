@@ -4,7 +4,8 @@
 
 - **LOMBOK-EXPERIMENTAL-001** — Do not use annotations from `lombok.experimental`.
 - **LOMBOK-BUILDER-001** — Do not use `@Builder`; use explicit constructors or factory methods for staged or fluent construction.
-- **LOMBOK-CONSTRUCTOR-001** — Use Lombok constructors only for direct field assignment without validation or conversion; write an explicit constructor when initialization contains invariants, transformations, or other logic.
+- **LOMBOK-CONSTRUCTOR-001** — Generate constructors that only assign fields and contain no validation, transformation, or initialization logic with Lombok constructor annotations rather than writing them manually; write an explicit constructor when such logic exists.
+- **LOMBOK-ACCESSOR-001** — Generate getters and setters that only read or assign fields and contain no validation, transformation, or other behavior with Lombok `@Getter` or `@Setter`; write methods explicitly when behavior exists.
 - **LOMBOK-LOG-001** — Use `@Slf4j` instead of declaring a Logger field manually.
 
 ## Type-specific use

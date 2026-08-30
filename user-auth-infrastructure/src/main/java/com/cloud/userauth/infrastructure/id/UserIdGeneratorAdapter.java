@@ -8,5 +8,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserIdGeneratorAdapter implements UserIdGenerator {
     private final LongIdGenerator idGenerator;
-    @Override public UserId nextId() { return new UserId(idGenerator.nextId(IdGeneratorNames.USER)); }
+    @Override public UserId nextId() { return new UserId(idGenerator.nextId(IdGeneratorScene.USER.getValue())); }
 }

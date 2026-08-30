@@ -1,7 +1,5 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.config;
 
-import com.cloud.userauth.infrastructure.oauth2.sas.config.SasAuthorizationServerProperties;
-
 public final class SasAuthorizationServerPropertiesFixtures {
     private SasAuthorizationServerPropertiesFixtures() {
     }

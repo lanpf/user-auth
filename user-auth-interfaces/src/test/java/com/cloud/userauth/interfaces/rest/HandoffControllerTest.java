@@ -1,5 +1,6 @@
 package com.cloud.userauth.interfaces.rest;
 
+import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,7 +32,7 @@ class HandoffControllerTest {
         AtomicReference<CreateSessionHandoffApiCommand> captured = new AtomicReference<>();
         SessionHandoffCommandFacade facade = new StubSessionHandoffCommandFacade(captured);
         MockMvc mockMvc = authenticatedMockMvc(facade);
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_HANDOFFS)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_HANDOFFS)
                 .header(RequestHeader.CLIENT_APP_ID, "mini-program")
                 .header(RequestHeader.USER_ID, "1001")
                 .header(RequestHeader.SESSION_ID, "session-1")
@@ -54,7 +55,7 @@ class HandoffControllerTest {
                 .setControllerAdvice(new ClientRequestBodyAdvice())
                 .build();
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_HANDOFFS_EXCHANGE)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_HANDOFFS_EXCHANGE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "h5-app")
                         .content("{\"ticket\":\"ticket-1\",\"target\":\"BROWSER_SESSION\"}"))

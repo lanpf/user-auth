@@ -20,8 +20,10 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties("user-auth.authentication.oauth2.authorization-server.sas")
+@ConfigurationProperties(SasAuthorizationServerProperties.PREFIX)
 public class SasAuthorizationServerProperties {
+    public static final String PREFIX = "user-auth.authentication.oauth2.authorization-server.sas";
+    public static final String SIGNATURE_PREFIX = PREFIX + ".signature";
     @Valid
     private final InternalTokenClientProperties internalTokenClient = new InternalTokenClientProperties();
     @Valid
@@ -55,9 +57,9 @@ public class SasAuthorizationServerProperties {
     @Setter
     public static class IntrospectionClientProperties {
         @NotBlank
-        private String clientId = "gateway-introspection-client";
+        private String clientId = "default-introspection-client";
         @NotBlank
-        private String clientSecret = "local-gateway-introspection-secret";
+        private String clientSecret = "local-default-introspection-secret";
     }
 
     @Getter
@@ -81,7 +83,7 @@ public class SasAuthorizationServerProperties {
     @Getter
     @Setter
     @Validated
-    @ConfigurationProperties("user-auth.authentication.oauth2.authorization-server.sas.signature")
+    @ConfigurationProperties(SIGNATURE_PREFIX)
     public static class SignatureProperties {
         @Valid
         private final KeyStoreProperties keyStore = new KeyStoreProperties();

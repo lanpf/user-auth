@@ -1,5 +1,6 @@
 package com.cloud.userauth.domain.authentication.external;
 
+import com.cloud.framework.core.validation.Require;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import com.cloud.userauth.domain.authentication.credential.CredentialIssuer;
@@ -13,9 +14,12 @@ public record ExternalIdentity(
         boolean mobileVerified
 ) {
     public ExternalIdentity {
-        if (issuer == null || principal == null) {
-            throw new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID);
-        }
+        Require.notNull(
+                issuer,
+                () -> new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID));
+        Require.notNull(
+                principal,
+                () -> new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID));
     }
 
     public boolean hasVerifiedMobile() {

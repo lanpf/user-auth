@@ -42,6 +42,6 @@ public final class BrowserSessionAuthenticationFilter extends OncePerRequestFilt
                 new UsernamePasswordAuthenticationToken(
                         authenticatedSession,
                         null,
-                        SessionAuthenticationAuthorities.browserSession()));
+                        SessionAuthenticationAuthority.BROWSER_SESSION.authorities()));
     }
 }

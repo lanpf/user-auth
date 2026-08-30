@@ -11,9 +11,11 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties(prefix = "user-auth.authentication.login-session")
+@ConfigurationProperties(prefix = LoginSessionProperties.PREFIX)
 public class LoginSessionProperties {
+    public static final String PREFIX = "user-auth.authentication.login-session";
+
     @NotNull
-    @DurationMin(days = 1, message = "user-auth.authentication.login-session.ttl must be at least 1 day")
+    @DurationMin(days = 1, message = PREFIX + ".ttl must be at least 1 day")
     private Duration ttl = Duration.ofDays(30);
 }

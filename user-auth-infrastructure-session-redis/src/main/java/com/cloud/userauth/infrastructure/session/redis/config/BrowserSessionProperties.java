@@ -13,8 +13,9 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties("user-auth.authentication.browser-session")
+@ConfigurationProperties(BrowserSessionProperties.PREFIX)
 public class BrowserSessionProperties implements Namespaced {
+    public static final String PREFIX = "user-auth.authentication.browser-session";
     private String namespace;
 
     @NotNull
@@ -29,13 +30,13 @@ public class BrowserSessionProperties implements Namespaced {
     @DurationMin(seconds = 30)
     private Duration renewalThreshold = Duration.ofMinutes(10);
 
-    @AssertTrue(message = "browser session renewal-threshold must not exceed idle-ttl")
+    @AssertTrue(message = PREFIX + ".renewal-threshold must not exceed idle-ttl")
     public boolean isRenewalThresholdWithinIdleTtl() {
         return renewalThreshold == null || idleTtl == null
                 || renewalThreshold.compareTo(idleTtl) <= 0;
     }
 
-    @AssertTrue(message = "browser session idle-ttl must not exceed absolute-ttl")
+    @AssertTrue(message = PREFIX + ".idle-ttl must not exceed absolute-ttl")
     public boolean isIdleTtlWithinAbsoluteTtl() {
         return idleTtl == null || absoluteTtl == null
                 || idleTtl.compareTo(absoluteTtl) <= 0;

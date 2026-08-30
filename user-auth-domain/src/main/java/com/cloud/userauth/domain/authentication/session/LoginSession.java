@@ -1,15 +1,20 @@
 package com.cloud.userauth.domain.authentication.session;
 
-import com.cloud.userauth.domain.authentication.account.AuthAccountId;
+import com.cloud.framework.core.validation.Require;
 import com.cloud.framework.domain.AggregateRoot;
+import com.cloud.userauth.domain.authentication.account.AuthAccountId;
+import com.cloud.userauth.domain.authentication.credential.CredentialId;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
-import com.cloud.userauth.domain.authentication.credential.CredentialId;
 import com.cloud.userauth.domain.user.UserId;
-import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.Instant;
+
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class LoginSession implements AggregateRoot<SessionId> {
     private final SessionId id;
     private final UserId userId;
@@ -23,32 +28,6 @@ public class LoginSession implements AggregateRoot<SessionId> {
     private final Instant expiresAt;
     private Instant lastActiveAt;
 
-    private LoginSession(
-            SessionId id,
-            UserId userId,
-            AuthAccountId authAccountId,
-            CredentialId authenticatedCredentialId,
-            SessionStatus status,
-            LoginScene loginScene,
-            Device device,
-            Client client,
-            Instant issuedAt,
-            Instant expiresAt,
-            Instant lastActiveAt
-    ) {
-        this.id = id;
-        this.userId = userId;
-        this.authAccountId = authAccountId;
-        this.authenticatedCredentialId = authenticatedCredentialId;
-        this.status = status;
-        this.loginScene = loginScene;
-        this.device = device;
-        this.client = client;
-        this.issuedAt = issuedAt;
-        this.expiresAt = expiresAt;
-        this.lastActiveAt = lastActiveAt;
-    }
-
     public static LoginSession create(
             SessionId id,
             UserId userId,
@@ -60,9 +39,17 @@ public class LoginSession implements AggregateRoot<SessionId> {
             Instant issuedAt,
             Instant expiresAt
     ) {
-        if (authenticatedCredentialId == null || loginScene == null
-                || issuedAt == null || expiresAt == null || !expiresAt.isAfter(issuedAt)) {
-            throw new DomainException(DomainError.DOMAIN_FIELD_REQUIRED);
+        Require.notNull(id, DomainException::missingField);
+        Require.notNull(userId, DomainException::missingField);
+        Require.notNull(authAccountId, DomainException::missingField);
+        Require.notNull(authenticatedCredentialId, DomainException::missingField);
+        Require.notNull(loginScene, DomainException::missingField);
+        Require.notNull(device, DomainException::missingField);
+        Require.notNull(client, DomainException::missingField);
+        Require.notNull(issuedAt, DomainException::missingField);
+        Require.notNull(expiresAt, DomainException::missingField);
+        if (!expiresAt.isAfter(issuedAt)) {
+            throw new DomainException(DomainError.DOMAIN_OBJECT_STATE_INVALID);
         }
         return new LoginSession(
                 id,
@@ -105,11 +92,6 @@ public class LoginSession implements AggregateRoot<SessionId> {
             expire(now);
             throw new DomainException(DomainError.LOGIN_SESSION_INACTIVE);
         }
-    }
-
-    @Override
-    public SessionId id() {
-        return id;
     }
 
     public void touch(Instant now) {

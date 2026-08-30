@@ -1,6 +1,7 @@
-package com.cloud.userauth.interfaces.rest;
+package com.cloud.userauth.api.constants;
 
-public final class UserAuthRestPaths {
+public final class UserAuthPathApiConstants {
+    public static final String SERVICE_NAME = "user-auth";
     public static final String API_BASE_PATH = "/api/user-auth";
 
     public static final String API_CHALLENGES = API_BASE_PATH + "/challenges";
@@ -20,13 +21,11 @@ public final class UserAuthRestPaths {
 
     public static final String API_CREDENTIALS_BIND = API_CREDENTIALS + "/bind";
     public static final String API_LOGOUT = API_BASE_PATH + "/logout";
-
     public static final String API_HANDOFFS_EXCHANGE = API_HANDOFFS + "/exchange";
 
     public static final String ADMIN_BASE_PATH = "/admin/user-auth";
     public static final String ADMIN_AUTHORIZATION = ADMIN_BASE_PATH + "/authorization";
-    public static final String ADMIN_AUTHORIZATION_PERMISSIONS =
-            ADMIN_AUTHORIZATION + "/permissions";
+    public static final String ADMIN_AUTHORIZATION_PERMISSIONS = ADMIN_AUTHORIZATION + "/permissions";
     public static final String ADMIN_AUTHORIZATION_PERMISSIONS_ACTIVATE =
             ADMIN_AUTHORIZATION_PERMISSIONS + "/activate";
     public static final String ADMIN_AUTHORIZATION_PERMISSIONS_DISABLE =
@@ -36,14 +35,10 @@ public final class UserAuthRestPaths {
     public static final String ADMIN_AUTHORIZATION_PERMISSIONS_QUERY_PAGE =
             ADMIN_AUTHORIZATION_PERMISSIONS + "/query-page";
     public static final String ADMIN_AUTHORIZATION_ROLES = ADMIN_AUTHORIZATION + "/roles";
-    public static final String ADMIN_AUTHORIZATION_ROLES_ACTIVATE =
-            ADMIN_AUTHORIZATION_ROLES + "/activate";
-    public static final String ADMIN_AUTHORIZATION_ROLES_DISABLE =
-            ADMIN_AUTHORIZATION_ROLES + "/disable";
-    public static final String ADMIN_AUTHORIZATION_ROLES_QUERY =
-            ADMIN_AUTHORIZATION_ROLES + "/query";
-    public static final String ADMIN_AUTHORIZATION_ROLES_QUERY_PAGE =
-            ADMIN_AUTHORIZATION_ROLES + "/query-page";
+    public static final String ADMIN_AUTHORIZATION_ROLES_ACTIVATE = ADMIN_AUTHORIZATION_ROLES + "/activate";
+    public static final String ADMIN_AUTHORIZATION_ROLES_DISABLE = ADMIN_AUTHORIZATION_ROLES + "/disable";
+    public static final String ADMIN_AUTHORIZATION_ROLES_QUERY = ADMIN_AUTHORIZATION_ROLES + "/query";
+    public static final String ADMIN_AUTHORIZATION_ROLES_QUERY_PAGE = ADMIN_AUTHORIZATION_ROLES + "/query-page";
     public static final String ADMIN_AUTHORIZATION_CHANNEL_POLICIES =
             ADMIN_AUTHORIZATION + "/channel-policies";
     public static final String ADMIN_AUTHORIZATION_CHANNEL_POLICIES_ACTIVATE =
@@ -54,9 +49,8 @@ public final class UserAuthRestPaths {
             ADMIN_AUTHORIZATION_CHANNEL_POLICIES + "/reconciliation";
     public static final String ADMIN_AUTHORIZATION_CHANNEL_POLICIES_QUERY =
             ADMIN_AUTHORIZATION_CHANNEL_POLICIES + "/query";
-    public static final String ADMIN_AUTHORIZATION_USERS_QUERY =
-            ADMIN_AUTHORIZATION + "/users/query";
+    public static final String ADMIN_AUTHORIZATION_USERS_QUERY = ADMIN_AUTHORIZATION + "/users/query";
 
-    private UserAuthRestPaths() {
+    private UserAuthPathApiConstants() {
     }
 }

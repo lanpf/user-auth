@@ -1,5 +1,6 @@
 package com.cloud.userauth.interfaces.rest;
 
+import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import com.cloud.framework.core.ClientRequest;
 import com.cloud.framework.core.PaginationRequest;
 import com.cloud.framework.core.PageResult;
@@ -33,102 +34,102 @@ public class UserAuthorizationController {
     private final UserAuthorizationQueryFacade queryFacade;
     private final AuthorizationRestMapper mapper;
 
-    @PutMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_PERMISSIONS)
+    @PutMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_PERMISSIONS)
     public Result<PermissionApiResponse> savePermission(
             @Valid @RequestBody SavePermissionRequest request
     ) {
         return commandFacade.savePermission(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_PERMISSIONS_ACTIVATE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_PERMISSIONS_ACTIVATE)
     public Result<PermissionApiResponse> activatePermission(
             @Valid @RequestBody PermissionTargetRequest request
     ) {
         return commandFacade.activatePermission(mapper.toPermissionStatusCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_PERMISSIONS_DISABLE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_PERMISSIONS_DISABLE)
     public Result<PermissionApiResponse> disablePermission(
             @Valid @RequestBody PermissionTargetRequest request
     ) {
         return commandFacade.disablePermission(mapper.toPermissionStatusCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_PERMISSIONS_QUERY)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_PERMISSIONS_QUERY)
     public Result<PermissionApiResponse> getPermission(
             @Valid @RequestBody PermissionTargetRequest request
     ) {
         return queryFacade.getPermission(mapper.toQuery(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_PERMISSIONS_QUERY_PAGE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_PERMISSIONS_QUERY_PAGE)
     public PageResult<PermissionApiResponse> getPermissions(
             @Valid @RequestBody CatalogPageRequest request
     ) {
         return queryFacade.getPermissions(mapper.toQuery(request));
     }
 
-    @PutMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_ROLES)
+    @PutMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_ROLES)
     public Result<RoleApiResponse> saveRole(@Valid @RequestBody SaveRoleRequest request) {
         return commandFacade.saveRole(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_ROLES_ACTIVATE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_ROLES_ACTIVATE)
     public Result<RoleApiResponse> activateRole(@Valid @RequestBody RoleTargetRequest request) {
         return commandFacade.activateRole(mapper.toRoleStatusCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_ROLES_DISABLE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_ROLES_DISABLE)
     public Result<RoleApiResponse> disableRole(@Valid @RequestBody RoleTargetRequest request) {
         return commandFacade.disableRole(mapper.toRoleStatusCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_ROLES_QUERY)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_ROLES_QUERY)
     public Result<RoleApiResponse> getRole(@Valid @RequestBody RoleTargetRequest request) {
         return queryFacade.getRole(mapper.toQuery(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_ROLES_QUERY_PAGE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_ROLES_QUERY_PAGE)
     public PageResult<RoleApiResponse> getRoles(@Valid @RequestBody CatalogPageRequest request) {
         return queryFacade.getRoles(mapper.toQuery(request));
     }
 
-    @PutMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_CHANNEL_POLICIES)
+    @PutMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_CHANNEL_POLICIES)
     public Result<ChannelAuthorizationPolicyApiResponse> saveChannelPolicy(
             @Valid @RequestBody SavePolicyRequest request
     ) {
         return commandFacade.saveChannelPolicy(mapper.toCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_ACTIVATE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_ACTIVATE)
     public Result<ChannelAuthorizationPolicyApiResponse> activateChannelPolicy(
             @Valid @RequestBody VersionRequest request
     ) {
         return commandFacade.activateChannelPolicy(mapper.toStatusCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_DISABLE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_DISABLE)
     public Result<ChannelAuthorizationPolicyApiResponse> disableChannelPolicy(
             @Valid @RequestBody VersionRequest request
     ) {
         return commandFacade.disableChannelPolicy(mapper.toStatusCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_RECONCILIATION)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_RECONCILIATION)
     public Result<ReconcileChannelAuthorizationPolicyApiCommandOutput> reconcileChannelPolicy(
             @Valid @RequestBody ReconciliationRequest request
     ) {
         return commandFacade.reconcileChannelPolicy(mapper.toReconcileCommand(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_QUERY)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_QUERY)
     public Result<ChannelAuthorizationPolicyApiResponse> getChannelPolicy(
             @Valid @RequestBody ChannelTargetRequest request
     ) {
         return queryFacade.getChannelPolicy(mapper.toQuery(request));
     }
 
-    @PostMapping(UserAuthRestPaths.ADMIN_AUTHORIZATION_USERS_QUERY)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_USERS_QUERY)
     public Result<UserAuthorizationApiQueryView> getUserAuthorization(
             @Valid @RequestBody UserTargetRequest request
     ) {

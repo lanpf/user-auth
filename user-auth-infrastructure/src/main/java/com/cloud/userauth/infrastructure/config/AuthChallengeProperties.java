@@ -14,8 +14,9 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties(prefix = "user-auth.authentication.challenge")
+@ConfigurationProperties(prefix = AuthChallengeProperties.PREFIX)
 public class AuthChallengeProperties {
+    public static final String PREFIX = "user-auth.authentication.challenge";
     @NotBlank
     private String pepper;
 
@@ -27,16 +28,16 @@ public class AuthChallengeProperties {
     public static class IssuePolicyProperties {
         @NotNull
         @DurationMin(seconds = 1,
-                message = "user-auth.authentication.challenge.issue-policy.ttl must be at least 1 second")
+                message = PREFIX + ".issue-policy.ttl must be at least 1 second")
         private Duration ttl = Duration.ofMinutes(5);
 
         @NotNull
         @DurationMin(
                 seconds = 1,
-                message = "user-auth.authentication.challenge.issue-policy.reuse-window must be at least 1 second")
+                message = PREFIX + ".issue-policy.reuse-window must be at least 1 second")
         private Duration reuseWindow = Duration.ofSeconds(60);
 
-        @AssertTrue(message = "user-auth.authentication.challenge.issue-policy.reuse-window must not exceed ttl")
+        @AssertTrue(message = PREFIX + ".issue-policy.reuse-window must not exceed ttl")
         public boolean isReuseWindowWithinTtl() {
             return reuseWindow == null || ttl == null || reuseWindow.compareTo(ttl) <= 0;
         }

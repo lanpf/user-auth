@@ -1,5 +1,6 @@
 package com.cloud.userauth.infrastructure.oauth2.sas.grant.external;
 
+import com.cloud.userauth.infrastructure.oauth2.sas.protocol.SasOAuth2RequestMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -32,8 +33,8 @@ public final class ExternalIdentityGrantRequestParser {
                 booleanValue(single(request, ExternalIdentityGrantParameterNames.BIND_EXTERNAL_IDENTITY)));
         Set<ConstraintViolation<ExternalIdentityGrantRequest>> violations = validator.validate(parsed);
         if (!CollectionUtils.isEmpty(violations)) {
-            throw oauth2("OAuth2 parameter is invalid: "
-                    + violations.iterator().next().getPropertyPath());
+            throw oauth2(SasOAuth2RequestMessages.invalid(
+                    violations.iterator().next().getPropertyPath().toString()));
         }
         return parsed;
     }
@@ -44,7 +45,7 @@ public final class ExternalIdentityGrantRequestParser {
             return null;
         }
         if (values.length != 1) {
-            throw oauth2("OAuth2 parameter must occur at most once: " + name);
+            throw oauth2(SasOAuth2RequestMessages.atMostOnce(name));
         }
         return StringUtils.hasText(values[0]) ? values[0] : null;
     }
@@ -56,7 +57,7 @@ public final class ExternalIdentityGrantRequestParser {
         try {
             return Long.valueOf(value);
         } catch (NumberFormatException exception) {
-            throw oauth2("OAuth2 parameter must be a valid integer");
+            throw oauth2(SasOAuth2RequestMessages.integerRequired(value));
         }
     }
 
@@ -64,13 +65,13 @@ public final class ExternalIdentityGrantRequestParser {
         if (value == null) {
             return true;
         }
-        if ("true".equalsIgnoreCase(value)) {
+        if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
             return true;
         }
-        if ("false".equalsIgnoreCase(value)) {
+        if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
             return false;
         }
-        throw oauth2("OAuth2 parameter must be a boolean");
+        throw oauth2(SasOAuth2RequestMessages.booleanRequired(value));
     }
 
     private static OAuth2AuthenticationException oauth2(String description) {

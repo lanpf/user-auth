@@ -1,11 +1,15 @@
 package com.cloud.userauth.domain.authentication.credential;
 
+import com.cloud.framework.core.validation.Require;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Credential {
     private final CredentialId credentialId;
     private final CredentialType credentialType;
@@ -15,26 +19,6 @@ public class Credential {
     private Instant verifiedAt;
     private final Instant createdAt;
     private Instant updatedAt;
-
-    private Credential(
-            CredentialId credentialId,
-            CredentialType credentialType,
-            CredentialIssuer issuer,
-            Principal principal,
-            CredentialStatus status,
-            Instant verifiedAt,
-            Instant createdAt,
-            Instant updatedAt
-    ) {
-        this.credentialId = credentialId;
-        this.credentialType = credentialType;
-        this.issuer = issuer;
-        this.principal = principal;
-        this.status = status;
-        this.verifiedAt = verifiedAt;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
 
     public static Credential mobile(
             CredentialId credentialId,
@@ -59,7 +43,10 @@ public class Credential {
             Principal principal,
             Instant createdAt
     ) {
-        if (issuer == null || issuer.isLocal()) {
+        Require.notNull(
+                issuer,
+                () -> new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID));
+        if (issuer.isLocal()) {
             throw new DomainException(DomainError.AUTH_ACCOUNT_EXTERNAL_IDENTITY_INVALID);
         }
         return new Credential(

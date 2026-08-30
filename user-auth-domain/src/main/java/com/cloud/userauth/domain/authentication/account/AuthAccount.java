@@ -80,11 +80,6 @@ public class AuthAccount implements AggregateRoot<AuthAccountId> {
         return Collections.unmodifiableList(credentials);
     }
 
-    @Override
-    public AuthAccountId id() {
-        return id;
-    }
-
     public UserId userId() {
         return userId;
     }

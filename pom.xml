@@ -6,7 +6,7 @@
 
     <groupId>com.cloud</groupId>
     <artifactId>user-auth</artifactId>
-    <version>0.4.1-SNAPSHOT</version>
+    <version>0.4.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>user-auth</name>
@@ -37,9 +37,8 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
 
-        <framework-dependencies.version>0.2.0-SNAPSHOT</framework-dependencies.version>
-        <framework-bom.version>0.2.0-SNAPSHOT</framework-bom.version>
-        <framework-starter-bom.version>0.2.0-SNAPSHOT</framework-starter-bom.version>
+        <framework-dependencies.version>0.3.0-SNAPSHOT</framework-dependencies.version>
+        <framework-starter-dependencies.version>0.3.0-SNAPSHOT</framework-starter-dependencies.version>
     </properties>
 
     <dependencyManagement>
@@ -53,15 +52,8 @@
             </dependency>
             <dependency>
                 <groupId>com.cloud</groupId>
-                <artifactId>framework-bom</artifactId>
-                <version>${framework-bom.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.cloud</groupId>
-                <artifactId>framework-starter-bom</artifactId>
-                <version>${framework-starter-bom.version}</version>
+                <artifactId>framework-starter-dependencies</artifactId>
+                <version>${framework-starter-dependencies.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

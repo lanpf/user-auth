@@ -12,8 +12,9 @@ import java.time.Duration;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties("user-auth.authentication.oauth2.access-token")
+@ConfigurationProperties(AccessTokenProperties.PREFIX)
 public class AccessTokenProperties {
+    public static final String PREFIX = "user-auth.authentication.oauth2.access-token";
 
     @NotNull
     private Format format = Format.SELF_CONTAINED;

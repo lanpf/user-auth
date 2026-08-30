@@ -3,9 +3,12 @@ package com.cloud.userauth.domain.authorization;
 import com.cloud.framework.domain.AggregateRoot;
 import com.cloud.userauth.domain.user.UserId;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserPermissionGrant implements AggregateRoot<GrantId> {
     private final GrantId id;
     private final UserId userId;
@@ -17,14 +20,6 @@ public class UserPermissionGrant implements AggregateRoot<GrantId> {
     private final Instant expiresAt;
     private final String reason;
     private Instant updatedAt;
-
-    private UserPermissionGrant(GrantId id, UserId userId, PermissionCode permissionCode, GrantSource source,
-                                GrantStatus status, UserId grantedBy, Instant grantedAt,
-                                Instant expiresAt, String reason, Instant updatedAt) {
-        this.id = id; this.userId = userId; this.permissionCode = permissionCode; this.source = source; this.status = status;
-        this.grantedBy = grantedBy; this.grantedAt = grantedAt; this.expiresAt = expiresAt;
-        this.reason = reason; this.updatedAt = updatedAt;
-    }
 
     public static UserPermissionGrant grant(GrantId id, UserId userId, PermissionCode permissionCode, GrantSource source,
                                             UserId grantedBy, Instant grantedAt, Instant expiresAt, String reason) {
@@ -39,7 +34,6 @@ public class UserPermissionGrant implements AggregateRoot<GrantId> {
                 grantedBy, grantedAt, expiresAt, reason, updatedAt);
     }
 
-    @Override public GrantId id() { return id; }
     public boolean isActiveAt(Instant at) { return status == GrantStatus.ACTIVE && (expiresAt == null || at.isBefore(expiresAt)); }
     public void revoke(Instant revokedAt) { status = GrantStatus.REVOKED; updatedAt = revokedAt; }
 }

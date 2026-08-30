@@ -12,8 +12,9 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties("user-auth.authentication.session-handoff")
+@ConfigurationProperties(SessionHandoffProperties.PREFIX)
 public class SessionHandoffProperties implements Namespaced {
+    public static final String PREFIX = "user-auth.authentication.session-handoff";
     private String namespace;
 
     @NotNull

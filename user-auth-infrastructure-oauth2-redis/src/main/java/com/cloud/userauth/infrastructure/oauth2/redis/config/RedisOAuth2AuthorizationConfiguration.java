@@ -32,8 +32,7 @@ public class RedisOAuth2AuthorizationConfiguration {
             NamespaceResolver namespaceResolver
     ) {
         return new OAuth2AuthorizationRedisKeyResolver(
-                new NamespacedResourceNameResolver(namespaceResolver, properties),
-                properties.getScene());
+                new NamespacedResourceNameResolver(namespaceResolver, properties));
     }
 
     @Bean

@@ -3,15 +3,20 @@ package com.cloud.userauth.infrastructure.common;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.cloud.framework.core.error.BaseError;
 import com.cloud.userauth.application.common.ApplicationError;
 import com.cloud.userauth.domain.common.DomainError;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 class ErrorCodeAllocationTest {
     @Test
     void shouldAllocateDomainErrorsToSharedAndAggregateBlocks() {
         assertEquals(0, DomainError.DOMAIN_ENTITY_ID_INVALID.getLocalCode());
-        assertEquals(2, DomainError.DOMAIN_FIELD_REQUIRED.getLocalCode());
+        assertEquals(2, DomainError.DOMAIN_OBJECT_FIELD_REQUIRED.getLocalCode());
         assertRange(DomainError.AUTH_ACCOUNT_NOT_FOUND.getLocalCode(), 100, 149);
         assertRange(DomainError.AUTH_CHALLENGE_NOT_FOUND.getLocalCode(), 150, 199);
         assertRange(DomainError.LOGIN_ATTEMPT_NOT_FOUND.getLocalCode(), 200, 249);
@@ -45,6 +50,24 @@ class ErrorCodeAllocationTest {
                 assertRange(error.getLocalCode(), 800, 899);
             }
         }
+    }
+
+    @Test
+    void shouldKeepCompleteErrorCodesUniqueWithinUserAuth() {
+        List<BaseError> errors = Stream.of(
+                        Arrays.stream(DomainError.values()),
+                        Arrays.stream(ApplicationError.values()),
+                        Arrays.stream(InfrastructureError.values()))
+                .flatMap(stream -> stream)
+                .map(BaseError.class::cast)
+                .toList();
+        Set<String> completeCodes = errors.stream()
+                .map(BaseError::getErrorCode)
+                .collect(java.util.stream.Collectors.toSet());
+
+        assertEquals(errors.size(), completeCodes.size());
+        assertEquals("200000", DomainError.DOMAIN_ENTITY_ID_INVALID.getErrorCode());
+        assertTrue(errors.stream().allMatch(error -> error.getErrorCode().startsWith("200")));
     }
 
     private static void assertRange(int localCode, int lowerBound, int upperBound) {

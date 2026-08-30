@@ -5,6 +5,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import java.io.Serializable;
 import java.util.Objects;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,14 +23,10 @@ public class ChannelAuthorizationPolicyRoleDO {
     @Getter
     @Setter
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class Key implements Serializable {
         private String channelCode;
         private String roleCode;
-
-        public Key(String channelCode, String roleCode) {
-            this.channelCode = channelCode;
-            this.roleCode = roleCode;
-        }
 
         @Override
         public boolean equals(Object other) {

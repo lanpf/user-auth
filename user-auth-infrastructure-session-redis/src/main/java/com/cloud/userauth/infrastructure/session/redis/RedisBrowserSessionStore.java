@@ -17,6 +17,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
@@ -85,15 +86,17 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
             AuthenticatedSession authenticatedSession,
             Instant now
     ) {
-        return loginSessionRepository.findById(authenticatedSession.sessionId())
+        Instant parentExpiresAt = loginSessionRepository.findById(authenticatedSession.sessionId())
                 .filter(session -> session.getStatus() == SessionStatus.ACTIVE)
                 .filter(session -> session.getUserId().value().equals(authenticatedSession.userId()))
                 .filter(session -> session.getAuthAccountId().value()
                         .equals(authenticatedSession.authAccountId()))
                 .filter(session -> session.getExpiresAt().isAfter(now))
                 .map(LoginSession::getExpiresAt)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Cannot create browser session for an inactive login session"));
+                .orElse(null);
+        Assert.state(parentExpiresAt != null,
+                "Cannot create browser session for an inactive login session");
+        return parentExpiresAt;
     }
 
     private ResolvedSession refresh(String key, SessionData data) {

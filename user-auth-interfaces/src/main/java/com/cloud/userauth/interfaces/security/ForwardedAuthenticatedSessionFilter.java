@@ -27,7 +27,7 @@ public final class ForwardedAuthenticatedSessionFilter extends OncePerRequestFil
                     new UsernamePasswordAuthenticationToken(
                             new ForwardedAuthenticatedSession(userId, sessionId),
                             null,
-                            SessionAuthenticationAuthorities.hostSession()));
+                            SessionAuthenticationAuthority.HOST_SESSION.authorities()));
         }
         filterChain.doFilter(request, response);
     }

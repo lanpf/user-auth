@@ -3,6 +3,7 @@ package com.cloud.userauth.infrastructure.oauth2.sas.grant.mobileotp;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import com.cloud.userauth.infrastructure.oauth2.sas.protocol.SasOAuth2RequestMessages;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -49,9 +50,8 @@ public final class MobileOtpGrantRequestParser {
         try {
             return Long.valueOf(value);
         } catch (NumberFormatException exception) {
-            throw oauth2Exception(
-                    "OAuth2 parameter must be a valid integer: "
-                            + MobileOtpGrantParameterNames.CHALLENGE_ID);
+            throw oauth2Exception(SasOAuth2RequestMessages.integerRequired(
+                    MobileOtpGrantParameterNames.CHALLENGE_ID));
         }
     }
 
@@ -61,9 +61,8 @@ public final class MobileOtpGrantRequestParser {
         if (!CollectionUtils.isEmpty(violations)) {
             ConstraintViolation<MobileOtpGrantRequest> violation =
                     violations.iterator().next();
-            throw oauth2Exception(
-                    "OAuth2 parameter is invalid: "
-                            + violation.getPropertyPath());
+            throw oauth2Exception(SasOAuth2RequestMessages.invalid(
+                    violation.getPropertyPath().toString()));
         }
     }
 
@@ -76,8 +75,7 @@ public final class MobileOtpGrantRequestParser {
             return null;
         }
         if (values.length != 1) {
-            throw oauth2Exception(
-                    "OAuth2 parameter must occur at most once: " + name);
+            throw oauth2Exception(SasOAuth2RequestMessages.atMostOnce(name));
         }
         return StringUtils.hasText(values[0]) ? values[0] : null;
     }

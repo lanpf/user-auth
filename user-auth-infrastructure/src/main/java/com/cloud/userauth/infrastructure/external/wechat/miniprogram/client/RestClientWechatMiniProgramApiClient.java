@@ -12,9 +12,6 @@ import java.util.function.Supplier;
 
 @RequiredArgsConstructor
 public final class RestClientWechatMiniProgramApiClient implements WechatMiniProgramApiClient {
-    private static final String AUTHORIZATION_CODE = "authorization_code";
-    private static final String CLIENT_CREDENTIAL = "client_credential";
-
     private final RestClient restClient;
     private final WechatMiniProgramProperties properties;
 
@@ -22,12 +19,12 @@ public final class RestClientWechatMiniProgramApiClient implements WechatMiniPro
     public WechatStableAccessTokenPayload getStableAccessToken() {
         WechatStableAccessTokenRequest request =
                 new WechatStableAccessTokenRequest(
-                        CLIENT_CREDENTIAL,
+                        WechatMiniProgramApiConstants.CLIENT_CREDENTIAL_GRANT,
                         properties.getAppId(),
                         properties.getAppSecret(),
                         false);
         return execute(() -> restClient.post()
-                .uri("/cgi-bin/stable_token")
+                .uri(WechatMiniProgramApiConstants.STABLE_TOKEN_PATH)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -38,11 +35,12 @@ public final class RestClientWechatMiniProgramApiClient implements WechatMiniPro
     public WechatCode2SessionPayload exchangeLoginCode(String loginCode) {
         return execute(() -> restClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/sns/jscode2session")
-                        .queryParam("appid", properties.getAppId())
-                        .queryParam("secret", properties.getAppSecret())
-                        .queryParam("js_code", loginCode)
-                        .queryParam("grant_type", AUTHORIZATION_CODE)
+                        .path(WechatMiniProgramApiConstants.CODE_TO_SESSION_PATH)
+                        .queryParam(WechatMiniProgramApiConstants.APP_ID_PARAMETER, properties.getAppId())
+                        .queryParam(WechatMiniProgramApiConstants.SECRET_PARAMETER, properties.getAppSecret())
+                        .queryParam(WechatMiniProgramApiConstants.JS_CODE_PARAMETER, loginCode)
+                        .queryParam(WechatMiniProgramApiConstants.GRANT_TYPE_PARAMETER,
+                                WechatMiniProgramApiConstants.AUTHORIZATION_CODE_GRANT)
                         .build())
                 .retrieve()
                 .body(WechatCode2SessionPayload.class));
@@ -52,8 +50,8 @@ public final class RestClientWechatMiniProgramApiClient implements WechatMiniPro
     public WechatPhoneNumberPayload exchangePhoneCode(String accessToken, String phoneCode) {
         return execute(() -> restClient.post()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/wxa/business/getuserphonenumber")
-                        .queryParam("access_token", accessToken)
+                        .path(WechatMiniProgramApiConstants.PHONE_NUMBER_PATH)
+                        .queryParam(WechatMiniProgramApiConstants.ACCESS_TOKEN_PARAMETER, accessToken)
                         .build())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new WechatPhoneNumberRequest(phoneCode))

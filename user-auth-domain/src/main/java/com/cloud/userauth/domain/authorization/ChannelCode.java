@@ -1,18 +1,19 @@
 package com.cloud.userauth.domain.authorization;
 
-import com.cloud.framework.domain.EntityId;
-import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
+import com.cloud.userauth.domain.common.StringEntityId;
 
-public final class ChannelCode extends EntityId<String> {
+public final class ChannelCode extends StringEntityId {
     public ChannelCode(String value) {
-        super(validate(value));
+        super(value);
     }
 
-    private static String validate(String value) {
-        if (value == null || !value.trim().matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
-            throw new DomainException(DomainError.DOMAIN_FIELD_REQUIRED);
+    @Override
+    protected String validate(String value) {
+        String trimmed = super.validate(value);
+        if (!trimmed.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
+            throw DomainException.invalidEntityId();
         }
-        return value.trim();
+        return trimmed;
     }
 }

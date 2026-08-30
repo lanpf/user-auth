@@ -3,8 +3,8 @@ package com.cloud.userauth.interfaces.config;
 import com.cloud.userauth.application.port.BrowserSessionStore;
 import com.cloud.userauth.interfaces.security.ForwardedAuthenticatedSessionFilter;
 import com.cloud.userauth.interfaces.security.BrowserSessionAuthenticationFilter;
-import com.cloud.userauth.interfaces.security.SessionAuthenticationAuthorities;
-import com.cloud.userauth.interfaces.rest.UserAuthRestPaths;
+import com.cloud.userauth.interfaces.security.SessionAuthenticationAuthority;
+import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,41 +25,41 @@ public class ApplicationSecurityConfiguration {
     ) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
-                                UserAuthRestPaths.API_CHALLENGES,
-                                UserAuthRestPaths.API_LOGIN_MOBILE_OTP,
-                                UserAuthRestPaths.API_LOGIN_REFRESH,
-                                UserAuthRestPaths.API_LOGIN_PARTNER_TRUSTED_MOBILE,
-                                UserAuthRestPaths.API_LOGIN_EXTERNAL_PROOF,
-                                UserAuthRestPaths.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL,
-                                UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPT,
-                                UserAuthRestPaths.API_LOGIN_EXTERNAL_COMPLETE,
-                                UserAuthRestPaths.API_HANDOFFS_EXCHANGE,
+                                UserAuthPathApiConstants.API_CHALLENGES,
+                                UserAuthPathApiConstants.API_LOGIN_MOBILE_OTP,
+                                UserAuthPathApiConstants.API_LOGIN_REFRESH,
+                                UserAuthPathApiConstants.API_LOGIN_PARTNER_TRUSTED_MOBILE,
+                                UserAuthPathApiConstants.API_LOGIN_EXTERNAL_PROOF,
+                                UserAuthPathApiConstants.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL,
+                                UserAuthPathApiConstants.API_LOGIN_EXTERNAL_ATTEMPT,
+                                UserAuthPathApiConstants.API_LOGIN_EXTERNAL_COMPLETE,
+                                UserAuthPathApiConstants.API_HANDOFFS_EXCHANGE,
                                 "/actuator/health",
                                 "/actuator/info")
                         .permitAll()
                         .requestMatchers(
-                                UserAuthRestPaths.API_LOGOUT,
-                                UserAuthRestPaths.API_CREDENTIALS_BIND,
-                                UserAuthRestPaths.API_HANDOFFS)
-                        .hasAuthority(SessionAuthenticationAuthorities.HOST_SESSION)
-                        .requestMatchers(UserAuthRestPaths.ADMIN_AUTHORIZATION + "/**")
-                        .hasAuthority(SessionAuthenticationAuthorities.HOST_SESSION)
+                                UserAuthPathApiConstants.API_LOGOUT,
+                                UserAuthPathApiConstants.API_CREDENTIALS_BIND,
+                                UserAuthPathApiConstants.API_HANDOFFS)
+                        .hasAuthority(SessionAuthenticationAuthority.HOST_SESSION.getValue())
+                        .requestMatchers(UserAuthPathApiConstants.ADMIN_AUTHORIZATION + "/**")
+                        .hasAuthority(SessionAuthenticationAuthority.HOST_SESSION.getValue())
                         .anyRequest()
                         .denyAll())
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
-                        UserAuthRestPaths.API_CHALLENGES,
-                        UserAuthRestPaths.API_LOGIN_MOBILE_OTP,
-                        UserAuthRestPaths.API_LOGIN_REFRESH,
-                        UserAuthRestPaths.API_LOGIN_PARTNER_TRUSTED_MOBILE,
-                        UserAuthRestPaths.API_LOGIN_EXTERNAL_PROOF,
-                        UserAuthRestPaths.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL,
-                        UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPT,
-                        UserAuthRestPaths.API_LOGIN_EXTERNAL_COMPLETE,
-                        UserAuthRestPaths.API_HANDOFFS,
-                        UserAuthRestPaths.API_HANDOFFS_EXCHANGE,
-                        UserAuthRestPaths.API_LOGOUT,
-                        UserAuthRestPaths.API_CREDENTIALS_BIND,
-                        UserAuthRestPaths.ADMIN_AUTHORIZATION + "/**"));
+                        UserAuthPathApiConstants.API_CHALLENGES,
+                        UserAuthPathApiConstants.API_LOGIN_MOBILE_OTP,
+                        UserAuthPathApiConstants.API_LOGIN_REFRESH,
+                        UserAuthPathApiConstants.API_LOGIN_PARTNER_TRUSTED_MOBILE,
+                        UserAuthPathApiConstants.API_LOGIN_EXTERNAL_PROOF,
+                        UserAuthPathApiConstants.API_LOGIN_EXTERNAL_BOUND_CREDENTIAL,
+                        UserAuthPathApiConstants.API_LOGIN_EXTERNAL_ATTEMPT,
+                        UserAuthPathApiConstants.API_LOGIN_EXTERNAL_COMPLETE,
+                        UserAuthPathApiConstants.API_HANDOFFS,
+                        UserAuthPathApiConstants.API_HANDOFFS_EXCHANGE,
+                        UserAuthPathApiConstants.API_LOGOUT,
+                        UserAuthPathApiConstants.API_CREDENTIALS_BIND,
+                        UserAuthPathApiConstants.ADMIN_AUTHORIZATION + "/**"));
         http.addFilterBefore(forwardedAuthenticatedSessionFilter, AnonymousAuthenticationFilter.class);
         browserSessionAuthenticationFilter.ifAvailable(filter -> http.addFilterAfter(filter, ForwardedAuthenticatedSessionFilter.class));
 

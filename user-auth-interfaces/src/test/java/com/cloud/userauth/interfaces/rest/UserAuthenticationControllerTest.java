@@ -1,5 +1,6 @@
 package com.cloud.userauth.interfaces.rest;
 
+import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,7 +48,7 @@ class UserAuthenticationControllerTest {
         UserAuthenticationCommandFacade facade = new StubUserAuthenticationCommandFacade(capturedRequest);
         MockMvc mockMvc = mockMvc(facade);
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGIN_MOBILE_OTP)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_LOGIN_MOBILE_OTP)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "gateway-app")
                         .header(RequestHeader.CLIENT_PLATFORM, "WECHAT_MINI_PROGRAM")
@@ -92,7 +93,7 @@ class UserAuthenticationControllerTest {
         };
         MockMvc mockMvc = mockMvc(facade);
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGIN_REFRESH)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_LOGIN_REFRESH)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "gateway-app")
                         .content("{\"refreshToken\":\"refresh-1\",\"clientAppId\":\"forged-app\"}"))
@@ -120,7 +121,7 @@ class UserAuthenticationControllerTest {
         MockMvc mockMvc = mockMvc(facade);
 
         MvcResult result = mockMvc.perform(post(
-                        UserAuthRestPaths.API_LOGIN_PARTNER_TRUSTED_MOBILE)
+                        UserAuthPathApiConstants.API_LOGIN_PARTNER_TRUSTED_MOBILE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "partner-service")
                         .header(RequestHeader.CLIENT_PLATFORM, "SERVICE")
@@ -161,7 +162,7 @@ class UserAuthenticationControllerTest {
                 .setCustomArgumentResolvers(new ClientRequestArgumentResolver())
                 .build();
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_CREDENTIALS_BIND)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_CREDENTIALS_BIND)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "gateway-app")
                         .header(RequestHeader.CHANNEL_CODE, "DIRECT")
@@ -191,7 +192,7 @@ class UserAuthenticationControllerTest {
         UserAuthenticationCommandFacade facade = new StubUserAuthenticationCommandFacade(capturedRequest);
         MockMvc mockMvc = mockMvc(facade);
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGIN_MOBILE_OTP)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_LOGIN_MOBILE_OTP)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -212,7 +213,7 @@ class UserAuthenticationControllerTest {
                 new AtomicReference<>(), capturedRequest);
         MockMvc mockMvc = mockMvc(facade);
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGIN_EXTERNAL_ATTEMPT)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_ATTEMPT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "gateway-app")
                         .header(RequestHeader.CHANNEL_CODE, "DIRECT")
@@ -254,7 +255,7 @@ class UserAuthenticationControllerTest {
         };
         MockMvc mockMvc = mockMvc(facade);
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGIN_EXTERNAL_PROOF)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_LOGIN_EXTERNAL_PROOF)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "mini-program")
                         .header(RequestHeader.CLIENT_PLATFORM, "WECHAT_MINI_PROGRAM")
@@ -296,7 +297,7 @@ class UserAuthenticationControllerTest {
                 .setCustomArgumentResolvers(new ClientRequestArgumentResolver())
                 .build();
 
-        MvcResult result = mockMvc.perform(post(UserAuthRestPaths.API_LOGOUT)
+        MvcResult result = mockMvc.perform(post(UserAuthPathApiConstants.API_LOGOUT)
                         .header(RequestHeader.CLIENT_APP_ID, "gateway-app")
                         .header(RequestHeader.USER_ID, "1001")
                         .header(RequestHeader.SESSION_ID, "session-1"))

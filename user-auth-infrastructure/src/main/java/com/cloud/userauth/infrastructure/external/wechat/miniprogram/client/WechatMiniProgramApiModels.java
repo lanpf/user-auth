@@ -1,5 +1,7 @@
 package com.cloud.userauth.infrastructure.external.wechat.miniprogram.client;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 interface WechatMiniProgramApiPayload {
     Integer errorCode();
 
@@ -7,27 +9,27 @@ interface WechatMiniProgramApiPayload {
 }
 
 record WechatCode2SessionPayload(
-        String openId,
-        String sessionKey,
-        String unionId,
-        Integer errorCode,
-        String errorMessage
+        @JsonProperty(WechatMiniProgramApiConstants.OPEN_ID_PROPERTY) String openId,
+        @JsonProperty(WechatMiniProgramApiConstants.SESSION_KEY_PROPERTY) String sessionKey,
+        @JsonProperty(WechatMiniProgramApiConstants.UNION_ID_PROPERTY) String unionId,
+        @JsonProperty(WechatMiniProgramApiConstants.ERROR_CODE_PROPERTY) Integer errorCode,
+        @JsonProperty(WechatMiniProgramApiConstants.ERROR_MESSAGE_PROPERTY) String errorMessage
 ) implements WechatMiniProgramApiPayload {
 }
 
 record WechatStableAccessTokenRequest(
-        String grantType,
-        String appId,
+        @JsonProperty(WechatMiniProgramApiConstants.GRANT_TYPE_PARAMETER) String grantType,
+        @JsonProperty(WechatMiniProgramApiConstants.APP_ID_PARAMETER) String appId,
         String secret,
-        boolean forceRefresh
+        @JsonProperty(WechatMiniProgramApiConstants.FORCE_REFRESH_PROPERTY) boolean forceRefresh
 ) {
 }
 
 record WechatStableAccessTokenPayload(
-        String accessToken,
-        Long expiresIn,
-        Integer errorCode,
-        String errorMessage
+        @JsonProperty(WechatMiniProgramApiConstants.ACCESS_TOKEN_PARAMETER) String accessToken,
+        @JsonProperty(WechatMiniProgramApiConstants.EXPIRES_IN_PROPERTY) Long expiresIn,
+        @JsonProperty(WechatMiniProgramApiConstants.ERROR_CODE_PROPERTY) Integer errorCode,
+        @JsonProperty(WechatMiniProgramApiConstants.ERROR_MESSAGE_PROPERTY) String errorMessage
 ) implements WechatMiniProgramApiPayload {
 }
 
@@ -35,9 +37,9 @@ record WechatPhoneNumberRequest(String code) {
 }
 
 record WechatPhoneNumberPayload(
-        WechatPhoneInfo phoneInfo,
-        Integer errorCode,
-        String errorMessage
+        @JsonProperty(WechatMiniProgramApiConstants.PHONE_INFO_PROPERTY) WechatPhoneInfo phoneInfo,
+        @JsonProperty(WechatMiniProgramApiConstants.ERROR_CODE_PROPERTY) Integer errorCode,
+        @JsonProperty(WechatMiniProgramApiConstants.ERROR_MESSAGE_PROPERTY) String errorMessage
 ) implements WechatMiniProgramApiPayload {
 }
 

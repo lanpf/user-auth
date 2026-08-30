@@ -1,8 +1,8 @@
 package com.cloud.userauth.domain.authorization;
 
-import com.cloud.framework.domain.EntityId;
+import com.cloud.userauth.domain.common.LongEntityId;
 
-public final class GrantId extends EntityId<Long> {
+public final class GrantId extends LongEntityId {
     public GrantId(Long value) {
         super(value);
     }

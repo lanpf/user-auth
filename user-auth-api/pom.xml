@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.cloud</groupId>
         <artifactId>user-auth</artifactId>
-        <version>0.4.1-SNAPSHOT</version>
+        <version>0.4.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>user-auth-api</artifactId>
@@ -16,6 +16,11 @@
     <name>user-auth-api</name>
 
     <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>com.cloud</groupId>
             <artifactId>framework-core</artifactId>

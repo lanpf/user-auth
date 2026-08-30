@@ -78,11 +78,11 @@ class WechatMiniProgramPropertiesTest {
         MapConfigurationPropertySource source =
                 new MapConfigurationPropertySource();
         values.forEach((name, value) -> source.put(
-                "user-auth.authentication.external-identity.wechat-mini-program." + name,
+                WechatMiniProgramProperties.PREFIX + "." + name,
                 value));
         return new Binder(source)
                 .bind(
-                        "user-auth.authentication.external-identity.wechat-mini-program",
+                        WechatMiniProgramProperties.PREFIX,
                         Bindable.of(WechatMiniProgramProperties.class))
                 .orElseThrow(IllegalStateException::new);
     }

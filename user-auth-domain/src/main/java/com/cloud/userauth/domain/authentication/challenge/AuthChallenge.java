@@ -1,12 +1,16 @@
 package com.cloud.userauth.domain.authentication.challenge;
 
+import com.cloud.framework.core.validation.Require;
 import com.cloud.framework.domain.AggregateRoot;
 import com.cloud.userauth.domain.common.DomainError;
 import com.cloud.userauth.domain.common.DomainException;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AuthChallenge implements AggregateRoot<AuthChallengeId> {
     public static final int DEFAULT_MAX_ATTEMPTS = 5;
 
@@ -25,38 +29,6 @@ public class AuthChallenge implements AggregateRoot<AuthChallengeId> {
     private final Instant createdAt;
     private Instant updatedAt;
 
-    private AuthChallenge(
-            AuthChallengeId id,
-            AuthChallengeType type,
-            ChallengeTarget target,
-            AuthChallengeScene scene,
-            ChallengeSecretHash secretHash,
-            AuthChallengeStatus status,
-            Instant expiresAt,
-            Instant reusableUntil,
-            int attempts,
-            Instant verifiedAt,
-            ChallengeConsumerType consumedByType,
-            String consumedById,
-            Instant createdAt,
-            Instant updatedAt
-    ) {
-        this.id = id;
-        this.type = type;
-        this.target = target;
-        this.scene = scene;
-        this.secretHash = secretHash;
-        this.status = status;
-        this.expiresAt = expiresAt;
-        this.reusableUntil = reusableUntil;
-        this.attempts = attempts;
-        this.verifiedAt = verifiedAt;
-        this.consumedByType = consumedByType;
-        this.consumedById = consumedById;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-
     public static AuthChallenge issue(
             AuthChallengeId id,
             AuthChallengeType type,
@@ -67,11 +39,17 @@ public class AuthChallenge implements AggregateRoot<AuthChallengeId> {
             Instant expiresAt,
             Instant reusableUntil
     ) {
-        if (type == null || scene == null || issuedAt == null
-                || expiresAt == null || reusableUntil == null
-                || !expiresAt.isAfter(issuedAt) || !reusableUntil.isAfter(issuedAt)
+        Require.notNull(id, DomainException::missingField);
+        Require.notNull(type, DomainException::missingField);
+        Require.notNull(target, DomainException::missingField);
+        Require.notNull(scene, DomainException::missingField);
+        Require.notNull(secretHash, DomainException::missingField);
+        Require.notNull(issuedAt, DomainException::missingField);
+        Require.notNull(expiresAt, DomainException::missingField);
+        Require.notNull(reusableUntil, DomainException::missingField);
+        if (!expiresAt.isAfter(issuedAt) || !reusableUntil.isAfter(issuedAt)
                 || reusableUntil.isAfter(expiresAt)) {
-            throw new DomainException(DomainError.DOMAIN_FIELD_REQUIRED);
+            throw new DomainException(DomainError.DOMAIN_OBJECT_STATE_INVALID);
         }
         return new AuthChallenge(
                 id, type, target, scene, secretHash, AuthChallengeStatus.ISSUED,
@@ -141,7 +119,6 @@ public class AuthChallenge implements AggregateRoot<AuthChallengeId> {
             throw new DomainException(DomainError.AUTH_CHALLENGE_INVALID);
         }
         status = AuthChallengeStatus.VERIFIED;
-        verifiedAt = updatedAt;
     }
 
     public void consume(
@@ -158,12 +135,9 @@ public class AuthChallenge implements AggregateRoot<AuthChallengeId> {
         if (status != AuthChallengeStatus.VERIFIED) {
             throw new DomainException(DomainError.AUTH_CHALLENGE_INVALID);
         }
-        if (consumerType == null || consumerId == null) {
-            throw new DomainException(DomainError.DOMAIN_FIELD_REQUIRED);
-        }
         status = AuthChallengeStatus.CONSUMED;
-        consumedByType = consumerType;
-        consumedById = consumerId;
+        consumedByType = Require.notNull(consumerType, DomainException::missingField);
+        consumedById = Require.notBlank(consumerId, DomainException::missingField);
         updatedAt = consumedAt;
     }
 
@@ -171,10 +145,5 @@ public class AuthChallenge implements AggregateRoot<AuthChallengeId> {
         return status == AuthChallengeStatus.ISSUED
                 && now.isBefore(reusableUntil)
                 && now.isBefore(expiresAt);
-    }
-
-    @Override
-    public AuthChallengeId id() {
-        return id;
     }
 }

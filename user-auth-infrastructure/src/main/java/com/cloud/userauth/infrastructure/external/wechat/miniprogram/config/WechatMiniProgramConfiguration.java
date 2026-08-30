@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Import;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(
-        prefix = "user-auth.authentication.external-identity.wechat-mini-program",
+        prefix = WechatMiniProgramProperties.PREFIX,
         name = "enabled",
         havingValue = "true")
 @EnableConfigurationProperties(WechatMiniProgramProperties.class)

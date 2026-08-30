@@ -2,6 +2,7 @@ package com.cloud.userauth.infrastructure.oauth2.redis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.cloud.framework.core.naming.Namespaced;
 import com.cloud.framework.core.naming.NamespacedResourceNameResolver;
 import com.cloud.userauth.infrastructure.oauth2.redis.config.OAuth2AuthorizationStoreProperties;
 import org.junit.jupiter.api.Test;
@@ -9,16 +10,15 @@ import org.junit.jupiter.api.Test;
 class OAuth2AuthorizationRedisKeyResolverTest {
 
     @Test
-    void shouldResolveNamespaceAndDefaultOAuth2Scene() {
+    void shouldResolveNamespaceAndConfiguredOAuth2Scene() {
         OAuth2AuthorizationStoreProperties properties =
                 new OAuth2AuthorizationStoreProperties();
         properties.setNamespace("user-auth");
         OAuth2AuthorizationRedisKeyResolver resolver =
                 new OAuth2AuthorizationRedisKeyResolver(
                         new NamespacedResourceNameResolver(
-                                namespaced -> namespaced.getNamespace(),
-                                properties),
-                        properties.getScene());
+                                Namespaced::getNamespace,
+                                properties));
 
         assertEquals(
                 "user-auth:oauth2:{authorization-state}:authorization:authorization-1",
@@ -42,29 +42,10 @@ class OAuth2AuthorizationRedisKeyResolverTest {
                 new OAuth2AuthorizationRedisKeyResolver(
                         new NamespacedResourceNameResolver(
                                 namespaced -> "user-auth",
-                                properties),
-                        properties.getScene());
+                                properties));
 
         assertEquals(
                 "user-auth:oauth2:{authorization-state}:authorization:authorization-1",
-                resolver.authorization("authorization-1"));
-    }
-
-    @Test
-    void shouldLetRedisImplementationComposeConfiguredScene() {
-        OAuth2AuthorizationStoreProperties properties =
-                new OAuth2AuthorizationStoreProperties();
-        properties.setNamespace("user-auth");
-        properties.setScene("oauth2-login");
-        OAuth2AuthorizationRedisKeyResolver resolver =
-                new OAuth2AuthorizationRedisKeyResolver(
-                        new NamespacedResourceNameResolver(
-                                namespaced -> namespaced.getNamespace(),
-                                properties),
-                        properties.getScene());
-
-        assertEquals(
-                "user-auth:oauth2-login:{authorization-state}:authorization:authorization-1",
                 resolver.authorization("authorization-1"));
     }
 }

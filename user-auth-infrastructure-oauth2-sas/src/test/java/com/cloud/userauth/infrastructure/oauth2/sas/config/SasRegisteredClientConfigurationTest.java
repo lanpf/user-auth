@@ -157,6 +157,7 @@ class SasRegisteredClientConfigurationTest {
 
     private static AccessTokenProperties hostAccessTokenProperties() {
         AccessTokenProperties properties = new AccessTokenProperties();
+        properties.setFormat(AccessTokenProperties.Format.SELF_CONTAINED);
         properties.setTtl(Duration.ofMinutes(15));
         return properties;
     }

@@ -1,6 +1,7 @@
 package com.cloud.userauth.infrastructure.external.wechat.miniprogram.config;
 
 import com.cloud.framework.core.http.RestClientProperties;
+import com.cloud.userauth.infrastructure.config.ExternalIdentityProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,9 +15,12 @@ import org.springframework.validation.annotation.Validated;
 @Getter
 @Setter
 @Validated
-@ConfigurationProperties("user-auth.authentication.external-identity.wechat-mini-program")
+@ConfigurationProperties(WechatMiniProgramProperties.PREFIX)
 public class WechatMiniProgramProperties {
+    public static final String PREFIX = ExternalIdentityProperties.PREFIX + ".wechat-mini-program";
     private boolean enabled;
+    @NotBlank
+    private String baseUrl = "https://api.weixin.qq.com";
     @NotBlank
     private String appId;
     @NotBlank

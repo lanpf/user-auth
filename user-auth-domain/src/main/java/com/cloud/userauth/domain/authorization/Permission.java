@@ -1,7 +1,10 @@
 package com.cloud.userauth.domain.authorization;
 
+import com.cloud.framework.core.validation.Require;
 import com.cloud.framework.domain.AggregateRoot;
 import java.time.Instant;
+
+import com.cloud.userauth.domain.common.DomainException;
 import lombok.Getter;
 
 @Getter
@@ -16,8 +19,8 @@ public class Permission implements AggregateRoot<PermissionCode> {
     private Permission(PermissionCode permissionCode, String permissionName, String ownerService,
                        PermissionStatus status, Instant createdAt, Instant updatedAt) {
         this.permissionCode = permissionCode;
-        this.permissionName = requireText(permissionName);
-        this.ownerService = requireText(ownerService);
+        this.permissionName = Require.notBlank(permissionName, DomainException::missingField).trim();
+        this.ownerService = Require.notBlank(ownerService, DomainException::missingField).trim();
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -38,8 +41,8 @@ public class Permission implements AggregateRoot<PermissionCode> {
     public boolean isActive() { return status == PermissionStatus.ACTIVE; }
 
     public void updateProfile(String name, String service, Instant changedAt) {
-        permissionName = requireText(name);
-        ownerService = requireText(service);
+        permissionName = Require.notBlank(name, DomainException::missingField).trim();
+        ownerService = Require.notBlank(service, DomainException::missingField).trim();
         updatedAt = changedAt;
     }
 
@@ -51,13 +54,5 @@ public class Permission implements AggregateRoot<PermissionCode> {
     public void activate(Instant activatedAt) {
         status = PermissionStatus.ACTIVE;
         updatedAt = activatedAt;
-    }
-
-    private static String requireText(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            throw new com.cloud.userauth.domain.common.DomainException(
-                    com.cloud.userauth.domain.common.DomainError.DOMAIN_FIELD_REQUIRED);
-        }
-        return value.trim();
     }
 }

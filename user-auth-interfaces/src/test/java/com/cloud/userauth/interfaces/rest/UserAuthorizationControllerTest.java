@@ -1,5 +1,6 @@
 package com.cloud.userauth.interfaces.rest;
 
+import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -45,7 +46,7 @@ class UserAuthorizationControllerTest {
         MockMvc mockMvc = mockMvc(new StubQueryFacade(captured, new AtomicReference<>()));
 
         int status = mockMvc.perform(post(
-                        UserAuthRestPaths.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_QUERY)
+                        UserAuthPathApiConstants.ADMIN_AUTHORIZATION_CHANNEL_POLICIES_QUERY)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "admin-console")
                         .header(RequestHeader.CHANNEL_CODE, "HEADER_CHANNEL")
@@ -64,7 +65,7 @@ class UserAuthorizationControllerTest {
         MockMvc mockMvc = mockMvc(new StubQueryFacade(new AtomicReference<>(), captured));
 
         int status = mockMvc.perform(post(
-                        UserAuthRestPaths.ADMIN_AUTHORIZATION_USERS_QUERY)
+                        UserAuthPathApiConstants.ADMIN_AUTHORIZATION_USERS_QUERY)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "admin-console")
                         .header(RequestHeader.USER_ID, "1001")
@@ -82,7 +83,7 @@ class UserAuthorizationControllerTest {
         MockMvc mockMvc = mockMvc(new StubQueryFacade(new AtomicReference<>(), new AtomicReference<>()));
 
         int status = mockMvc.perform(post(
-                        UserAuthRestPaths.ADMIN_AUTHORIZATION_PERMISSIONS_QUERY_PAGE)
+                        UserAuthPathApiConstants.ADMIN_AUTHORIZATION_PERMISSIONS_QUERY_PAGE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header(RequestHeader.CLIENT_APP_ID, "admin-console")
                         .content("{\"pageNo\":1,\"pageSize\":201}"))
