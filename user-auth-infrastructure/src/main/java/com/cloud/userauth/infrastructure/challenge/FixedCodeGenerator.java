@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class FixedOneTimeCodeGenerator implements OneTimeCodeGenerator {
-    private final NonProductionAuthChallengeProperties properties;
+    private final String fixed;
 
     @Override
     public String generate() {
