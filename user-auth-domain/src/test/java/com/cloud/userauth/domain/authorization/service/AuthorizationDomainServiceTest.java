@@ -1,6 +1,5 @@
 package com.cloud.userauth.domain.authorization.service;
 
-import com.cloud.framework.domain.DomainEventId;
 import com.cloud.userauth.domain.authorization.GrantId;
 import com.cloud.userauth.domain.authorization.GrantSource;
 import com.cloud.userauth.domain.authorization.GrantSourceType;
@@ -35,7 +34,7 @@ class AuthorizationDomainServiceTest {
         InMemoryPermissions permissions = new InMemoryPermissions(Permission.register(code, "退款", "order", Instant.EPOCH));
         InMemoryPermissionGrants grants = new InMemoryPermissionGrants();
         AuthorizationDomainService service = new AuthorizationDomainService(new InMemoryRoles(), new InMemoryRoleGrants(),
-                permissions, grants, () -> new DomainEventId(1L));
+                permissions, grants);
         UserId userId = new UserId(10L);
         UserPermissionGrant grant = service.grantPermission(
                 userId, code, channelSource("mini-program"), new UserId(1L), Instant.EPOCH, null, "temporary");
@@ -49,7 +48,7 @@ class AuthorizationDomainServiceTest {
         InMemoryPermissions permissions = new InMemoryPermissions(Permission.register(code, "退款", "order", Instant.EPOCH));
         InMemoryPermissionGrants grants = new InMemoryPermissionGrants();
         AuthorizationDomainService service = new AuthorizationDomainService(new InMemoryRoles(), new InMemoryRoleGrants(),
-                permissions, grants, () -> new DomainEventId(1L));
+                permissions, grants);
         UserId userId = new UserId(10L);
 
         UserPermissionGrant miniProgram = service.grantPermission(

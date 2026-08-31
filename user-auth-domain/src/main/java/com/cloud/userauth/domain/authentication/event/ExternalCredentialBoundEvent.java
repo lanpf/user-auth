@@ -2,7 +2,6 @@ package com.cloud.userauth.domain.authentication.event;
 
 import com.cloud.userauth.domain.authentication.account.AuthAccountId;
 import com.cloud.framework.domain.AbstractDomainEvent;
-import com.cloud.framework.domain.DomainEventId;
 import com.cloud.userauth.domain.authentication.credential.CredentialIssuer;
 import com.cloud.userauth.domain.authentication.credential.Principal;
 import java.time.Instant;
@@ -15,13 +14,12 @@ public class ExternalCredentialBoundEvent extends AbstractDomainEvent {
     private final Principal principal;
 
     public ExternalCredentialBoundEvent(
-            DomainEventId eventId,
             Instant occurredAt,
             AuthAccountId authAccountId,
             CredentialIssuer issuer,
             Principal principal
     ) {
-        super(eventId, occurredAt);
+        super(occurredAt);
         this.authAccountId = authAccountId;
         this.issuer = issuer;
         this.principal = principal;

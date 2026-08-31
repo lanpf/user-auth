@@ -1,7 +1,6 @@
 package com.cloud.userauth.domain.authentication.event;
 
 import com.cloud.framework.domain.AbstractDomainEvent;
-import com.cloud.framework.domain.DomainEventId;
 import com.cloud.userauth.domain.authentication.credential.CredentialIssuer;
 import com.cloud.userauth.domain.authentication.credential.Principal;
 import com.cloud.userauth.domain.authentication.loginattempt.LoginAttemptId;
@@ -15,13 +14,12 @@ public class LoginAttemptCreatedEvent extends AbstractDomainEvent {
     private final Principal principal;
 
     public LoginAttemptCreatedEvent(
-            DomainEventId eventId,
             Instant occurredAt,
             LoginAttemptId loginAttemptId,
             CredentialIssuer issuer,
             Principal principal
     ) {
-        super(eventId, occurredAt);
+        super(occurredAt);
         this.loginAttemptId = loginAttemptId;
         this.issuer = issuer;
         this.principal = principal;

@@ -1,6 +1,5 @@
 package com.cloud.userauth.domain.authentication.service;
 
-import com.cloud.framework.domain.DomainEventIdGenerator;
 import com.cloud.userauth.domain.authentication.account.AuthAccount;
 import com.cloud.userauth.domain.authentication.account.AuthAccountId;
 import com.cloud.userauth.domain.authentication.credential.CredentialId;
@@ -18,12 +17,8 @@ import com.cloud.userauth.domain.common.DomainException;
 import com.cloud.userauth.domain.user.UserId;
 import java.time.Instant;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 public class AuthenticationDomainService {
-    private final DomainEventIdGenerator domainEventIdGenerator;
-
     public AuthAccountCreationEffect createAuthAccountWithMobile(
             AuthAccountId authAccountId,
             UserId userId,
@@ -36,7 +31,7 @@ public class AuthenticationDomainService {
         return new AuthAccountCreationEffect(
                 authAccount,
                 List.of(new AuthAccountCreatedEvent(
-                        domainEventIdGenerator.nextId(), createdAt, authAccount.id(), authAccount.userId()
+                        createdAt, authAccount.id(), authAccount.userId()
                 ))
         );
     }
@@ -72,7 +67,7 @@ public class AuthenticationDomainService {
         return new LoginAuthenticationEffect(
                 loginSession,
                 List.of(new UserLoggedInEvent(
-                        domainEventIdGenerator.nextId(), loggedInAt, authAccount.userId(), authAccount.id(), loginSession.id()
+                        loggedInAt, authAccount.userId(), authAccount.id(), loginSession.id()
                 ))
         );
     }

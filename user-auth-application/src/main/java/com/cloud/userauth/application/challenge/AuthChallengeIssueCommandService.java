@@ -26,8 +26,8 @@ public class AuthChallengeIssueCommandService {
 
     public IssueAuthChallengeOutput execute(IssueAuthChallengeCommand command) {
         ChallengeTarget target = ChallengeTarget.of(command.challengeType(), command.target());
-        return issueLock.execute(command.challengeType(), target, command.scene(),
-                () -> executeLocked(command, target));
+        return issueLock.execute(command.challengeType(), command.scene(),
+                target, () -> executeLocked(command, target));
     }
 
     private IssueAuthChallengeOutput executeLocked(

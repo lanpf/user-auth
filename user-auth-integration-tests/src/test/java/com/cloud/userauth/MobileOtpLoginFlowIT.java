@@ -9,9 +9,11 @@ import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommandOutput;
 import com.cloud.userauth.api.enums.AuthChallengeSceneApiEnum;
 import com.cloud.userauth.api.enums.AuthChallengeTypeApiEnum;
 import com.cloud.userauth.application.port.AuthChallengeDispatcher;
+import com.cloud.userauth.application.port.MobileOtpLoginLock;
 import com.cloud.userauth.application.port.UserGateway;
 import com.cloud.userauth.domain.authentication.challenge.AuthChallengeType;
 import com.cloud.userauth.domain.authentication.challenge.ChallengeTarget;
+import com.cloud.userauth.domain.authentication.credential.LoginMobile;
 import com.cloud.userauth.domain.user.UserId;
 import com.redis.testcontainers.RedisContainer;
 import lombok.extern.slf4j.Slf4j;
@@ -54,8 +56,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MobileOtpLoginFlowIT {
     private static final String MOBILE = "13800138000";
     private static final String CLIENT_APP_ID = "app";
-    private static final String REDIS_NAMESPACE = "user-auth-it";
-    private static final String REDIS_SCENE = "oauth2";
+    private static final String OAUTH2_NAMESPACE = "user-auth-it";
+    private static final String LOCK_NAMESPACE = "user-auth-lock-it";
+    private static final String SESSION_HANDOFF_NAMESPACE = "user-auth-session-it";
+    private static final String OAUTH2_RESOURCE_PREFIX = "oauth2:{authorization-state}";
 
     @Container
     private static final MySQLContainer<?> MYSQL =
@@ -121,6 +125,7 @@ class MobileOtpLoginFlowIT {
         assertThat(userProbe.initializedUserId()).isEqualTo(login.userId());
         assertDatabaseState(database, challenge.challengeId(), login);
         assertRedisState(redis, login);
+        assertLockNamespaceInjectedOnce();
 
         log.info(
                 "MySQL business observation: challenge={}, account={}, credential={}, "
@@ -180,6 +185,7 @@ class MobileOtpLoginFlowIT {
         assertThat(handoff.isSuccess()).isTrue();
         assertThat(handoff.getData()).isNotNull();
         assertThat(handoff.getData().ticket()).isNotBlank();
+        assertSessionHandoffNamespaceInjectedOnce(login, handoff.getData());
 
         restClient.post()
                 .uri("/api/user-auth/logout")
@@ -222,7 +228,7 @@ class MobileOtpLoginFlowIT {
                 REDIS.getContainerId(),
                 REDIS.getHost(),
                 REDIS.getRedisPort(),
-                REDIS_NAMESPACE + ":" + REDIS_SCENE + ":{authorization-state}:*",
+                OAUTH2_NAMESPACE + ":" + OAUTH2_RESOURCE_PREFIX + ":*",
                 challengeId,
                 login.userId(),
                 login.authAccountId(),
@@ -269,8 +275,9 @@ class MobileOtpLoginFlowIT {
                         "--spring.data.redis.port=" + REDIS.getRedisPort(),
                         "--user-auth.authentication.oauth2.access-token.format="
                                 + accessTokenFormat,
-                        "--user-auth.authentication.oauth2.authorization-store.namespace=" + REDIS_NAMESPACE,
-                        "--user-auth.authentication.oauth2.authorization-store.scene=" + REDIS_SCENE,
+                        "--user-auth.authentication.oauth2.authorization-store.namespace=" + OAUTH2_NAMESPACE,
+                        "--user-auth.authentication.session-handoff.namespace=" + SESSION_HANDOFF_NAMESPACE,
+                        "--framework.lock.redis.namespace=" + LOCK_NAMESPACE,
                         "--user-auth.authentication.oauth2.authorization-server.sas.issuer=http://127.0.0.1:"
                                 + serverPort,
                         "--user-auth.authentication.oauth2.authorization-server.sas.internal-token-client.token-endpoint="
@@ -389,7 +396,7 @@ class MobileOtpLoginFlowIT {
         StringRedisTemplate redis = context.getBean(StringRedisTemplate.class);
         String accessTokenHash = sha256(login.accessToken());
         String refreshTokenHash = sha256(login.refreshToken());
-        String prefix = REDIS_NAMESPACE + ":" + REDIS_SCENE + ":{authorization-state}:";
+        String prefix = OAUTH2_NAMESPACE + ":" + OAUTH2_RESOURCE_PREFIX + ":";
         String authorizationKey = prefix + "authorization:" + login.sessionId();
         String accessIndexKey = prefix + "access-token:" + accessTokenHash;
         String refreshIndexKey = prefix + "refresh-token:" + refreshTokenHash;
@@ -412,6 +419,36 @@ class MobileOtpLoginFlowIT {
                         && (storedAuthorization.contains(login.accessToken())
                         || storedAuthorization.contains(login.refreshToken())),
                 keys == null ? Set.of() : keys);
+    }
+
+    private void assertLockNamespaceInjectedOnce() throws Exception {
+        StringRedisTemplate redis = context.getBean(StringRedisTemplate.class);
+        MobileOtpLoginLock lock = context.getBean(MobileOtpLoginLock.class);
+        String expectedKey = LOCK_NAMESPACE + ":mobile-login:" + MOBILE;
+
+        lock.execute(new LoginMobile(MOBILE), () -> {
+            assertThat(redis.keys("*mobile-login*"))
+                    .containsExactly(expectedKey);
+            assertThat(expectedKey).doesNotContain(LOCK_NAMESPACE + ":" + LOCK_NAMESPACE);
+            return null;
+        });
+    }
+
+    private void assertSessionHandoffNamespaceInjectedOnce(
+            MobileOtpLoginApiCommandOutput login,
+            CreateSessionHandoffApiCommandOutput handoff
+    ) {
+        StringRedisTemplate redis = context.getBean(StringRedisTemplate.class);
+        String ticketKey = SESSION_HANDOFF_NAMESPACE + ":session-handoff:ticket:" + handoff.ticket();
+        String loginSessionKey = SESSION_HANDOFF_NAMESPACE
+                + ":session-handoff:login-session:" + login.sessionId();
+
+        assertThat(redis.keys("*session-handoff*"))
+                .containsExactlyInAnyOrder(ticketKey, loginSessionKey);
+        assertThat(ticketKey)
+                .doesNotContain(SESSION_HANDOFF_NAMESPACE + ":" + SESSION_HANDOFF_NAMESPACE);
+        assertThat(loginSessionKey)
+                .doesNotContain(SESSION_HANDOFF_NAMESPACE + ":" + SESSION_HANDOFF_NAMESPACE);
     }
 
     private static void assertDatabaseState(

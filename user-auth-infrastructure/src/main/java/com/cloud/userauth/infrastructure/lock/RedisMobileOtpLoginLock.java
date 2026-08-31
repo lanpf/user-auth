@@ -14,14 +14,13 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class RedisMobileOtpLoginLock implements MobileOtpLoginLock {
-    private static final String SCENE = "mobile-login";
     private static final Duration WAIT_TIME = Duration.ofSeconds(3);
 
     private final LockExecutor lockExecutor;
 
     @Override
     public <T> T execute(LoginMobile mobile, Supplier<T> action) {
-        LockContext context = new LockContext(SCENE, mobile.value(), WAIT_TIME);
+        LockContext context = new LockContext(WAIT_TIME, "mobile-login", mobile.value());
         try {
             return lockExecutor.execute(context, action::get)
                     .orElseThrow(() -> new ApplicationException(ApplicationError.APP_MOBILE_LOGIN_IN_PROGRESS));

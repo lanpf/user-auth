@@ -21,9 +21,7 @@ class RedisLockKeyTest {
         String result = lock.execute(new LoginMobile("13800138000"), () -> "completed");
 
         assertEquals("completed", result);
-        assertEquals("mobile-login", executor.context.scene());
-        assertEquals("13800138000", executor.context.key());
-        assertEquals("mobile-login:13800138000", executor.context.getLockName());
+        assertEquals("mobile-login:13800138000", String.join(":", executor.context.lockNames()));
     }
 
     @Test
@@ -33,16 +31,14 @@ class RedisLockKeyTest {
 
         String result = lock.execute(
                 AuthChallengeType.SMS_OTP,
-                new ChallengeTarget("13800138000"),
                 AuthChallengeScene.LOGIN,
+                new ChallengeTarget("13800138000"),
                 () -> "completed");
 
         assertEquals("completed", result);
-        assertEquals("challenge-issue", executor.context.scene());
-        assertEquals("SMS_OTP:LOGIN:13800138000", executor.context.key());
         assertEquals(
                 "challenge-issue:SMS_OTP:LOGIN:13800138000",
-                executor.context.getLockName());
+                String.join(":", executor.context.lockNames()));
     }
 
     @Test
@@ -53,10 +49,9 @@ class RedisLockKeyTest {
         String result = lock.execute("sensitive-refresh-token", () -> "completed");
 
         assertEquals("completed", result);
-        assertEquals("refresh-token-rotation", executor.context.scene());
         assertEquals(
-                "3b7bef4289af3728d9c1c6d5cd3362b289a5c7cd258cad35194b3eb188ae7d53",
-                executor.context.key());
+                "refresh-token-rotation:3b7bef4289af3728d9c1c6d5cd3362b289a5c7cd258cad35194b3eb188ae7d53",
+                String.join(":", executor.context.lockNames()));
     }
 
     private static final class CapturingLockExecutor implements LockExecutor {

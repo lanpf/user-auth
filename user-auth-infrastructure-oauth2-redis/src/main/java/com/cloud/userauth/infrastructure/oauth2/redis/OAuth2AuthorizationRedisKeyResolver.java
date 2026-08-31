@@ -1,14 +1,17 @@
 package com.cloud.userauth.infrastructure.oauth2.redis;
 
 import com.cloud.framework.core.naming.ResourceNameResolver;
-import lombok.RequiredArgsConstructor;
+import com.cloud.framework.starter.autoconfigure.naming.AbstractKeyResolver;
 
-@RequiredArgsConstructor
-public class OAuth2AuthorizationRedisKeyResolver {
-    private static final String SCENE = "oauth2";
-    private static final String AUTHORIZATION_STATE_HASH_TAG = "{authorization-state}";
+public class OAuth2AuthorizationRedisKeyResolver extends AbstractKeyResolver {
+    public OAuth2AuthorizationRedisKeyResolver(ResourceNameResolver resourceNameResolver) {
+        super(resourceNameResolver);
+    }
 
-    private final ResourceNameResolver resourceNameResolver;
+    @Override
+    protected String[] prefixes() {
+        return new String[]{"oauth2", "{authorization-state}"};
+    }
 
     String authorization(String authorizationId) {
         return resolve("authorization", authorizationId);
@@ -24,11 +27,6 @@ public class OAuth2AuthorizationRedisKeyResolver {
 
     String refreshTokenHistory(String tokenHash) {
         return resolve("refresh-token-history", nullableKeyPart(tokenHash));
-    }
-
-    private String resolve(String type, String key) {
-        return resourceNameResolver.resolve(
-                SCENE + ":" + AUTHORIZATION_STATE_HASH_TAG + ":" + type + ":" + key);
     }
 
     private static String nullableKeyPart(String value) {

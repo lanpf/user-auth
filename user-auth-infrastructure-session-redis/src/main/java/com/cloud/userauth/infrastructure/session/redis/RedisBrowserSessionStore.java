@@ -26,7 +26,7 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
 
     private final BrowserSessionProperties properties;
     private final StringRedisTemplate redisTemplate;
-    private final RedisBrowserSessionKeyResolver keyResolver;
+    private final BrowserSessionKeyResolver keyResolver;
     private final LoginSessionRepository loginSessionRepository;
     private final Clock clock;
 

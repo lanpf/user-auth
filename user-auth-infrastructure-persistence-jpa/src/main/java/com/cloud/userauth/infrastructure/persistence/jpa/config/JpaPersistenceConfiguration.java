@@ -47,7 +47,7 @@ public class JpaPersistenceConfiguration {
     @Bean @ConditionalOnMissingBean
     LoginAttemptPersistenceRepository loginAttemptPersistenceRepository(LoginAttemptJpaRepository r, UserAuthPersistenceMapper m) { return new LoginAttemptJpaPersistenceRepository(r, m); }
     @Bean @ConditionalOnMissingBean
-    DomainEventJpaPersistenceRepository storedDomainEventPersistenceRepository(DomainEventJpaRepository r, DomainEventPersistenceMapper m) { return new DomainEventJpaPersistenceRepository(r, m); }
+    DomainEventJpaPersistenceRepository domainEventEnvelopePersistenceRepository(DomainEventJpaRepository r, DomainEventPersistenceMapper m) { return new DomainEventJpaPersistenceRepository(r, m); }
 
     @Bean
     @ConditionalOnMissingBean

@@ -3,8 +3,6 @@ package com.cloud.userauth.application.authorization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.cloud.framework.domain.DomainEventId;
-import com.cloud.framework.domain.DomainEventIdGenerator;
 import com.cloud.userauth.domain.authorization.Permission;
 import com.cloud.userauth.domain.authorization.PermissionCode;
 import com.cloud.userauth.domain.authorization.PermissionRepository;
@@ -64,10 +62,7 @@ class AuthorizationCatalogCommandServiceTest {
                 roles,
                 emptyRoleGrants(),
                 permissions,
-                emptyPermissionGrants(),
-                new DomainEventIdGenerator() {
-                    @Override public DomainEventId nextId() { return new DomainEventId(1L); }
-                });
+                emptyPermissionGrants());
         return new AuthorizationCatalogCommandService(
                 permissions, roles, domainService, Clock.fixed(NOW, ZoneOffset.UTC));
     }

@@ -19,7 +19,7 @@ public final class RedisSessionHandoffStore implements SessionHandoffStore {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final StringRedisTemplate redisTemplate;
-    private final RedisSessionHandoffKeyResolver keyResolver;
+    private final SessionHandoffKeyResolver keyResolver;
 
     @Override
     public IssuedTicket issue(

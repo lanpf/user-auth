@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cloud.framework.domain.DomainEvent;
-import com.cloud.framework.domain.DomainEventId;
 import com.cloud.userauth.domain.authentication.account.AuthAccountId;
 import com.cloud.userauth.domain.authentication.credential.CredentialId;
 import com.cloud.userauth.domain.authentication.event.UserLoggedOutEvent;
@@ -37,7 +36,7 @@ class LogoutCommandServiceTest {
         LogoutCommandService service = new LogoutCommandService(
                 sessions,
                 List.of(revokedArtifacts::add, revokedArtifacts::add, revokedArtifacts::add),
-                new SessionDomainService(() -> new DomainEventId(1L)),
+                new SessionDomainService(),
                 events::addAll,
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
@@ -60,7 +59,7 @@ class LogoutCommandServiceTest {
         LogoutCommandService service = new LogoutCommandService(
                 sessions,
                 List.of(ignored -> { }),
-                new SessionDomainService(() -> new DomainEventId(1L)),
+                new SessionDomainService(),
                 events::addAll,
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
@@ -78,7 +77,7 @@ class LogoutCommandServiceTest {
         LogoutCommandService service = new LogoutCommandService(
                 sessions,
                 List.of(),
-                new SessionDomainService(() -> new DomainEventId(1L)),
+                new SessionDomainService(),
                 events::addAll,
                 Clock.fixed(NOW, ZoneOffset.UTC));
 

@@ -1,15 +1,14 @@
 package com.cloud.userauth.infrastructure.challenge;
 
 import com.cloud.userauth.application.port.OneTimeCodeGenerator;
-import com.cloud.userauth.infrastructure.config.NonProductionAuthChallengeProperties;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class FixedOneTimeCodeGenerator implements OneTimeCodeGenerator {
-    private final String fixed;
+public class FixedCodeGenerator implements OneTimeCodeGenerator {
+    private final String fixedCode;
 
     @Override
     public String generate() {
-        return properties.getFixedCode();
+        return fixedCode;
     }
 }

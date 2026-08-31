@@ -3,7 +3,6 @@ package com.cloud.userauth.application.authorization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.cloud.framework.domain.DomainEventId;
 import com.cloud.userauth.domain.authorization.ChannelAuthorizationPolicy;
 import com.cloud.userauth.domain.authorization.ChannelAuthorizationPolicyRepository;
 import com.cloud.userauth.domain.authorization.ChannelCode;
@@ -54,10 +53,8 @@ class ChannelAuthorizationPolicySynchronizationServiceTest {
         PermissionGrants permissionGrants = new PermissionGrants();
         Policies policies = new Policies();
         Applications applications = new Applications();
-        AtomicLong eventIds = new AtomicLong();
         AuthorizationDomainService domainService = new AuthorizationDomainService(
-                roles, roleGrants, permissions, permissionGrants,
-                () -> new DomainEventId(eventIds.incrementAndGet()));
+                roles, roleGrants, permissions, permissionGrants);
         ChannelAuthorizationPolicy policy = ChannelAuthorizationPolicy.draft(
                 new ChannelCode("PARTNER_A"), List.of(roleCode), List.of(directPermission), NOW);
         policy.activate(1L, NOW);

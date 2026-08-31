@@ -11,7 +11,6 @@ public enum IdGeneratorScene {
     CREDENTIAL("credential"),
     AUTH_CHALLENGE("auth_challenge"),
     REGISTRATION_PROCESS("registration_process"),
-    DOMAIN_EVENT("domain_event"),
     USER_ROLE_GRANT("user_role_grant"),
     USER_PERMISSION_GRANT("user_permission_grant");
 

@@ -3,7 +3,7 @@ package com.cloud.userauth.infrastructure.persistence.jpa.config;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.cloud.framework.starter.domain.eventstore.persistence.StoredDomainEventPersistenceRepository;
+import com.cloud.framework.starter.domain.eventstore.persistence.DomainEventEnvelopePersistenceRepository;
 import com.cloud.userauth.infrastructure.persistence.jpa.repository.DomainEventJpaPersistenceRepository;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,7 +36,7 @@ class SharedInfrastructurePersistenceBoundaryTest {
         assertFalse(containsSourceText(
                 Path.of("..", "user-auth-application", "src", "main", "java"),
                 "com.cloud.framework.starter.domain.eventstore"));
-        assertTrue(StoredDomainEventPersistenceRepository.class
+        assertTrue(DomainEventEnvelopePersistenceRepository.class
                 .isAssignableFrom(DomainEventJpaPersistenceRepository.class));
     }
 

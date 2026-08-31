@@ -5,7 +5,7 @@ import com.cloud.userauth.domain.authentication.challenge.AuthChallengeType;
 
 public record IssueAuthChallengeCommand(
         AuthChallengeType challengeType,
-        String target,
-        AuthChallengeScene scene
-) {
+        AuthChallengeScene scene,
+        String target
+        ) {
 }

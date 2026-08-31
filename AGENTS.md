@@ -1,4 +1,4 @@
-<!-- engineering-standards:begin version=2.0.8 -->
+<!-- engineering-standards:begin version=2.1.6 -->
 ## Shared engineering guidance
 
 - **STD-HIERARCHY-001** — Shared rules apply to every project; service rules additionally apply to service projects, and project-specific authoritative documents may only add or tighten constraints.
@@ -13,14 +13,10 @@
 
 ## Skill routing
 
-- Creating, modifying, refactoring, or reviewing Java language and common-tool code: use `$develop-java-code`.
-- Changing Maven dependencies, versions, scopes, BOMs, starters, modules, or runtime implementations: use `$manage-maven-dependencies`.
-- Creating, modifying, reviewing, or diagnosing unit, contract, or service integration tests: use `$test-service`.
-- Adding or reviewing layered service modules, contracts, domain behavior, adapters, protocols, data carriers, or naming: use `$develop-layered-service`.
-- Implementing or reviewing distributed identifiers, locking, event publication, or message consumption: use `$develop-distributed-capabilities`.
+- Developing, changing, or reviewing service code under the shared engineering standards during development: use `$develop-service-code`.
+- Implementing or reviewing cross-instance locking, reliable event publication, message consumption, partitioning, dead letters, delayed messages, or related failure handling.: use `$develop-distributed-capabilities`.
 - Designing, implementing, or reviewing compensation, reconciliation, repair, cleanup, batch recovery, or fallback workflows: use `$develop-compensation-workflows`.
-- Designing, implementing, migrating, or reviewing repositories, transactions, schemas, constraints, queries, or persistence mappings: use `$develop-service-persistence`.
-- Allocating, changing, documenting, or reviewing service error codes: use `$manage-service-error-codes`.
+- Writing, running, or reviewing integration tests in the smoke-test phase: use `$test-integration`.
 - Planning or applying coordinated standards-driven layered service refactors: use `$refactor-layered-service`.
 
 <!-- engineering-standards:end -->

@@ -2,7 +2,7 @@ package com.cloud.userauth.api.constants;
 
 public final class UserAuthPathApiConstants {
     public static final String SERVICE_NAME = "user-auth";
-    public static final String API_BASE_PATH = "/api/user-auth";
+    public static final String API_BASE_PATH = "/api";
 
     public static final String API_CHALLENGES = API_BASE_PATH + "/challenges";
     public static final String API_LOGIN = API_BASE_PATH + "/login";
@@ -23,7 +23,7 @@ public final class UserAuthPathApiConstants {
     public static final String API_LOGOUT = API_BASE_PATH + "/logout";
     public static final String API_HANDOFFS_EXCHANGE = API_HANDOFFS + "/exchange";
 
-    public static final String ADMIN_BASE_PATH = "/admin/user-auth";
+    public static final String ADMIN_BASE_PATH = "/admin";
     public static final String ADMIN_AUTHORIZATION = ADMIN_BASE_PATH + "/authorization";
     public static final String ADMIN_AUTHORIZATION_PERMISSIONS = ADMIN_AUTHORIZATION + "/permissions";
     public static final String ADMIN_AUTHORIZATION_PERMISSIONS_ACTIVATE =

@@ -1,6 +1,6 @@
 package com.cloud.userauth;
 
-import com.cloud.framework.domain.DomainEventId;
+import com.cloud.userauth.application.port.AuthChallengeIssuePolicy;
 import com.cloud.userauth.application.challenge.AuthChallengeIssueCommandService;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeCommand;
 import com.cloud.userauth.application.challenge.IssueAuthChallengeOutput;
@@ -34,7 +34,7 @@ import com.cloud.userauth.domain.authentication.session.LoginScene;
 import com.cloud.userauth.domain.authentication.session.LoginSession;
 import com.cloud.userauth.domain.authentication.session.SessionId;
 import com.cloud.userauth.domain.user.UserId;
-import com.cloud.userauth.infrastructure.challenge.FixedOneTimeCodeGenerator;
+import com.cloud.userauth.infrastructure.challenge.FixedCodeGenerator;
 import com.cloud.userauth.infrastructure.challenge.PropertiesAuthChallengePolicyProvider;
 import com.cloud.userauth.infrastructure.config.AuthChallengeProperties;
 import com.cloud.userauth.infrastructure.config.NonProductionAuthChallengeProperties;
@@ -60,7 +60,7 @@ class MobileRegistrationRetryIT {
     void shouldUseRefreshedFixedOneTimeCodeWithoutRecreatingGenerator() {
         NonProductionAuthChallengeProperties properties = new NonProductionAuthChallengeProperties();
         properties.setFixedCode("123456");
-        FixedOneTimeCodeGenerator generator = new FixedOneTimeCodeGenerator(properties);
+        FixedCodeGenerator generator = new FixedCodeGenerator(properties.getFixedCode());
 
         assertEquals("123456", generator.generate());
 
@@ -85,13 +85,13 @@ class MobileRegistrationRetryIT {
                 java.time.Clock.systemUTC());
 
         IssueAuthChallengeOutput first = service.execute(new IssueAuthChallengeCommand(
-                AuthChallengeType.SMS_OTP, "13800138000", AuthChallengeScene.LOGIN));
+                AuthChallengeType.SMS_OTP, AuthChallengeScene.LOGIN, "13800138000"));
         AuthChallenge firstChallenge = challenges.findById(new AuthChallengeId(first.challengeId())).orElseThrow();
 
         properties.getIssuePolicy().setTtl(java.time.Duration.ofMinutes(3));
         properties.getIssuePolicy().setReuseWindow(java.time.Duration.ofSeconds(30));
         IssueAuthChallengeOutput second = service.execute(new IssueAuthChallengeCommand(
-                AuthChallengeType.SMS_OTP, "13900139000", AuthChallengeScene.LOGIN));
+                AuthChallengeType.SMS_OTP, AuthChallengeScene.LOGIN, "13900139000"));
         AuthChallenge secondChallenge = challenges.findById(new AuthChallengeId(second.challengeId())).orElseThrow();
 
         assertEquals(java.time.Duration.ofMinutes(5), java.time.Duration.between(
@@ -123,7 +123,7 @@ class MobileRegistrationRetryIT {
         };
         Services services = services(challenges, accounts, registrations, sessions, hasher, gateway);
         IssueAuthChallengeCommand issue = new IssueAuthChallengeCommand(
-                AuthChallengeType.SMS_OTP, "13800138000", AuthChallengeScene.LOGIN);
+                AuthChallengeType.SMS_OTP, AuthChallengeScene.LOGIN, "13800138000");
 
         IssueAuthChallengeOutput firstIssue = services.challengeService().execute(issue);
         IssueAuthChallengeOutput repeatedIssue = services.challengeService().execute(issue);
@@ -228,7 +228,7 @@ class MobileRegistrationRetryIT {
                         (type, target, secret) -> {
                         },
                         AuthChallengeIssueLock.direct(),
-                        () -> new com.cloud.userauth.application.port.AuthChallengeIssuePolicy(
+                        () -> new AuthChallengeIssuePolicy(
                                 java.time.Duration.ofMinutes(5),
                                 java.time.Duration.ofSeconds(60)),
                         java.time.Clock.systemUTC()),
@@ -244,13 +244,12 @@ class MobileRegistrationRetryIT {
     ) {
         AtomicLong userIds = new AtomicLong(100_000);
         AtomicLong credentialIds = new AtomicLong(10_000);
-        AtomicLong eventIds = new AtomicLong(20_000);
         return new MobileOtpLoginTransactionService(
                 challenges, registrations, accounts, sessions,
                 () -> new UserId(userIds.incrementAndGet()),
                 () -> new CredentialId(credentialIds.incrementAndGet()),
                 hasher,
-                new AuthenticationDomainService(() -> new DomainEventId(eventIds.incrementAndGet())),
+                new AuthenticationDomainService(),
                 events -> {
                 },
                 java.time.Clock.systemUTC(),

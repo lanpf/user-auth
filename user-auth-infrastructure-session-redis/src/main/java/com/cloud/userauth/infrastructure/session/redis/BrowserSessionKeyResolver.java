@@ -3,8 +3,8 @@ package com.cloud.userauth.infrastructure.session.redis;
 import com.cloud.framework.core.naming.ResourceNameResolver;
 import com.cloud.framework.starter.autoconfigure.naming.AbstractKeyResolver;
 
-public class RedisBrowserSessionKeyResolver extends AbstractKeyResolver {
-    public RedisBrowserSessionKeyResolver(ResourceNameResolver resourceNameResolver) {
+public class BrowserSessionKeyResolver extends AbstractKeyResolver {
+    public BrowserSessionKeyResolver(ResourceNameResolver resourceNameResolver) {
         super(resourceNameResolver);
     }
 

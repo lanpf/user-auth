@@ -1,6 +1,5 @@
 package com.cloud.userauth.infrastructure.config;
 
-import com.cloud.framework.domain.DomainEventIdGenerator;
 import com.cloud.framework.domain.DomainEventStore;
 import com.cloud.framework.id.LongIdGenerator;
 import com.cloud.framework.lock.LockExecutor;
@@ -60,7 +59,6 @@ import com.cloud.userauth.infrastructure.challenge.PropertiesAuthChallengePolicy
 import com.cloud.userauth.infrastructure.external.DefaultExternalIdentityVerifierRegistry;
 import com.cloud.userauth.infrastructure.external.DefaultIssuerMobileTrustPolicyProvider;
 import com.cloud.userauth.infrastructure.id.CredentialIdGeneratorAdapter;
-import com.cloud.userauth.infrastructure.id.DomainEventIdGeneratorAdapter;
 import com.cloud.userauth.infrastructure.id.UserIdGeneratorAdapter;
 import com.cloud.userauth.infrastructure.lock.RedisAuthChallengeIssueLock;
 import com.cloud.userauth.infrastructure.lock.RedisMobileOtpLoginLock;
@@ -274,39 +272,28 @@ public class UserAuthConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public DomainEventIdGenerator domainEventIdGenerator(LongIdGenerator idGenerator) {
-        return new DomainEventIdGeneratorAdapter(idGenerator);
+    public AuthenticationDomainService authenticationDomainService() {
+        return new AuthenticationDomainService();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public AuthenticationDomainService authenticationDomainService(
-            DomainEventIdGenerator domainEventIdGenerator
-    ) {
-        return new AuthenticationDomainService(domainEventIdGenerator);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public SessionDomainService sessionDomainService(DomainEventIdGenerator domainEventIdGenerator) {
-        return new SessionDomainService(domainEventIdGenerator);
+    public SessionDomainService sessionDomainService() {
+        return new SessionDomainService();
     }
 
     @Bean
     @ConditionalOnMissingBean
     public CredentialDomainService credentialDomainService(
-            AuthAccountRepository authAccountRepository,
-            DomainEventIdGenerator domainEventIdGenerator
+            AuthAccountRepository authAccountRepository
     ) {
-        return new CredentialDomainService(authAccountRepository, domainEventIdGenerator);
+        return new CredentialDomainService(authAccountRepository);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ExternalIdentityDomainService externalIdentityDomainService(
-            DomainEventIdGenerator domainEventIdGenerator
-    ) {
-        return new ExternalIdentityDomainService(domainEventIdGenerator);
+    public ExternalIdentityDomainService externalIdentityDomainService() {
+        return new ExternalIdentityDomainService();
     }
 
     @Bean
@@ -315,15 +302,13 @@ public class UserAuthConfiguration {
             RoleRepository roleRepository,
             UserRoleGrantRepository roleGrantRepository,
             PermissionRepository permissionRepository,
-            UserPermissionGrantRepository permissionGrantRepository,
-            DomainEventIdGenerator domainEventIdGenerator
+            UserPermissionGrantRepository permissionGrantRepository
     ) {
         return new AuthorizationDomainService(
                 roleRepository,
                 roleGrantRepository,
                 permissionRepository,
-                permissionGrantRepository,
-                domainEventIdGenerator);
+                permissionGrantRepository);
     }
 
     @Bean

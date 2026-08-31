@@ -2,13 +2,20 @@ package com.cloud.userauth.infrastructure.session.redis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.cloud.framework.core.naming.NamespacedResourceNameResolver;
+import com.cloud.userauth.infrastructure.session.redis.config.BrowserSessionProperties;
+import com.cloud.userauth.infrastructure.session.redis.config.SessionHandoffProperties;
 import org.junit.jupiter.api.Test;
 
 class RedisSessionKeyResolverTest {
     @Test
     void shouldResolveBrowserSessionKeysWithinServiceNamespace() {
-        RedisBrowserSessionKeyResolver resolver =
-                new RedisBrowserSessionKeyResolver(name -> "user-auth:" + name);
+        BrowserSessionProperties properties = new BrowserSessionProperties();
+        properties.setNamespace("user-auth");
+        BrowserSessionKeyResolver resolver =
+                new BrowserSessionKeyResolver(new NamespacedResourceNameResolver(
+                        namespaced -> namespaced.getNamespace(),
+                        properties));
 
         assertEquals("user-auth:browser-session:credential", resolver.key("credential"));
         assertEquals(
@@ -18,8 +25,12 @@ class RedisSessionKeyResolverTest {
 
     @Test
     void shouldResolveSessionHandoffKeysWithinServiceNamespace() {
-        RedisSessionHandoffKeyResolver resolver =
-                new RedisSessionHandoffKeyResolver(name -> "user-auth:" + name);
+        SessionHandoffProperties properties = new SessionHandoffProperties();
+        properties.setNamespace("user-auth");
+        SessionHandoffKeyResolver resolver =
+                new SessionHandoffKeyResolver(new NamespacedResourceNameResolver(
+                        namespaced -> namespaced.getNamespace(),
+                        properties));
 
         assertEquals(
                 "user-auth:session-handoff:ticket:ticket",

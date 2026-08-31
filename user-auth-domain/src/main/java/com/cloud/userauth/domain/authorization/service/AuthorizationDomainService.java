@@ -1,6 +1,5 @@
 package com.cloud.userauth.domain.authorization.service;
 
-import com.cloud.framework.domain.DomainEventIdGenerator;
 import com.cloud.userauth.domain.authorization.GrantId;
 import com.cloud.userauth.domain.authorization.GrantSource;
 import com.cloud.userauth.domain.authorization.PermissionCode;
@@ -29,7 +28,6 @@ public class AuthorizationDomainService {
     private final UserRoleGrantRepository grantRepository;
     private final PermissionRepository permissionRepository;
     private final UserPermissionGrantRepository userPermissionGrantRepository;
-    private final DomainEventIdGenerator domainEventIdGenerator;
 
     public RoleGrantEffect grantRole(
             GrantId grantId,
@@ -56,7 +54,7 @@ public class AuthorizationDomainService {
         return new RoleGrantEffect(
                 grant,
                 List.of(new RoleGrantedEvent(
-                        domainEventIdGenerator.nextId(), grantedAt, grant.id(), grant.userId(), grant.roleCode()
+                        grantedAt, grant.id(), grant.userId(), grant.roleCode()
                 ))
         );
     }
@@ -68,7 +66,7 @@ public class AuthorizationDomainService {
         return new RoleGrantEffect(
                 grant,
                 List.of(new RoleRevokedEvent(
-                        domainEventIdGenerator.nextId(), revokedAt, grant.id(), grant.userId(), grant.roleCode()
+                        revokedAt, grant.id(), grant.userId(), grant.roleCode()
                 ))
         );
     }

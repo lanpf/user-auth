@@ -4,7 +4,7 @@ import com.cloud.framework.core.naming.NamespaceResolver;
 import com.cloud.framework.core.naming.NamespacedResourceNameResolver;
 import com.cloud.userauth.application.port.BrowserSessionStore;
 import com.cloud.userauth.domain.authentication.session.LoginSessionRepository;
-import com.cloud.userauth.infrastructure.session.redis.RedisBrowserSessionKeyResolver;
+import com.cloud.userauth.infrastructure.session.redis.BrowserSessionKeyResolver;
 import com.cloud.userauth.infrastructure.session.redis.RedisBrowserSessionStore;
 import java.time.Clock;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -16,11 +16,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @EnableConfigurationProperties(BrowserSessionProperties.class)
 public class RedisBrowserSessionConfiguration {
     @Bean
-    RedisBrowserSessionKeyResolver browserSessionKeyResolver(
+    BrowserSessionKeyResolver browserSessionKeyResolver(
             BrowserSessionProperties properties,
             NamespaceResolver namespaceResolver
     ) {
-        return new RedisBrowserSessionKeyResolver(
+        return new BrowserSessionKeyResolver(
                 new NamespacedResourceNameResolver(namespaceResolver, properties));
     }
 
@@ -28,7 +28,7 @@ public class RedisBrowserSessionConfiguration {
     BrowserSessionStore browserSessionStore(
             BrowserSessionProperties properties,
             StringRedisTemplate redisTemplate,
-            RedisBrowserSessionKeyResolver keyResolver,
+            BrowserSessionKeyResolver keyResolver,
             LoginSessionRepository loginSessionRepository,
             Clock clock
     ) {

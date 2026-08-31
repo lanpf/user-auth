@@ -17,14 +17,13 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public final class RedisRefreshTokenRotationLock implements RefreshTokenRotationLock {
-    private static final String SCENE = "refresh-token-rotation";
     private static final Duration WAIT_TIME = Duration.ofSeconds(3);
 
     private final LockExecutor lockExecutor;
 
     @Override
     public <T> T execute(String refreshToken, Supplier<T> action) {
-        LockContext context = new LockContext(SCENE, sha256(refreshToken), WAIT_TIME);
+        LockContext context = new LockContext(WAIT_TIME, "refresh-token-rotation", sha256(refreshToken));
         try {
             return lockExecutor.execute(context, action::get)
                     .orElseThrow(() -> new ApplicationException(

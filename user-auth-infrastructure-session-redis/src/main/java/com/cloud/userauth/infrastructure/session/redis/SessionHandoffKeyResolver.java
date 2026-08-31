@@ -3,8 +3,8 @@ package com.cloud.userauth.infrastructure.session.redis;
 import com.cloud.framework.core.naming.ResourceNameResolver;
 import com.cloud.framework.starter.autoconfigure.naming.AbstractKeyResolver;
 
-public class RedisSessionHandoffKeyResolver extends AbstractKeyResolver {
-    public RedisSessionHandoffKeyResolver(ResourceNameResolver resourceNameResolver) {
+public class SessionHandoffKeyResolver extends AbstractKeyResolver {
+    public SessionHandoffKeyResolver(ResourceNameResolver resourceNameResolver) {
         super(resourceNameResolver);
     }
 

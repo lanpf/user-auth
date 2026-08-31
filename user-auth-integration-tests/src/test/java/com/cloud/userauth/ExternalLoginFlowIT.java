@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.cloud.framework.domain.DomainEventId;
 import com.cloud.userauth.application.login.external.ExternalAttemptLoginOutput;
 import com.cloud.userauth.application.login.external.ExternalCredentialBinding;
 import com.cloud.userauth.application.login.external.ExternalLoginCommand;
@@ -197,11 +196,8 @@ class ExternalLoginFlowIT {
         Sessions sessions = new Sessions();
         AtomicLong users = new AtomicLong(1000);
         AtomicLong credentials = new AtomicLong(2000);
-        AtomicLong events = new AtomicLong(3000);
-        var eventIds = (com.cloud.framework.domain.DomainEventIdGenerator)
-                () -> new DomainEventId(events.incrementAndGet());
         ExternalIdentityDomainService externalDomain =
-                new ExternalIdentityDomainService(eventIds);
+                new ExternalIdentityDomainService();
         var verifier = (com.cloud.userauth.application.port.ExternalIdentityVerifierRegistry)
                 (issuer, proofType, payload) -> new ExternalIdentity(
                         WECHAT, new Principal("openid-1"),
@@ -220,7 +216,7 @@ class ExternalLoginFlowIT {
         HmacSha256ChallengeSecretHasher hasher =
                 new HmacSha256ChallengeSecretHasher("test-pepper");
         AuthenticationDomainService authenticationDomain =
-                new AuthenticationDomainService(eventIds);
+                new AuthenticationDomainService();
         ExternalLoginTransactionService transactionService =
                 new ExternalLoginTransactionService(
                         loginAttempts,
@@ -231,7 +227,7 @@ class ExternalLoginFlowIT {
                         () -> new CredentialId(credentials.incrementAndGet()),
                         hasher,
                         authenticationDomain,
-                        new CredentialDomainService(accounts, eventIds),
+                        new CredentialDomainService(accounts),
                         externalDomain,
                         ignored -> { },
                         clock,

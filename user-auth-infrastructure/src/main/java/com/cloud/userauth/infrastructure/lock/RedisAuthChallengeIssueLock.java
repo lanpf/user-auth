@@ -16,16 +16,13 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class RedisAuthChallengeIssueLock implements AuthChallengeIssueLock {
-    private static final String SCENE = "challenge-issue";
     private static final Duration WAIT_TIME = Duration.ofSeconds(3);
     private final LockExecutor lockExecutor;
 
     @Override
-    public <T> T execute(AuthChallengeType type, ChallengeTarget target,
-                         AuthChallengeScene scene, Supplier<T> action) {
-        String key = type.name() + ":" + scene.name() + ":" + target.value();
-        LockContext context = new LockContext(
-                SCENE, key, WAIT_TIME);
+    public <T> T execute(AuthChallengeType type, AuthChallengeScene scene,
+                         ChallengeTarget target, Supplier<T> action) {
+        LockContext context = new LockContext(WAIT_TIME, "challenge-issue", type.name(), scene.name(), target.value());
         try {
             return lockExecutor.execute(context, action::get).orElseThrow(
                     () -> new ApplicationException(ApplicationError.APP_AUTH_CHALLENGE_ISSUE_IN_PROGRESS));

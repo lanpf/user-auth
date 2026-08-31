@@ -1,6 +1,5 @@
 package com.cloud.userauth.domain.authentication.service;
 
-import com.cloud.framework.domain.DomainEventIdGenerator;
 import com.cloud.userauth.domain.authentication.account.AuthAccount;
 import com.cloud.userauth.domain.authentication.account.AuthAccountRepository;
 import com.cloud.userauth.domain.common.DomainError;
@@ -21,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CredentialDomainService {
     private final AuthAccountRepository authAccountRepository;
-    private final DomainEventIdGenerator domainEventIdGenerator;
 
     public CredentialChangeEffect bindExternalCredential(
             AuthAccount authAccount,
@@ -42,7 +40,7 @@ public class CredentialDomainService {
                 authAccount,
                 credential,
                 List.of(new ExternalCredentialBoundEvent(
-                        domainEventIdGenerator.nextId(), boundAt, authAccount.id(), issuer, principal
+                        boundAt, authAccount.id(), issuer, principal
                 ))
         );
     }
@@ -66,7 +64,7 @@ public class CredentialDomainService {
                 authAccount,
                 credential,
                 List.of(new LoginMobileChangedEvent(
-                        domainEventIdGenerator.nextId(), changedAt,
+                        changedAt,
                         authAccount.userId(), authAccount.id(), oldMobile, newMobile
                 ))
         );
@@ -81,7 +79,7 @@ public class CredentialDomainService {
         return new CredentialChangeEffect(
                 authAccount,
                 null,
-                List.of(new CredentialDisabledEvent(domainEventIdGenerator.nextId(), disabledAt, key))
+                List.of(new CredentialDisabledEvent(disabledAt, key))
         );
     }
 
