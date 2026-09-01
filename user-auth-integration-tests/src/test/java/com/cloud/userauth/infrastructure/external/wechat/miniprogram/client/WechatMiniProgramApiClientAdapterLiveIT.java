@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramCode2SessionPayload;
 import com.cloud.userauth.infrastructure.external.wechat.miniprogram.config.WechatMiniProgramProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
@@ -14,7 +15,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
-class RestClientWechatMiniProgramApiClientLiveIT {
+class WechatMiniProgramApiClientAdapterLiveIT {
     private static final String APP_ID_ENV = "WECHAT_MINI_PROGRAM_APP_ID";
     private static final String APP_SECRET_ENV = "WECHAT_MINI_PROGRAM_APP_SECRET";
     private static final String LOGIN_CODE_ENV = "WECHAT_MINI_PROGRAM_LOGIN_CODE";
@@ -31,7 +32,7 @@ class RestClientWechatMiniProgramApiClientLiveIT {
                         .allMatch(StringUtils::hasText),
                 "real WeChat credentials are not configured");
 
-        WechatCode2SessionPayload response = client(appId, appSecret)
+        WechatMiniProgramCode2SessionPayload response = client(appId, appSecret)
                 .exchangeLoginCode(loginCode);
 
         assertAll(
@@ -49,7 +50,7 @@ class RestClientWechatMiniProgramApiClientLiveIT {
                 StringUtils.hasText(response.unionId()));
     }
 
-    private static RestClientWechatMiniProgramApiClient client(
+    private static WechatMiniProgramApiClientAdapter client(
             String appId,
             String appSecret
     ) {
@@ -73,7 +74,7 @@ class RestClientWechatMiniProgramApiClientLiveIT {
                     converters.add(jsonMapper.messageConverter());
                 })
                 .build();
-        return new RestClientWechatMiniProgramApiClient(
+        return new WechatMiniProgramApiClientAdapter(
                 restClient,
                 properties);
     }

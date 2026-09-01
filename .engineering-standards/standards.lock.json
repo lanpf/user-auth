@@ -1,8 +1,8 @@
 {
   "name": "engineering-guidance-publisher",
   "source": "https://github.com/lanpf/engineering-guidance-publisher.git",
-  "version": "2.1.6",
-  "artifact_sha256": "d95fdcfd53b0aa83db6319272c592d84b34c529bc17964b43837f9726711bc6a",
+  "version": "2.1.8",
+  "artifact_sha256": "853a5cab0e9fb6515a9a485db218be8319290db4f6bd5eb3c2b0bfa562c2528d",
   "managed_skills": [
     "develop-service-code",
     "develop-distributed-capabilities",

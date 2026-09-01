@@ -2,6 +2,9 @@ package com.cloud.userauth.infrastructure.external.wechat.miniprogram.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramCode2SessionPayload;
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramPhoneNumberPayload;
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramStableAccessTokenPayload;
 import com.cloud.userauth.infrastructure.external.wechat.miniprogram.config.WechatMiniProgramProperties;
 import java.time.Clock;
 import java.time.Duration;
@@ -39,16 +42,16 @@ class WechatMiniProgramAccessTokenProviderTest {
         private int accessTokenRequests;
 
         @Override
-        public WechatCode2SessionPayload exchangeLoginCode(
+        public WechatMiniProgramCode2SessionPayload exchangeLoginCode(
                 String loginCode
         ) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public WechatStableAccessTokenPayload getStableAccessToken() {
+        public WechatMiniProgramStableAccessTokenPayload getStableAccessToken() {
             accessTokenRequests++;
-            return new WechatStableAccessTokenPayload(
+            return new WechatMiniProgramStableAccessTokenPayload(
                     "access-token-" + accessTokenRequests,
                     120L,
                     null,
@@ -56,7 +59,7 @@ class WechatMiniProgramAccessTokenProviderTest {
         }
 
         @Override
-        public WechatPhoneNumberPayload exchangePhoneCode(
+        public WechatMiniProgramPhoneNumberPayload exchangePhoneCode(
                 String accessToken,
                 String phoneCode
         ) {

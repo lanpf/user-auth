@@ -1,9 +1,13 @@
 package com.cloud.userauth.infrastructure.external.wechat.miniprogram.client;
 
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramCode2SessionPayload;
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramPhoneNumberPayload;
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramStableAccessTokenPayload;
+
 interface WechatMiniProgramApiClient {
-    WechatStableAccessTokenPayload getStableAccessToken();
+    WechatMiniProgramStableAccessTokenPayload getStableAccessToken();
 
-    WechatCode2SessionPayload exchangeLoginCode(String loginCode);
+    WechatMiniProgramCode2SessionPayload exchangeLoginCode(String loginCode);
 
-    WechatPhoneNumberPayload exchangePhoneCode(String accessToken, String phoneCode);
+    WechatMiniProgramPhoneNumberPayload exchangePhoneCode(String accessToken, String phoneCode);
 }

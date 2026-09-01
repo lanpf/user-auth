@@ -1,4 +1,4 @@
-<!-- engineering-standards:begin version=2.1.6 -->
+<!-- engineering-standards:begin version=2.1.8 -->
 ## Shared engineering guidance
 
 - **STD-HIERARCHY-001** — Shared rules apply to every project; service rules additionally apply to service projects, and project-specific authoritative documents may only add or tighten constraints.

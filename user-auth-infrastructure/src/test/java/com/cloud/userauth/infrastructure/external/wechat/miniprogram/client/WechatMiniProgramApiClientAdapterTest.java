@@ -7,8 +7,13 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cloud.userauth.infrastructure.common.InfrastructureError;
+import com.cloud.userauth.infrastructure.common.InfrastructureException;
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramCode2SessionPayload;
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramPhoneNumberPayload;
+import com.cloud.userauth.infrastructure.external.wechat.miniprogram.client.payload.WechatMiniProgramStableAccessTokenPayload;
 import com.cloud.userauth.infrastructure.external.wechat.miniprogram.config.WechatMiniProgramProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -16,7 +21,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-class RestClientWechatMiniProgramApiClientTest {
+class WechatMiniProgramApiClientAdapterTest {
     @Test
     void shouldExchangeLoginCodeUsingWechatProtocol() {
         TestClient fixture = fixture();
@@ -37,7 +42,7 @@ class RestClientWechatMiniProgramApiClientTest {
                         """,
                         MediaType.APPLICATION_JSON));
 
-        WechatCode2SessionPayload response =
+        WechatMiniProgramCode2SessionPayload response =
                 fixture.client.exchangeLoginCode("login-code");
 
         assertEquals("openid-1", response.openId());
@@ -66,12 +71,35 @@ class RestClientWechatMiniProgramApiClientTest {
                         """,
                         MediaType.TEXT_PLAIN));
 
-        WechatCode2SessionPayload response =
+        WechatMiniProgramCode2SessionPayload response =
                 fixture.client.exchangeLoginCode("login-code");
 
         assertEquals("openid-1", response.openId());
         assertEquals("session-key", response.sessionKey());
         assertEquals("unionid-1", response.unionId());
+        fixture.server.verify();
+    }
+
+    @Test
+    void shouldTranslateMalformedWechatPayloadToInfrastructureFailure() {
+        TestClient fixture = fixture();
+        fixture.server.expect(requestTo(
+                        "https://api.weixin.qq.com/sns/jscode2session"
+                                + "?appid=app-id"
+                                + "&secret=app-secret"
+                                + "&js_code=login-code"
+                                + "&grant_type=authorization_code"))
+                .andRespond(withSuccess(
+                        "not-json",
+                        MediaType.TEXT_PLAIN));
+
+        InfrastructureException exception = assertThrows(
+                InfrastructureException.class,
+                () -> fixture.client.exchangeLoginCode("login-code"));
+
+        assertEquals(
+                InfrastructureError.INFRA_ACL_EXTERNAL_IDENTITY_PROVIDER_UNAVAILABLE.errorCode(),
+                exception.getErrorCode());
         fixture.server.verify();
     }
 
@@ -142,9 +170,9 @@ class RestClientWechatMiniProgramApiClientTest {
                         """,
                         MediaType.APPLICATION_JSON));
 
-        WechatStableAccessTokenPayload token =
+        WechatMiniProgramStableAccessTokenPayload token =
                 fixture.client.getStableAccessToken();
-        WechatPhoneNumberPayload phone =
+        WechatMiniProgramPhoneNumberPayload phone =
                 fixture.client.exchangePhoneCode(
                         token.accessToken(),
                         "phone-code");
@@ -152,7 +180,7 @@ class RestClientWechatMiniProgramApiClientTest {
         assertEquals(7200L, token.expiresIn());
         assertEquals(
                 "13800138000",
-                phone.phoneInfo().phoneNumber());
+                phone.phoneInfo().getPhoneNumber());
         assertEquals(0, phone.errorCode());
         assertEquals("ok", phone.errorMessage());
         fixture.server.verify();
@@ -174,15 +202,15 @@ class RestClientWechatMiniProgramApiClientTest {
                 });
         MockRestServiceServer server =
                 MockRestServiceServer.bindTo(builder).build();
-        RestClientWechatMiniProgramApiClient client =
-                new RestClientWechatMiniProgramApiClient(
+        WechatMiniProgramApiClientAdapter client =
+                new WechatMiniProgramApiClientAdapter(
                         builder.build(),
                         properties);
         return new TestClient(client, server);
     }
 
     private record TestClient(
-            RestClientWechatMiniProgramApiClient client,
+            WechatMiniProgramApiClientAdapter client,
             MockRestServiceServer server
     ) {
     }

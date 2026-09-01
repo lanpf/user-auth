@@ -33,7 +33,7 @@ public class WechatMiniProgramClientConfiguration {
         return new WechatMiniProgramResponseErrorHandler();
     }
 
-    @Bean
+    @Bean(name = "wechatMiniProgramRestClient")
     @ConditionalOnMissingBean(name = "wechatMiniProgramRestClient")
     RestClient wechatMiniProgramRestClient(
             RestClient.Builder builder,
@@ -65,7 +65,7 @@ public class WechatMiniProgramClientConfiguration {
             RestClient restClient,
             WechatMiniProgramProperties properties
     ) {
-        return new RestClientWechatMiniProgramApiClient(
+        return new WechatMiniProgramApiClientAdapter(
                 restClient,
                 properties);
     }
@@ -90,7 +90,7 @@ public class WechatMiniProgramClientConfiguration {
             WechatMiniProgramApiClient apiClient,
             WechatMiniProgramAccessTokenProvider accessTokenProvider
     ) {
-        return new DefaultWechatMiniProgramClient(
+        return new WechatMiniProgramClientAdapter(
                 apiClient,
                 accessTokenProvider);
     }

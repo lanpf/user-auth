@@ -8,9 +8,9 @@ class DomainErrorAllocationTest {
     @Test
     void shouldAllocateSharedDomainErrorsInRequiredOrder() {
         assertEquals(0, DomainError.DOMAIN_ENTITY_ID_INVALID.getLocalCode());
-        assertEquals(2, DomainError.DOMAIN_OBJECT_FIELD_REQUIRED.getLocalCode());
-        assertEquals(3, DomainError.DOMAIN_OBJECT_FIELD_INVALID.getLocalCode());
-        assertEquals(4, DomainError.DOMAIN_OBJECT_STATE_INVALID.getLocalCode());
+        assertEquals(1, DomainError.DOMAIN_OBJECT_FIELD_REQUIRED.getLocalCode());
+        assertEquals(2, DomainError.DOMAIN_OBJECT_FIELD_INVALID.getLocalCode());
+        assertEquals(3, DomainError.DOMAIN_OBJECT_STATE_INVALID.getLocalCode());
         assertEquals("领域对象字段不能为空", DomainError.DOMAIN_OBJECT_FIELD_REQUIRED.getMessage());
     }
 

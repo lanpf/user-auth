@@ -1,11 +1,10 @@
 package com.cloud.userauth.infrastructure.external.wechat.miniprogram.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
 public final class WechatMiniProgramJsonMapper {
     private final ObjectMapper objectMapper;

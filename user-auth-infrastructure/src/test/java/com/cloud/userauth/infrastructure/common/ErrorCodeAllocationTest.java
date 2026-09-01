@@ -16,7 +16,9 @@ class ErrorCodeAllocationTest {
     @Test
     void shouldAllocateDomainErrorsToSharedAndAggregateBlocks() {
         assertEquals(0, DomainError.DOMAIN_ENTITY_ID_INVALID.getLocalCode());
-        assertEquals(2, DomainError.DOMAIN_OBJECT_FIELD_REQUIRED.getLocalCode());
+        assertEquals(1, DomainError.DOMAIN_OBJECT_FIELD_REQUIRED.getLocalCode());
+        assertEquals(2, DomainError.DOMAIN_OBJECT_FIELD_INVALID.getLocalCode());
+        assertEquals(3, DomainError.DOMAIN_OBJECT_STATE_INVALID.getLocalCode());
         assertRange(DomainError.AUTH_ACCOUNT_NOT_FOUND.getLocalCode(), 100, 149);
         assertRange(DomainError.AUTH_CHALLENGE_NOT_FOUND.getLocalCode(), 150, 199);
         assertRange(DomainError.LOGIN_ATTEMPT_NOT_FOUND.getLocalCode(), 200, 249);
