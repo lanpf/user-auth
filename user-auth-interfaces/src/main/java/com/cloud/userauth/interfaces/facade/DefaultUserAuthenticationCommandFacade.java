@@ -31,10 +31,8 @@ import com.cloud.userauth.application.credential.BindExternalCredentialCommandSe
 import com.cloud.userauth.application.logout.LogoutCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
 @Service
-@Validated
 @RequiredArgsConstructor
 public class DefaultUserAuthenticationCommandFacade implements UserAuthenticationCommandFacade {
     private final AuthChallengeIssueCommandService authChallengeIssueCommandService;

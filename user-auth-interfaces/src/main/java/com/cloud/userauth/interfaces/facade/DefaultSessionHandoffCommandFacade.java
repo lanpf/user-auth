@@ -11,10 +11,8 @@ import com.cloud.userauth.application.session.handoff.ExchangeSessionHandoffComm
 import com.cloud.userauth.interfaces.mapper.SessionHandoffApiMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
 @Service
-@Validated
 @RequiredArgsConstructor
 public class DefaultSessionHandoffCommandFacade implements SessionHandoffCommandFacade {
     private final CreateSessionHandoffCommandService createCommandService;

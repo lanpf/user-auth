@@ -14,10 +14,8 @@ import com.cloud.userauth.domain.authentication.session.SessionId;
 import com.cloud.userauth.domain.user.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
 @Service
-@Validated
 @RequiredArgsConstructor
 public class DefaultBrowserSessionCommandFacade implements BrowserSessionCommandFacade {
     private final VerifyBrowserSessionCommandService verifyService;

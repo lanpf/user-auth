@@ -20,10 +20,8 @@ import com.cloud.userauth.application.authorization.RoleView;
 import com.cloud.userauth.interfaces.mapper.AuthorizationApiMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
 @Service
-@Validated
 @RequiredArgsConstructor
 public class DefaultUserAuthorizationQueryFacade implements UserAuthorizationQueryFacade {
     private final AuthorizationQueryService queryService;
