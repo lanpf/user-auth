@@ -21,7 +21,7 @@ import com.cloud.userauth.infrastructure.oauth2.sas.login.SasLoginTokenIssuer;
 import com.cloud.userauth.infrastructure.oauth2.sas.login.SasLoginTokenRefresher;
 import com.cloud.userauth.infrastructure.oauth2.sas.login.mapper.SasExternalTokenEndpointPayloadMapper;
 import com.cloud.userauth.infrastructure.oauth2.sas.login.mapper.SasTokenEndpointPayloadMapper;
-import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.RestClientSasTokenEndpointClient;
+import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasTokenEndpointClientAdapter;
 import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasTokenEndpointClient;
 import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasTokenEndpointResponseErrorHandler;
 import com.cloud.userauth.infrastructure.oauth2.sas.login.tokenendpoint.SasTokenEndpointJsonMapper;
@@ -59,8 +59,6 @@ import java.net.URI;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(SasAuthorizationServerProperties.class)
 public class SasAuthorizationServerConfiguration {
-    private static final String SERVER_PORT_PROPERTY = "${server.port}";
-    private static final String HTTP_LOOPBACK_PREFIX = "http://127.0.0.1:";
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -151,7 +149,7 @@ public class SasAuthorizationServerConfiguration {
             SasTokenEndpointResponseErrorHandler errorHandler,
             SasTokenEndpointJsonMapper jsonMapper,
             Validator validator,
-            @Value(SERVER_PORT_PROPERTY) int serverPort
+            @Value("${server.port}") int serverPort
     ) {
         SimpleClientHttpRequestFactory requestFactory =
                 new SimpleClientHttpRequestFactory();
@@ -172,7 +170,7 @@ public class SasAuthorizationServerConfiguration {
                 })
                 .defaultStatusHandler(errorHandler)
                 .build();
-        return new RestClientSasTokenEndpointClient(
+        return new SasTokenEndpointClientAdapter(
                 restClient,
                 internalTokenEndpoint(properties, serverPort),
                 properties.getInternalTokenClient().getClientId(),
@@ -263,6 +261,6 @@ public class SasAuthorizationServerConfiguration {
         String configured = properties.getInternalTokenClient().getTokenEndpoint();
         return URI.create(StringUtils.hasText(configured)
                 ? configured
-                : HTTP_LOOPBACK_PREFIX + serverPort + LoopbackTokenEndpointValidator.TOKEN_ENDPOINT_PATH);
+                : "http://127.0.0.1:" + serverPort + LoopbackTokenEndpointValidator.TOKEN_ENDPOINT_PATH);
     }
 }

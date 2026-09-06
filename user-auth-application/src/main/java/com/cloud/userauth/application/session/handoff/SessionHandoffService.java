@@ -34,8 +34,8 @@ public class SessionHandoffService {
                 .orElseThrow(() -> new ApplicationException(
                         ApplicationError.APP_SESSION_HANDOFF_TICKET_INVALID));
         AuthenticatedSession authenticatedSession = new AuthenticatedSession(
-                resolvedSession.getUserId().value(),
-                resolvedSession.getAuthAccountId().value(),
+                resolvedSession.getUserId(),
+                resolvedSession.getAuthAccountId(),
                 resolvedSession.id());
         LoginSession loginSession = activeLoginSession(authenticatedSession, now);
         Duration effectiveTtl = effectiveTtl(loginSession, now);
@@ -64,9 +64,8 @@ public class SessionHandoffService {
         return loginSessionRepository.findById(authenticatedSession.sessionId())
                 .filter(session -> session.getStatus() == SessionStatus.ACTIVE)
                 .filter(session -> session.getExpiresAt().isAfter(now))
-                .filter(session -> session.getUserId().value().equals(authenticatedSession.userId()))
-                .filter(session -> session.getAuthAccountId().value()
-                        .equals(authenticatedSession.authAccountId()))
+                .filter(session -> session.getUserId().equals(authenticatedSession.userId()))
+                .filter(session -> session.getAuthAccountId().equals(authenticatedSession.authAccountId()))
                 .orElseThrow(() -> new ApplicationException(
                         ApplicationError.APP_SESSION_HANDOFF_TICKET_INVALID));
     }

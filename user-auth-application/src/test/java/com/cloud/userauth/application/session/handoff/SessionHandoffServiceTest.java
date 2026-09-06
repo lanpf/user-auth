@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 class SessionHandoffServiceTest {
     private static final Instant NOW = Instant.parse("2026-08-11T00:00:00Z");
     private static final AuthenticatedSession AUTHENTICATED_SESSION =
-            new AuthenticatedSession(1L, 2L, new SessionId("s1"));
+            new AuthenticatedSession(new UserId(1L), new AuthAccountId(2L), new SessionId("s1"));
 
     @Test
     void shouldIssueTicketBoundToTargetSessionType() {
@@ -34,7 +34,7 @@ class SessionHandoffServiceTest {
         SessionHandoffService service = service(store, activeSession());
 
         IssuedSessionHandoff handoff = service.issue(
-                AUTHENTICATED_SESSION.userId(), AUTHENTICATED_SESSION.sessionId().value(),
+                AUTHENTICATED_SESSION.userId().value(), AUTHENTICATED_SESSION.sessionId().value(),
                 SessionHandoffTarget.BROWSER_SESSION);
 
         assertEquals("ticket", handoff.ticket());
@@ -86,7 +86,7 @@ class SessionHandoffServiceTest {
         LoginSession loginSession = activeSession(NOW.plusSeconds(20));
         SessionHandoffService service = service(store, loginSession);
 
-        service.issue(AUTHENTICATED_SESSION.userId(), AUTHENTICATED_SESSION.sessionId().value(),
+        service.issue(AUTHENTICATED_SESSION.userId().value(), AUTHENTICATED_SESSION.sessionId().value(),
                 SessionHandoffTarget.BROWSER_SESSION);
 
         assertEquals(Duration.ofSeconds(20), store.issuedTtl);
@@ -160,8 +160,8 @@ class SessionHandoffServiceTest {
     private static LoginSession activeSession(Instant expiresAt) {
         return LoginSession.create(
                 AUTHENTICATED_SESSION.sessionId(),
-                new UserId(AUTHENTICATED_SESSION.userId()),
-                new AuthAccountId(AUTHENTICATED_SESSION.authAccountId()),
+                AUTHENTICATED_SESSION.userId(),
+                AUTHENTICATED_SESSION.authAccountId(),
                 new CredentialId(3L),
                 LoginScene.MOBILE_LOGIN,
                 new Device("device", "PHONE", "phone"),

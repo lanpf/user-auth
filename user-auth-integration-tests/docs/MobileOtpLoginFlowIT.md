@@ -13,8 +13,10 @@
 5. 验证 Redis 中保存 Authorization 与 Access Token 哈希索引，且不保存可直接使用的
    Token 明文。
 6. 以 `REFERENCE` 格式重启完整应用，验证不透明 Bearer Access Token、标准 introspection、
-   user-auth 本地在线认证、handoff 创建，以及 logout 后 introspection 立即返回 inactive。
-7. 验证 OAuth2 Authorization、Session Handoff 和分布式锁的 namespace 均只注入一次。
+   user-auth 本地在线认证、handoff 创建与兑换、Browser Session 在线验证和精确结束，
+   以及 logout 后 introspection 立即返回 inactive。
+7. 验证 Browser Session 结束响应清除 Cookie，结束后的同一凭据不能再次通过在线验证。
+8. 验证 OAuth2 Authorization、Session Handoff 和分布式锁的 namespace 均只注入一次。
 
 ## 运行条件
 
@@ -104,7 +106,8 @@ SHA-256 摘要，不是前端可直接使用的 Token 明文。
    - Access Token 索引指向登录返回的 SessionId。
    - `plaintextTokenStored=false`。
 5. 查找日志 `Reference access token observed`，观察 Reference Token 长度、SessionId 和
-   handoffId；日志不会输出 Token 明文。
+   handoffId；日志不会输出 Token 或 Browser Session 明文。该流程同时验证 handoff ticket
+   原子兑换、Browser Session Redis 解析/TTL 校验以及会话结束后的 Cookie 清除。
 6. 打开 Failsafe 报告，确认执行数为 1，失败数和错误数均为 0。
 
 测试还会在锁持有期间检查 `user-auth-lock-it:mobile-login:<mobile>`，并在 handoff 创建后检查

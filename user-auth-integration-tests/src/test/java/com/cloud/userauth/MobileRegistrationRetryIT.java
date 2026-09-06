@@ -34,7 +34,7 @@ import com.cloud.userauth.domain.authentication.session.LoginScene;
 import com.cloud.userauth.domain.authentication.session.LoginSession;
 import com.cloud.userauth.domain.authentication.session.SessionId;
 import com.cloud.userauth.domain.user.UserId;
-import com.cloud.userauth.infrastructure.challenge.FixedCodeGenerator;
+import com.cloud.userauth.infrastructure.challenge.FixedOneTimeCodeGenerator;
 import com.cloud.userauth.infrastructure.challenge.PropertiesAuthChallengePolicyProvider;
 import com.cloud.userauth.infrastructure.config.AuthChallengeProperties;
 import com.cloud.userauth.infrastructure.config.NonProductionAuthChallengeProperties;
@@ -60,7 +60,7 @@ class MobileRegistrationRetryIT {
     void shouldUseRefreshedFixedOneTimeCodeWithoutRecreatingGenerator() {
         NonProductionAuthChallengeProperties properties = new NonProductionAuthChallengeProperties();
         properties.setFixedCode("123456");
-        FixedCodeGenerator generator = new FixedCodeGenerator(properties.getFixedCode());
+        FixedOneTimeCodeGenerator generator = new FixedOneTimeCodeGenerator(properties);
 
         assertEquals("123456", generator.generate());
 

@@ -3,7 +3,9 @@ package com.cloud.userauth.infrastructure.session.redis;
 import com.cloud.userauth.application.authentication.AuthenticatedSession;
 import com.cloud.userauth.application.port.SessionHandoffStore;
 import com.cloud.userauth.application.session.handoff.SessionHandoffTarget;
+import com.cloud.userauth.domain.authentication.account.AuthAccountId;
 import com.cloud.userauth.domain.authentication.session.SessionId;
+import com.cloud.userauth.domain.user.UserId;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Base64;
@@ -69,8 +71,8 @@ public final class RedisSessionHandoffStore implements SessionHandoffStore {
             SessionHandoffTarget target
     ) {
         return authenticatedSession.sessionId().value() + ":"
-                + authenticatedSession.userId() + ":"
-                + authenticatedSession.authAccountId() + ":"
+                + authenticatedSession.userId().value() + ":"
+                + authenticatedSession.authAccountId().value() + ":"
                 + handoffId + ":"
                 + target.name();
     }
@@ -86,8 +88,8 @@ public final class RedisSessionHandoffStore implements SessionHandoffStore {
         try {
             return Optional.of(new ConsumedTicket(
                     new AuthenticatedSession(
-                            Long.valueOf(parts[1]),
-                            Long.valueOf(parts[2]),
+                            new UserId(Long.valueOf(parts[1])),
+                            new AuthAccountId(Long.valueOf(parts[2])),
                             new SessionId(parts[0])),
                     parts[3],
                     SessionHandoffTarget.valueOf(parts[4])));

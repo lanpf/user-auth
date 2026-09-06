@@ -14,13 +14,15 @@ public interface BrowserSessionStore extends LoginSessionRevoker {
 
     Optional<ResolvedSession> find(String credential);
 
-    record CreatedSession(String credential, Duration idleTtl) {
+    /** 精确结束单个 Browser Session（不影响同一父 LoginSession 的其他 Browser Session）。 */
+    boolean end(String credential);
+
+    record CreatedSession(String credential, Duration absoluteTtl) {
     }
 
     record ResolvedSession(
             AuthenticatedSession authenticatedSession,
-            Duration remainingIdleTtl,
-            boolean renewed
+            Duration remainingIdleTtl
     ) {
     }
 }

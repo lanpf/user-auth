@@ -1,6 +1,6 @@
 # user-auth 领域文档
 
-本文以当前源码为准，说明 `user-auth` 的领域边界、已交付业务语义和仍处于模型阶段的能力。项目入口见 [README.md](../README.md)；ClientApp、channelCode 与入口信任边界见 [CLIENT_AND_CHANNEL_CONTEXT.md](CLIENT_AND_CHANNEL_CONTEXT.md)；OAuth2/OIDC 的技术协议实现见 [OAUTH2_OIDC_PROTOCOL_INFRASTRUCTURE.md](OAUTH2_OIDC_PROTOCOL_INFRASTRUCTURE.md)。
+本文以当前源码为准，说明 `user-auth` 的领域边界、已交付业务语义和仍处于模型阶段的能力。项目入口见 [README.md](../README.md)；服务职责、入口信任边界与跨服务协作契约见 [RESPONSIBILITIES.md](RESPONSIBILITIES.md)；OAuth2/OIDC 的技术协议实现见 [OAUTH2.md](OAUTH2.md)。
 
 ## 子域与代码边界
 
@@ -47,7 +47,7 @@
 - **Device**：登录时提交的设备上下文快照，用于会话记录和审计；当前普通 deviceId 不构成 DPoP 或设备私钥持有证明。
 - **LoginSession**：一次成功登录形成的领域会话，以 SessionId 标识，关联 User、AuthAccount、本次实际使用的 Credential、Client、Device、登录场景、状态和绝对到期时间。协议授权、Bearer Access Token 和 Browser Session 都通过 SessionId 关联这个领域事实。
 - **Host Access Credential**：认证成功后交付给宿主、用于后续恢复 LoginSession 的访问凭据。当前统一为 OAuth2 Bearer Access Token，可采用自包含 JWT 或不透明 Reference Token；它不是 AuthAccount Credential。
-- **AuthenticatedSession**：应用内部使用的已认证会话快照，携带 `userId + authAccountId + sessionId`。gateway 向业务接口传递 `subjectType + userId + sessionId`；user-auth 必须区分 `HOST_SESSION` 与 `BROWSER_SESSION`，并从 LoginSession 恢复和校验 AuthAccount，不能信任调用方指定账户。
+- **AuthenticatedSession**：应用内部使用的已认证会话快照，分别以强类型 `UserId + AuthAccountId + SessionId` 携带三个领域身份；只有 API、HTTP Header 和 Redis 文本协议使用 `Long/String` 传输表示，并由 interfaces 或 infrastructure adapter 转换。gateway 向业务接口传递 `subjectType + userId + sessionId`；user-auth 必须区分 `HOST_SESSION` 与 `BROWSER_SESSION`，并从 LoginSession 恢复和校验 AuthAccount，不能信任调用方指定账户。
 - **Session Handoff Ticket / Browser Session**：前者是宿主向另一载体交接当前认证结果的一次性短期票据；后者是 H5 兑换后取得的独立 Cookie 会话。二者都不是账户 Credential，也不能用于改变父 AuthAccount 的身份绑定。
 
 ### Credential 的建立与登录路径
@@ -178,7 +178,7 @@ Boot 只负责选择和装配具体 adapter。若某个实现模块没有进入�
 
 JWT 本身由客户端持有并通常本地验证，因此 Redis 中撤销协议状态不会让已发出的 JWT 在所有资源服务器上即时失效；Reference Token 每次在线查询授权状态，logout 后可即时失效，但依赖 Redis 和 introspection 的可用性。Redis 协议状态同时服务于刷新、重放检测、Token family 撤销、Reference Token introspection、协议查询和登出联动。
 
-两种 Access Token 格式都由 gateway 归一为可信 `X-Subject-Type=HOST_SESSION + X-User-Id + X-Session-Id` 请求上下文。user-auth 接口层据此授予宿主会话入口权限，应用层再回查 LoginSession 验证归属并恢复认证账户。`X-Subject-Type` 尚待 gateway、framework 与 user-auth 完成代码迁移；迁移后缺失类型不得默认按 HOST_SESSION 处理。调用方不能在单次登录请求中选择格式；登录 API 始终返回 `tokenType + accessToken`，其中 `tokenType` 为 `Bearer`。访问凭据只解决当前请求的身份恢复，业务接口仍需继续执行功能权限和业务资源范围判断。
+两种 Access Token 格式都由 gateway 归一为可信 `X-Subject-Type=HOST_SESSION + X-User-Id + X-Session-Id` 请求上下文。user-auth 接口层据此授予宿主会话入口权限，应用层再回查 LoginSession 验证归属并恢复认证账户。`X-Subject-Type` 常量由共享 framework 承载，gateway 与 user-auth 均已完成读写迁移；缺失或未知类型不授予任何 authority，不得默认按 HOST_SESSION 处理。调用方不能在单次登录请求中选择格式；登录 API 始终返回 `tokenType + accessToken`，其中 `tokenType` 为 `Bearer`。访问凭据只解决当前请求的身份恢复，业务接口仍需继续执行功能权限和业务资源范围判断。
 
 ### 单个 LoginSession 的统一生命周期与级联撤销
 
@@ -274,7 +274,7 @@ Refresh Token 由 SAS 生成，Redis 仅保存不可逆哈希。每次刷新在 
 
 本方案适用于已登录的宿主 App（包括小程序、原生 App 等）打开 WebView H5。宿主的 Access Token 不进入 H5；H5 也不持有宿主的 Refresh Token。H5 使用独立、服务端可查询和撤销的 `BROWSER_SESSION` HttpOnly Cookie。
 
-一次性交接票据本身是与目标会话实现无关的通用应用能力：`SessionHandoffService` 只负责签发和原子消费票据，不创建 Browser Session，也不持有 H5 的 idle/absolute TTL。票据必须绑定 `SessionHandoffTarget`；当前仅登记 `BROWSER_SESSION`。`SessionHandoffCommandService` 才负责以 `BROWSER_SESSION` 目标消费票据并调用 `BrowserSessionStore` 创建具体会话。未来新增其他目标会话时，应新增对应的目标类型和专用交接用例，不能把目标会话创建逻辑重新放回通用票据服务。
+一次性交接票据本身是与目标会话实现无关的通用应用能力：`SessionHandoffService` 只负责签发和原子消费票据，不创建 Browser Session，也不持有 H5 的 idle/absolute TTL。票据必须绑定 `SessionHandoffTarget`；当前仅登记 `BROWSER_SESSION`。`ExchangeSessionHandoffCommandService` 才负责以 `BROWSER_SESSION` 目标消费票据并调用 `BrowserSessionStore` 创建具体会话。未来新增其他目标会话时，应新增对应的目标类型和专用交接用例，不能把目标会话创建逻辑重新放回通用票据服务。
 
 ```text
 宿主当前 LoginSession + Bearer Access Token
@@ -284,9 +284,9 @@ Refresh Token 由 SAS 生成，Redis 仅保存不可逆哈希。每次刷新在 
   → Set-Cookie: BROWSER_SESSION
 
 H5 正常请求
-  → gateway 校验 BROWSER_SESSION 与父 LoginSession
+  → gateway 调用 user-auth 校验 BROWSER_SESSION 与父 LoginSession
   → 写入 X-Subject-Type=BROWSER_SESSION + X-User-Id + X-Session-Id
-  → 未超过 absolute TTL 时按 idle window 滑动续期
+  → user-auth 在未超过 absolute TTL 时按 idle window 原子滑动 Redis TTL
 
 宿主再次进入 H5
   → 使用当前 Bearer Access Token 创建新的 handoff ticket
@@ -295,20 +295,20 @@ H5 正常请求
 
 初始 ticket 应仅放入 H5 URL fragment，H5 读取后立即调用 exchange endpoint，并使用 `history.replaceState` 清除 fragment；不得放入 query string、日志、埋点或 Referer。Browser Cookie 不是宿主 Access Token 的载体，不能把 JWT Access Token 直接写入 Cookie。
 
-宿主 Bearer Access Token 可以创建目标为 `BROWSER_SESSION` 的 handoff ticket，H5 原子兑换后取得独立的 `BROWSER_SESSION` HttpOnly Cookie。handoff ticket 不是宿主续期凭据，Browser Session 也不是 Bearer Token 的另一种传输形式。Browser Session 在 absolute TTL 内按 idle window 滑动续期；达到 absolute TTL 后，宿主必须先确保自己的 Access Token 仍有效，必要时按 ClientApp 策略取得新凭据，再重新创建 handoff ticket。
+宿主 Bearer Access Token 可以创建目标为 `BROWSER_SESSION` 的 handoff ticket，H5 原子兑换后取得独立的 `BROWSER_SESSION` HttpOnly Cookie。handoff ticket 不是宿主续期凭据，Browser Session 也不是 Bearer Token 的另一种传输形式。Cookie 的 `Max-Age` 取 Browser Session 配置 absolute TTL 与父 LoginSession 剩余时间的较小值；服务端 Redis 状态在该绝对边界内按 idle window 滑动续期，Cookie 本身不随普通请求刷新。达到 absolute TTL 后，宿主必须先确保自己的 Access Token 仍有效，必要时按 ClientApp 策略取得新凭据，再重新创建 handoff ticket。
 
 该方案必须搭配以下安全设计：
 
 - **原子单次兑换**：ticket 是随机高熵、短时凭据（建议 30–60 秒）。兑换必须使用 Redis `GETDEL` 或等价 Lua 脚本完成“读取并删除”；不得先查询再删除。并发兑换时仅一个请求可成功。服务端应以 ticket 哈希或 HMAC 派生值作为 Redis 索引，避免持久化原始 ticket。消费成功后创建 Browser Session 失败时，不恢复 ticket，宿主重新申请即可。
-- **严格绑定**：ticket 当前绑定 `userId`、`authAccountId`、宿主 `parentLoginSessionId`、`handoffId`、目标会话类型与有效期；兑换入口必须以期望的目标会话类型消费，目标不一致时票据无效，不能把 H5 ticket 用于未来的其他会话。目标 H5 ClientApp/origin 的进一步绑定必须以受管理的目标应用与 origin 目录为前提，不能把客户端任意提交的字符串当成可信绑定；该目录尚未实现。
-- **父会话关联与级联失效**：每个 Browser Session 记录 `parentLoginSessionId`。gateway 的 BrowserSessionAuthenticator 在线校验自身状态、idle TTL、absolute TTL，并确认父 LoginSession 为 `ACTIVE`。宿主主动登出或当前会话被强制下线时，通过已实现的 `parentLoginSessionId → Browser Session credential` Redis 反向索引立即删除全部关联 Browser Session；父会话状态校验是级联删除的兜底。全账户强制下线和跨重新认证代际撤销仍需要未来的 SessionFamily/账户会话能力。
+- **严格绑定**：ticket 当前绑定 `userId`、`authAccountId`、宿主 `parentLoginSessionId`、`handoffId`、目标会话类型与有效期；兑换入口必须以期望的目标会话类型消费，目标不一致时票据无效，不能把 H5 ticket 用于未来的其他会话。Browser Session 的请求 Origin 由 gateway 根据 `IngressClientAppPolicy.allowedBrowserOrigins` 校验并随完整策略快照热加载；客户端任意提交的字符串不能成为可信绑定事实。ticket 对目标 ClientApp/origin 的进一步绑定尚未实现。
+- **父会话关联与级联失效**：每个 Browser Session 记录 `parentLoginSessionId`。gateway 的 BrowserSessionAuthenticator 经 user-auth 内网验证端点逐请求在线校验自身状态、idle TTL、absolute TTL，并确认父 LoginSession 为 `ACTIVE`。宿主主动登出或当前会话被强制下线时，通过已实现的 `parentLoginSessionId → Browser Session credential` Redis 反向索引立即删除全部关联 Browser Session；父会话状态校验是级联删除的兜底。全账户强制下线和跨重新认证代际撤销仍需要未来的 SessionFamily/账户会话能力。
 - **会话职责隔离**：Bearer Access Token 是宿主访问凭据，Browser Session 是派生的浏览器 Cookie 会话。二者具有不同的传输、存储和生命周期，gateway 必须使用不同的 authenticator，并通过 `X-Subject-Type` 保留权限差异；不能把 Browser Session 转换成宿主 Header 权限。
-- **宿主权限隔离**：Bearer Access Token 在接口层获得宿主会话权限；`BROWSER_SESSION` 只获得受限 H5 会话权限。Browser Cookie 不得调用绑定外部 Credential、登出父 LoginSession 或创建新 handoff ticket 等宿主级命令。H5 自身退出需要独立的 Browser Session 结束能力，不能复用宿主 `logout`；该独立端点当前尚未实现。
-- **有限滑动窗口**：普通 H5 请求只在剩余 idle TTL 低于设定阈值时延长会话并刷新 Cookie，避免每次请求写存储。必须同时配置不可滑动的 absolute TTL，防止持续访问令会话无限存活。达到 absolute TTL 或父 LoginSession 失效时，必须由宿主重新创建 ticket。
-- **Cookie 与 CSRF 防护**：`BROWSER_SESSION` 必须使用 `HttpOnly`、`Secure` 和恰当的 `SameSite`（优先 `Lax`，不依赖跨站跳转时可用 `Strict`）。Cookie 鉴权的写操作仍必须实施 Origin/Referer 校验及 CSRF token 或双提交 token，不能仅依赖 SameSite。
+- **宿主权限隔离**：Bearer Access Token 在接口层获得宿主会话权限；`BROWSER_SESSION` 只获得受限浏览器会话权限。Browser Cookie 不得调用绑定外部 Credential、登出父 LoginSession 或创建新 handoff ticket 等宿主级命令。浏览器页面自行退出使用独立的 Browser Session 结束能力 `POST /api/browser-sessions/end`（不能复用宿主 `logout`）：gateway 以 Cookie 白名单回传原始凭据，本服务按 credential 精确删除单个 Browser Session 及其父会话反向索引成员，不影响同一父 LoginSession 的其他浏览器会话，并返回同名、`Max-Age=0` 的安全 Cookie；归属不一致或会话无效时拒绝并使用错误 `617`。
+- **有限滑动窗口**：普通 H5 请求触发在线验证时，user-auth 只在剩余 idle TTL 低于设定阈值后原子完成 Redis 会话读取、TTL 判断与续期，避免每次请求写存储。续期结果不通知 gateway，gateway 也不刷新 Cookie；Cookie 的 `Max-Age` 始终表达创建时确定的绝对生命周期上限。必须同时配置不可滑动的 absolute TTL，防止持续访问令服务端会话无限存活。达到 absolute TTL、Redis Key 已因 idle TTL 消失或父 LoginSession 失效时不得返回已验证会话，必须由宿主重新创建 ticket。
+- **Cookie 与 CSRF 防护**：`BROWSER_SESSION` 必须使用 `HttpOnly`、`Secure` 和恰当的 `SameSite`（优先 `Lax`，不依赖跨站跳转时可用 `Strict`）。gateway 对 Browser Session 的非安全方法强制要求 `Origin`，并按当前 ClientApp 的完整 Origin 白名单精确匹配；缺失或不匹配均拒绝，不能仅依赖 SameSite。若未来存在无法稳定提供 Origin 的浏览器、跨站兼容要求或绕过 gateway 的入口，必须另行增加 CSRF token 方案，不能降低为无校验。
 - **最小暴露与审计**：H5 永不读取宿主 Access Token；ticket 创建、兑换失败、重复兑换、会话滑动、宿主登出和级联撤销均应审计，并按 ClientApp、origin、账户和会话维度限流。
 
-本方案不需要 H5 与宿主之间为 Cookie 续期建立 SSE、长轮询或 `renewalChannelKey` 通道。早期 WebView SSE handoff 实现已删除；当前采用“宿主再次进入时重新 ticket 交接 + Browser Cookie 滑动窗口”模型。
+本方案不需要 H5 与宿主之间为会话续期建立 SSE、长轮询或 `renewalChannelKey` 通道。早期 WebView SSE handoff 实现已删除；当前采用“宿主再次进入时重新 ticket 交接 + 服务端 Browser Session idle 滑动窗口”模型。
 
 ### 关键业务约束
 
@@ -335,15 +335,17 @@ H5 正常请求
 
 上述类型的 `code` 是稳定的业务标识，未另外引入数据库代理 id。授权记录的来源用于追溯和独立撤销，而不是权限作用域：角色与 Permission 本身不带渠道范围。`CHANNEL_AUTHORIZATION_POLICY + channelCode` 是渠道策略授予的来源；`MANUAL + sourceId` 可用于人工或审批来源。同一用户、同一授权目标、同一来源的授予是幂等的；不同来源可以并存。一个来源撤销后，只要仍有其他有效来源，用户仍保有该角色或权限。
 
+渠道授权策略以 `channelCode + version` 管理：新策略以 `DRAFT`、`version=1` 创建，草稿不在登录时产生授权。策略目标的新增者授予、移除者撤销，且只作用于该 `channelCode` 来源，绝不删除来自其他渠道、人工操作或将来其他来源的授予。修改全局 Role 的 Permission 集合会影响所有持有该 Role 的用户，不属于某一渠道策略的局部变更；若只需调整某渠道的一项能力，应修改该渠道的直接 Permission 配置或建立更细的全局 Role。
+
 当前实现包括 Role、Permission、来源授权、渠道策略和策略应用游标的 JPA adapter，以及 Permission/Role 目录管理、渠道策略管理、批量重放和用户授权查询用例。Role 和渠道策略的多值目标以关系型主从记录持久化，避免把集合映射绑定到 JPA；策略更新使用 `channelCode + expectedVersion` 条件更新，未命中即返回既有版本冲突。策略写事务不会等待全量补偿；reconciliation 每次只处理稳定 userId 顺序的有限批次，并以 `appliedVersion` 作为持久化恢复检查点。策略停用或应用版本落后时，渠道来源授权在查询中 fail-closed。Permission 与 Role 的 `code` 创建后不可变；目录项不提供物理删除，使用 `ACTIVE / DISABLED` 状态维护引用稳定性。Permission 可修改名称与归属服务，Role 可修改名称并整体替换 PermissionCode 集合；保存或启用 Role 时，所有引用的 Permission 必须存在且启用。因此：
 
 - 任何现有 Access Token 均不携带角色或 PermissionCode。
 - 管理接口可以查询用户的有效角色、有效 PermissionCode 及每条授予来源，但当前 `user-auth` 不提供供业务资源服务器逐请求调用的功能鉴权接口。
 - 渠道策略只能引用已经登记且启用的全局 Role/Permission；当前已经提供目录项管理 API，人工直接授权 API 尚未交付。
 
-业务登录中的渠道策略同步必须由入口已校验的 `ChannelContext.channelCode` 触发，而不等同于 `clientAppId`。手机号和外部身份登录在访问凭据签发前同步 ACTIVE 策略；缺少策略时不影响登录，也不产生授权。管理接口不借用当前请求的 ChannelContext，而是由具备 `admin` scope 的调用方在请求体中显式提交 `targetChannelCode`；用户授权管理查询同样显式提交 `targetUserId`。更新 ACTIVE 策略、激活和停用只提交策略版本；显式 reconciliation 接口按 `batchSize` 重放一个批次并返回是否仍有待处理用户，用于失败重试。同一 ClientApp 可以进入多个渠道；签名与调用方绑定等入口安全规则、ClientApp 与渠道的完整设计见 [CLIENT_AND_CHANNEL_CONTEXT.md](CLIENT_AND_CHANNEL_CONTEXT.md)。
+业务登录中的渠道策略同步必须由入口已校验的 `ChannelContext.channelCode` 触发，而不等同于 `clientAppId`。手机号和外部身份登录在访问凭据签发前同步 ACTIVE 策略；同一用户与渠道已应用相同策略版本时直接跳过；缺少策略时不影响登录，也不产生授权。管理接口不借用当前请求的 ChannelContext，而是由具备 `admin` scope 的调用方在请求体中显式提交 `targetChannelCode`；用户授权管理查询同样显式提交 `targetUserId`。更新 ACTIVE 策略、激活和停用只提交策略版本；显式 reconciliation 接口按 `batchSize` 重放一个批次并返回是否仍有待处理用户，用于失败重试。同一 ClientApp 可以进入多个渠道；签名、调用方绑定与 ClientApp/Channel 入口校验由 gateway 负责，见 gateway 工程 [RESPONSIBILITIES.md](../../gateway/docs/RESPONSIBILITIES.md)。
 
-功能授权管理和用户授权查询位于 `/admin/user-auth/authorization/**`，要求 Bearer Access Token 具有 OAuth2 `admin` scope；H5 会话不能操作。管理调用只要求网关注入 `X-Client-App-Id`，目标 Permission、Role、渠道与用户分别通过请求体 `targetPermissionCode`、`targetRoleCode`、`targetChannelCode`、`targetUserId` 显式声明，不能由 `X-Channel-Code` 或 `X-User-Id` 代替。Permission 管理提供保存、启用、停用、按 code 查询和分页目录查询；Role 管理提供保存、启用、停用、按 code 查询和分页目录查询。分页默认每页 20 条，单页最多 200 条，按 code 升序返回。渠道策略更新、激活和停用必须携带 `expectedVersion`。角色编码非法使用错误 `304`；Permission 使用 `400-403`，其中不存在、已存在、停用和编码非法分别为 `400-403`；渠道策略不存在、已存在和版本冲突分别使用 `500`、`501`、`502`。
+功能授权管理和用户授权查询位于 `/admin/user-auth/authorization/**`，要求 Bearer Access Token 具有 OAuth2 `admin` scope；H5 会话不能操作。管理调用只要求网关注入 `X-Client-App-Id`，目标 Permission、Role、渠道与用户分别通过请求体 `targetPermissionCode`、`targetRoleCode`、`targetChannelCode`、`targetUserId` 显式声明，不能由 `X-Channel-Code` 或 `X-User-Id` 代替。Permission 管理提供保存、启用、停用、按 code 查询和分页目录查询；Role 管理提供保存、启用、停用、按 code 查询和分页目录查询。查询使用 POST 是为了让显式目标与 `ClientRequest` 上下文收敛在同一个请求对象中，并避免 GET body 的代理和客户端兼容性问题。分页默认每页 20 条，单页最多 200 条，按 code 升序返回。渠道策略更新、激活和停用必须携带 `expectedVersion`。角色编码非法使用错误 `304`；Permission 使用 `400-403`，其中不存在、已存在、停用和编码非法分别为 `400-403`；渠道策略不存在、已存在和版本冲突分别使用 `500`、`501`、`502`。
 
 ## 跨服务授权分工
 

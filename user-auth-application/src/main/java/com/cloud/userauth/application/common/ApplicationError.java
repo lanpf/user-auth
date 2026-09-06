@@ -22,7 +22,8 @@ public enum ApplicationError implements BaseError {
     APP_EXTERNAL_IDENTITY_ISSUER_NOT_SUPPORTED(612, "不支持该外部身份来源"),
     APP_SESSION_HANDOFF_TICKET_INVALID(613, "会话交接票据无效或已过期"),
     APP_CLIENT_RENEWAL_POLICY_NOT_ALLOWED(615, "客户端不允许使用 Refresh Token 续期"),
-    APP_REFRESH_TOKEN_FAILED(616, "Refresh Token 续期失败");
+    APP_REFRESH_TOKEN_FAILED(616, "Refresh Token 续期失败"),
+    APP_BROWSER_SESSION_INVALID(617, "浏览器会话无效或不属于当前登录会话");
 
     private final int localCode;
     private final String message;

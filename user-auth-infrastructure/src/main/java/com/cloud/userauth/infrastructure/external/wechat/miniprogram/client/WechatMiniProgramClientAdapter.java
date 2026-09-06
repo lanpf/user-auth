@@ -57,10 +57,10 @@ public final class WechatMiniProgramClientAdapter
         WechatMiniProgramPhoneNumberPayload response =
                 apiClient.exchangePhoneCode(accessToken, phoneCode);
         if (response.phoneInfo() == null
-                || !StringUtils.hasText(response.phoneInfo().getPhoneNumber())) {
+                || !StringUtils.hasText(response.phoneInfo().phoneNumber())) {
             throw rejected();
         }
-        return response.phoneInfo().getPhoneNumber();
+        return response.phoneInfo().phoneNumber();
     }
 
     private static RuntimeException translatePhoneCodeFailure(

@@ -2,20 +2,24 @@ package com.cloud.userauth.infrastructure.session.redis;
 
 import com.cloud.userauth.application.authentication.AuthenticatedSession;
 import com.cloud.userauth.application.port.BrowserSessionStore;
+import com.cloud.userauth.domain.authentication.account.AuthAccountId;
 import com.cloud.userauth.domain.authentication.session.LoginSession;
 import com.cloud.userauth.domain.authentication.session.LoginSessionRepository;
 import com.cloud.userauth.domain.authentication.session.SessionId;
 import com.cloud.userauth.domain.authentication.session.SessionStatus;
+import com.cloud.userauth.domain.user.UserId;
 import com.cloud.userauth.infrastructure.session.redis.config.BrowserSessionProperties;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -23,6 +27,27 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public final class RedisBrowserSessionStore implements BrowserSessionStore {
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String RESOLVE_AND_RENEW_SCRIPT = """
+            local value = redis.call('GET', KEYS[1])
+            if not value or value ~= ARGV[1] then
+                return nil
+            end
+            local currentTtl = redis.call('PTTL', KEYS[1])
+            if currentTtl <= 0 then
+                return nil
+            end
+            local renewalThreshold = tonumber(ARGV[2])
+            if currentTtl <= renewalThreshold then
+                local nextTtl = tonumber(ARGV[3])
+                if nextTtl <= 0 or redis.call('PEXPIRE', KEYS[1], nextTtl) ~= 1 then
+                    return nil
+                end
+                return tostring(nextTtl)
+            end
+            return tostring(currentTtl)
+            """;
+    private static final DefaultRedisScript<String> RESOLVE_AND_RENEW_REDIS_SCRIPT =
+            new DefaultRedisScript<>(RESOLVE_AND_RENEW_SCRIPT, String.class);
 
     private final BrowserSessionProperties properties;
     private final StringRedisTemplate redisTemplate;
@@ -54,7 +79,7 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
         String parentKey = keyResolver.parent(authenticatedSession.sessionId().value());
         redisTemplate.opsForSet().add(parentKey, credential);
         redisTemplate.expire(parentKey, effectiveAbsoluteTtl);
-        return new CreatedSession(credential, effectiveIdleTtl);
+        return new CreatedSession(credential, effectiveAbsoluteTtl);
     }
 
     @Override
@@ -63,11 +88,29 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
             return Optional.empty();
         }
         String key = keyResolver.key(credential);
-        return Optional.ofNullable(redisTemplate.opsForValue().get(key))
-                .flatMap(RedisBrowserSessionStore::parse)
-                .filter(data -> data.absoluteExpiresAt().isAfter(clock.instant()))
-                .filter(data -> active(data.authenticatedSession()))
-                .map(data -> refresh(key, data));
+        String serialized = redisTemplate.opsForValue().get(key);
+        Instant now = clock.instant();
+        return parse(serialized)
+                .filter(data -> data.absoluteExpiresAt().isAfter(now))
+                .filter(data -> active(data.authenticatedSession(), now))
+                .flatMap(data -> refresh(key, serialized, data, now));
+    }
+
+    @Override
+    public boolean end(String credential) {
+        if (!StringUtils.hasText(credential)) {
+            return false;
+        }
+        String key = keyResolver.key(credential);
+        String data = redisTemplate.opsForValue().getAndDelete(key);
+        if (data == null) {
+            return false;
+        }
+        RedisBrowserSessionStore.parse(data).ifPresent(sessionData ->
+                redisTemplate.opsForSet().remove(
+                        keyResolver.parent(sessionData.authenticatedSession().sessionId().value()),
+                        credential));
+        return true;
     }
 
     @Override
@@ -88,9 +131,8 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
     ) {
         Instant parentExpiresAt = loginSessionRepository.findById(authenticatedSession.sessionId())
                 .filter(session -> session.getStatus() == SessionStatus.ACTIVE)
-                .filter(session -> session.getUserId().value().equals(authenticatedSession.userId()))
-                .filter(session -> session.getAuthAccountId().value()
-                        .equals(authenticatedSession.authAccountId()))
+                .filter(session -> session.getUserId().equals(authenticatedSession.userId()))
+                .filter(session -> session.getAuthAccountId().equals(authenticatedSession.authAccountId()))
                 .filter(session -> session.getExpiresAt().isAfter(now))
                 .map(LoginSession::getExpiresAt)
                 .orElse(null);
@@ -99,27 +141,31 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
         return parentExpiresAt;
     }
 
-    private ResolvedSession refresh(String key, SessionData data) {
-        Duration untilAbsoluteExpiry = Duration.between(clock.instant(), data.absoluteExpiresAt());
+    private Optional<ResolvedSession> refresh(
+            String key,
+            String serialized,
+            SessionData data,
+            Instant now
+    ) {
+        Duration untilAbsoluteExpiry = Duration.between(now, data.absoluteExpiresAt());
         Duration nextIdleTtl = untilAbsoluteExpiry.compareTo(properties.getIdleTtl()) < 0
                 ? untilAbsoluteExpiry
                 : properties.getIdleTtl();
-        long currentTtlSeconds = redisTemplate.getExpire(key);
-        boolean renewed = currentTtlSeconds <= properties.getRenewalThreshold().toSeconds();
-        if (renewed) {
-            redisTemplate.expire(key, nextIdleTtl);
-        }
-        Duration remainingIdleTtl = renewed
-                ? nextIdleTtl
-                : Duration.ofSeconds(currentTtlSeconds);
-        return new ResolvedSession(
-                data.authenticatedSession(), remainingIdleTtl, renewed);
+        String result = redisTemplate.execute(
+                RESOLVE_AND_RENEW_REDIS_SCRIPT,
+                List.of(key),
+                serialized,
+                String.valueOf(properties.getRenewalThreshold().toMillis()),
+                String.valueOf(nextIdleTtl.toMillis()));
+        return parseRemainingIdleTtl(result)
+                .map(remainingIdleTtl -> new ResolvedSession(
+                        data.authenticatedSession(), remainingIdleTtl));
     }
 
-    private boolean active(AuthenticatedSession authenticatedSession) {
+    private boolean active(AuthenticatedSession authenticatedSession, Instant now) {
         return loginSessionRepository.findById(authenticatedSession.sessionId())
                 .filter(session -> session.getStatus() == SessionStatus.ACTIVE)
-                .filter(session -> session.getExpiresAt().isAfter(clock.instant()))
+                .filter(session -> session.getExpiresAt().isAfter(now))
                 .isPresent();
     }
 
@@ -128,12 +174,15 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
             Instant absoluteExpiresAt
     ) {
         return authenticatedSession.sessionId().value() + ":"
-                + authenticatedSession.userId() + ":"
-                + authenticatedSession.authAccountId() + ":"
+                + authenticatedSession.userId().value() + ":"
+                + authenticatedSession.authAccountId().value() + ":"
                 + absoluteExpiresAt.toEpochMilli();
     }
 
     private static Optional<SessionData> parse(String value) {
+        if (!StringUtils.hasText(value)) {
+            return Optional.empty();
+        }
         String[] parts = value.split(":", -1);
         if (parts.length != 4) {
             return Optional.empty();
@@ -141,10 +190,25 @@ public final class RedisBrowserSessionStore implements BrowserSessionStore {
         try {
             return Optional.of(new SessionData(
                     new AuthenticatedSession(
-                            Long.valueOf(parts[1]),
-                            Long.valueOf(parts[2]),
+                            new UserId(Long.valueOf(parts[1])),
+                            new AuthAccountId(Long.valueOf(parts[2])),
                             new SessionId(parts[0])),
                     Instant.ofEpochMilli(Long.parseLong(parts[3]))));
+        } catch (NumberFormatException exception) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<Duration> parseRemainingIdleTtl(String value) {
+        if (!StringUtils.hasText(value)) {
+            return Optional.empty();
+        }
+        try {
+            long remainingTtlMillis = Long.parseLong(value);
+            if (remainingTtlMillis <= 0) {
+                return Optional.empty();
+            }
+            return Optional.of(Duration.ofMillis(remainingTtlMillis));
         } catch (NumberFormatException exception) {
             return Optional.empty();
         }

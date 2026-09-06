@@ -26,7 +26,8 @@ class ControllerClientRequestContractTest {
         List<Class<?>> controllers = List.of(
                 UserAuthenticationController.class,
                 UserAuthorizationController.class,
-                HandoffController.class);
+                HandoffController.class,
+                BrowserSessionController.class);
 
         controllers.stream()
                 .flatMap(controller -> List.of(controller.getDeclaredMethods()).stream())
@@ -138,7 +139,8 @@ class ControllerClientRequestContractTest {
         return List.of(
                 UserAuthenticationController.class,
                 UserAuthorizationController.class,
-                HandoffController.class);
+                HandoffController.class,
+                BrowserSessionController.class);
     }
 
     private static void assertContexts(

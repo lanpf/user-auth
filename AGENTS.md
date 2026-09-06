@@ -1,4 +1,4 @@
-<!-- engineering-standards:begin version=2.1.8 -->
+<!-- engineering-standards:begin version=2.3.0 -->
 ## Shared engineering guidance
 
 - **STD-HIERARCHY-001** — Shared rules apply to every project; service rules additionally apply to service projects, and project-specific authoritative documents may only add or tighten constraints.
@@ -13,19 +13,20 @@
 
 ## Skill routing
 
-- Developing, changing, or reviewing service code under the shared engineering standards during development: use `$develop-service-code`.
-- Implementing or reviewing cross-instance locking, reliable event publication, message consumption, partitioning, dead letters, delayed messages, or related failure handling.: use `$develop-distributed-capabilities`.
-- Designing, implementing, or reviewing compensation, reconciliation, repair, cleanup, batch recovery, or fallback workflows: use `$develop-compensation-workflows`.
+- Developing, changing, or reviewing service code under the shared engineering standards during development: use `$develop-service`.
+- Implementing or reviewing cross-instance locking, reliable event publication, message consumption, partitioning, dead letters, delayed messages, or related failure handling.: use `$develop-distributed`.
+- Designing, implementing, or reviewing compensation, reconciliation, repair, cleanup, batch recovery, or fallback workflows: use `$develop-compensation`.
 - Writing, running, or reviewing integration tests in the smoke-test phase: use `$test-integration`.
-- Planning or applying coordinated standards-driven layered service refactors: use `$refactor-layered-service`.
+- Planning or applying coordinated standards-driven layered service refactors: use `$refactor-service`.
 
 <!-- engineering-standards:end -->
 
 ## Project documentation
 
 - Before making any change, read the root `README.md` for the project scope, module map, verification commands, and documentation routing.
+- Before changing service responsibilities, cross-service collaboration contracts, trust boundaries, or delivery status statements, also read `docs/RESPONSIBILITIES.md`.
 - Before changing domain models, invariants, business rules, application use cases, API business semantics, error definitions, or domain events, also read `docs/DOMAIN.md`.
-- Before changing authorization-server providers, SAS or OAuth2/OIDC behavior, grants, token lifecycle, scopes, internal clients, protocol endpoint security, JWKs, protocol persistence, or authorization-server configuration, also read `docs/OAUTH2_OIDC_PROTOCOL_INFRASTRUCTURE.md`.
+- Before changing authorization-server providers, SAS or OAuth2/OIDC behavior, grants, token lifecycle, scopes, internal clients, protocol endpoint security, JWKs, protocol persistence, or authorization-server configuration, also read `docs/OAUTH2.md`.
 - Read every additional authoritative document routed by the root `README.md` that applies to the task.
 - If a change crosses multiple documented areas, read all applicable authoritative documents.
 - The root `README.md` is the project entry and documentation index; the routed detailed documents are authoritative within their respective scopes.

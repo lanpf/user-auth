@@ -2,7 +2,7 @@ package com.cloud.userauth.infrastructure.config;
 
 import com.cloud.userauth.application.port.AuthChallengeDispatcher;
 import com.cloud.userauth.application.port.OneTimeCodeGenerator;
-import com.cloud.userauth.infrastructure.challenge.FixedCodeGenerator;
+import com.cloud.userauth.infrastructure.challenge.FixedOneTimeCodeGenerator;
 import com.cloud.userauth.infrastructure.challenge.NoopAuthChallengeDispatcher;
 import com.cloud.userauth.infrastructure.security.SensitiveValueCipher;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -19,7 +19,7 @@ public class NonProductionAuthChallengeConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public OneTimeCodeGenerator oneTimeCodeGenerator(NonProductionAuthChallengeProperties properties) {
-        return new FixedCodeGenerator(properties.getFixedCode());
+        return new FixedOneTimeCodeGenerator(properties);
     }
 
     @Bean

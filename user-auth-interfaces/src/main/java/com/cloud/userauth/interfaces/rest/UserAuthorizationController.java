@@ -2,7 +2,7 @@ package com.cloud.userauth.interfaces.rest;
 
 import com.cloud.userauth.api.constants.UserAuthPathApiConstants;
 import com.cloud.framework.core.ClientRequest;
-import com.cloud.framework.core.PaginationRequest;
+import com.cloud.framework.core.Pagination;
 import com.cloud.framework.core.PageResult;
 import com.cloud.framework.core.Result;
 import com.cloud.userauth.api.authorization.ChannelAuthorizationPolicyApiResponse;
@@ -89,7 +89,7 @@ public class UserAuthorizationController {
         return queryFacade.getRole(mapper.toQuery(request));
     }
 
-    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_ROLES_QUERY_PAGE)
+    @PostMapping(UserAuthPathApiConstants.ADMIN_AUTHORIZATION_ROLES_PAGE)
     public PageResult<RoleApiResponse> getRoles(@Valid @RequestBody CatalogPageRequest request) {
         return queryFacade.getRoles(mapper.toQuery(request));
     }
@@ -191,9 +191,9 @@ public class UserAuthorizationController {
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class CatalogPageRequest extends ClientRequest implements PaginationRequest {
-        private Integer pageNo = PaginationRequest.DEFAULT_PAGE_NO;
-        private Integer pageSize = PaginationRequest.DEFAULT_PAGE_SIZE;
+    public static class CatalogPageRequest extends ClientRequest implements Pagination {
+        private Integer pageNo = Pagination.DEFAULT_PAGE_NO;
+        private Integer pageSize = Pagination.DEFAULT_PAGE_SIZE;
     }
 
     @Getter

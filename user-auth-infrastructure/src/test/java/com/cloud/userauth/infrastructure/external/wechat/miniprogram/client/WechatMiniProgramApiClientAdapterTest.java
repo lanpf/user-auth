@@ -180,7 +180,7 @@ class WechatMiniProgramApiClientAdapterTest {
         assertEquals(7200L, token.expiresIn());
         assertEquals(
                 "13800138000",
-                phone.phoneInfo().getPhoneNumber());
+                phone.phoneInfo().phoneNumber());
         assertEquals(0, phone.errorCode());
         assertEquals("ok", phone.errorMessage());
         fixture.server.verify();

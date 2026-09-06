@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.cloud</groupId>
         <artifactId>user-auth</artifactId>
-        <version>0.4.2-SNAPSHOT</version>
+        <version>0.4.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>user-auth-domain</artifactId>
@@ -28,6 +28,10 @@
         <dependency>
             <groupId>com.cloud</groupId>
             <artifactId>framework-domain</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

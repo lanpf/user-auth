@@ -2,6 +2,7 @@ package com.cloud.userauth;
 
 import com.cloud.framework.core.RequestHeader;
 import com.cloud.framework.core.Result;
+import com.cloud.framework.core.SubjectType;
 import com.cloud.userauth.api.authentication.CreateSessionHandoffApiCommandOutput;
 import com.cloud.userauth.api.authentication.IssueAuthChallengeApiCommandOutput;
 import com.cloud.userauth.api.authentication.MobileOtpLoginApiCommand;
@@ -26,7 +27,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.client.RestClient;
@@ -36,6 +39,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
+import java.net.HttpCookie;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -172,8 +176,9 @@ class MobileOtpLoginFlowIT {
         assertThat(introspect(restClient, login.accessToken()).get("active")).isEqualTo(true);
 
         Result<CreateSessionHandoffApiCommandOutput> handoff = restClient.post()
-                .uri("/api/user-auth/handoffs")
+                .uri("/api/handoffs")
                 .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
+                .header(RequestHeader.SUBJECT_TYPE, SubjectType.HOST_SESSION.name())
                 .header(RequestHeader.USER_ID, login.userId().toString())
                 .header(RequestHeader.SESSION_ID, login.sessionId())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -186,10 +191,12 @@ class MobileOtpLoginFlowIT {
         assertThat(handoff.getData()).isNotNull();
         assertThat(handoff.getData().ticket()).isNotBlank();
         assertSessionHandoffNamespaceInjectedOnce(login, handoff.getData());
+        verifyBrowserSessionLifecycle(restClient, login, handoff.getData().ticket());
 
         restClient.post()
-                .uri("/api/user-auth/logout")
+                .uri("/api/logout")
                 .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
+                .header(RequestHeader.SUBJECT_TYPE, SubjectType.HOST_SESSION.name())
                 .header(RequestHeader.USER_ID, login.userId().toString())
                 .header(RequestHeader.SESSION_ID, login.sessionId())
                 .retrieve()
@@ -267,7 +274,7 @@ class MobileOtpLoginFlowIT {
                 .run(
                         "--server.port=" + serverPort,
                         "--spring.config.additional-location=optional:file:../config/",
-                        "--USER_AUTH_CONFIG_DIR=../config",
+                        "--spring.sql.init.schema-locations=file:../config/db/schema.sql",
                         "--spring.datasource.url=" + datasourceUrl,
                         "--spring.datasource.username=" + MYSQL.getUsername(),
                         "--spring.datasource.password=" + MYSQL.getPassword(),
@@ -284,9 +291,66 @@ class MobileOtpLoginFlowIT {
                                 + tokenEndpoint);
     }
 
+    private static void verifyBrowserSessionLifecycle(
+            RestClient restClient,
+            MobileOtpLoginApiCommandOutput login,
+            String ticket
+    ) {
+        ResponseEntity<Result<Map<String, Object>>> exchange = restClient.post()
+                .uri("/api/handoffs/exchange")
+                .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("ticket", ticket, "target", "BROWSER_SESSION"))
+                .retrieve()
+                .toEntity(new ParameterizedTypeReference<>() {
+                });
+        String setCookie = exchange.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+        assertThat(setCookie).isNotBlank();
+        String browserSession = HttpCookie.parse(setCookie).get(0).getValue();
+
+        Result<Map<String, Object>> verified = verifyBrowserSession(restClient, browserSession);
+        assertThat(verified.getData()).containsEntry("verified", true);
+        assertThat(verified.getData()).containsEntry("userId", login.userId().intValue());
+        assertThat(verified.getData()).containsEntry("sessionId", login.sessionId());
+
+        ResponseEntity<Void> ended = restClient.post()
+                .uri("/api/browser-sessions/end")
+                .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
+                .header(RequestHeader.SUBJECT_TYPE, SubjectType.BROWSER_SESSION.name())
+                .header(RequestHeader.USER_ID, login.userId().toString())
+                .header(RequestHeader.SESSION_ID, login.sessionId())
+                .header(HttpHeaders.ORIGIN, "https://h5.example.com")
+                .header(HttpHeaders.COOKIE, "BROWSER_SESSION=" + browserSession)
+                .retrieve()
+                .toBodilessEntity();
+        assertThat(ended.getHeaders().getFirst(HttpHeaders.SET_COOKIE))
+                .contains("BROWSER_SESSION=")
+                .contains("Max-Age=0");
+
+        Result<Map<String, Object>> invalid = verifyBrowserSession(restClient, browserSession);
+        assertThat(invalid.getData()).containsEntry("verified", false);
+    }
+
+    private static Result<Map<String, Object>> verifyBrowserSession(
+            RestClient restClient,
+            String browserSession
+    ) {
+        Result<Map<String, Object>> result = restClient.post()
+                .uri("/internal/browser-sessions/verification")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("credential", browserSession))
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {
+                });
+        assertThat(result).isNotNull();
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getData()).isNotNull();
+        return result;
+    }
+
     private static IssueAuthChallengeApiCommandOutput issueChallenge(RestClient restClient) {
         Result<IssueAuthChallengeApiCommandOutput> result = restClient.post()
-                .uri("/api/user-auth/challenges")
+                .uri("/api/challenges")
                 .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
                 .header(RequestHeader.CLIENT_PLATFORM, "IOS")
                 .header(RequestHeader.CLIENT_VERSION, "1.0.0")
@@ -310,7 +374,7 @@ class MobileOtpLoginFlowIT {
             String code
     ) {
         Result<MobileOtpLoginApiCommandOutput> result = restClient.post()
-                .uri("/api/user-auth/login/mobile-otp")
+                .uri("/api/login/mobile-otp")
                 .header(RequestHeader.CLIENT_APP_ID, CLIENT_APP_ID)
                 .header(RequestHeader.CLIENT_PLATFORM, "IOS")
                 .header(RequestHeader.CLIENT_VERSION, "1.0.0")
@@ -430,7 +494,7 @@ class MobileOtpLoginFlowIT {
             assertThat(redis.keys("*mobile-login*"))
                     .containsExactly(expectedKey);
             assertThat(expectedKey).doesNotContain(LOCK_NAMESPACE + ":" + LOCK_NAMESPACE);
-            return null;
+            return Boolean.TRUE;
         });
     }
 

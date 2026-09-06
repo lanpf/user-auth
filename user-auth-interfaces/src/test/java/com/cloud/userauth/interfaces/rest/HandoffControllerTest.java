@@ -65,6 +65,7 @@ class HandoffControllerTest {
         String cookie = result.getResponse().getHeader("Set-Cookie");
         assertNotNull(cookie);
         assertTrue(cookie.contains("BROWSER_SESSION=h5-secret"));
+        assertTrue(cookie.contains("Max-Age=28800"));
         assertTrue(cookie.contains("HttpOnly"));
         assertTrue(cookie.contains("Secure"));
         assertFalse(result.getResponse().getContentAsString().contains("h5-secret"));
@@ -99,10 +100,10 @@ class HandoffControllerTest {
 
         @Override
         public Result<ExchangeSessionHandoffApiCommandOutput> exchange(
-                ExchangeSessionHandoffApiCommand request
+            ExchangeSessionHandoffApiCommand request
         ) {
             return Result.success(new ExchangeSessionHandoffApiCommandOutput(
-                    "h5-secret", 1800L, "handoff-1"));
+                    "h5-secret", 28800L, "handoff-1"));
         }
     }
 }

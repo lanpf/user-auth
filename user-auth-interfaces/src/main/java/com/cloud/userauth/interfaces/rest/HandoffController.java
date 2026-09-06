@@ -45,8 +45,7 @@ public class HandoffController {
             @Valid @RequestBody ExchangeRequest request,
             HttpServletResponse response
     ) {
-        Result<ExchangeSessionHandoffApiCommandOutput> result =
-                facade.exchange(mapper.toCommand(request));
+        Result<ExchangeSessionHandoffApiCommandOutput> result = facade.exchange(mapper.toCommand(request));
         ExchangeSessionHandoffApiCommandOutput output = result.getData();
         BrowserSessionCookie.write(response, output.sessionCredential(), Duration.ofSeconds(output.expiresIn()));
         return Result.success(mapper.toRepresentation(output));
